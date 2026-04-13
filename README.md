@@ -46,3 +46,102 @@ The system follows a modular, event-driven architecture.
 - **Core systems** – routing, ragdoll control, and coordination  
 
 ### Execution Flow
+Event → Router → Feature Module → Physics / Animation Response
+
+
+Each feature operates independently while sharing a consistent routing and scheduling model.
+
+---
+
+## Key Systems
+
+### Impulse System
+
+- Controls direction, magnitude, and timing of impulses  
+- Supports multiple configurable behaviors  
+- Enables fine-tuned physical reactions  
+
+### Ragdoll System
+
+- Manages animation → physics transitions  
+- Prevents unstable or unrealistic motion  
+- Coordinates with impulse systems  
+
+### Animation Coordination
+
+- Aligns animation states with physics behavior  
+- Reduces conflicts between scripted animation and simulation  
+
+### Movement & Interaction Systems
+
+- Handles environmental reactions (stairs, impacts, movement states)  
+- Applies context-aware physics adjustments  
+
+---
+
+## Technical Highlights
+
+- Event-driven system design  
+- Modular feature architecture  
+- Runtime physics and animation coordination  
+- Log-based debugging and issue reproduction  
+- Regression testing across multiple releases  
+- Configurable behavior through runtime settings  
+
+---
+
+## My Role
+
+- Designed system architecture and modular structure  
+- Implemented runtime behavior logic and feature systems  
+- Debugged physics and animation conflicts using log analysis  
+- Performed regression testing across multiple releases  
+- Maintained a production system used by ~19,000 users  
+
+---
+
+## Development Approach
+
+The system was developed iteratively with a focus on:
+
+- isolating features into independent modules  
+- testing behavior under real runtime conditions  
+- refining stability and consistency over time  
+
+Each release focused on improving:
+
+- system reliability  
+- behavioral realism  
+- maintainability  
+
+---
+
+## Example Use Cases
+
+- Improving realism of character falls and impacts  
+- Controlling directional reactions to force  
+- Stabilizing animation-to-physics transitions  
+- Customizing behavior for specific gameplay scenarios  
+
+---
+
+## Repository Structure
+Features/ → modular behavior systems
+Helpers/ → shared utilities
+Core Files → routing, ragdoll, coordination
+
+
+---
+
+## Future Work
+
+- Continued refinement of detection and response systems  
+- Additional modular features  
+- Improved configurability  
+
+---
+
+## Notes
+
+This project focuses on runtime system design, debugging, and behavior control rather than building a full standalone engine.
+
