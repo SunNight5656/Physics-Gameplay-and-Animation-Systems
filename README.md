@@ -41,7 +41,7 @@ The system follows a modular, event-driven architecture.
 
 ### Structure
 
-- **Features/** – independent behavior modules  
+- **Features/** – independent behavior modules (impulses, animation overrides, movement logic)  
 - **Helpers/** – shared utilities and state management  
 - **Core systems** – routing, ragdoll control, and coordination  
 
@@ -57,15 +57,15 @@ Each feature operates independently while sharing a consistent routing and sched
 
 ### Impulse System
 
-- Controls direction, magnitude, and timing of impulses  
+- Controls direction, magnitude, and timing of physical impulses  
 - Supports multiple configurable behaviors  
-- Enables fine-tuned physical reactions  
+- Allows fine-tuned control over physical reactions  
 
 ### Ragdoll System
 
-- Manages animation → physics transitions  
+- Manages transitions between animation and physics states  
 - Prevents unstable or unrealistic motion  
-- Coordinates with impulse systems  
+- Coordinates with impulse and animation systems  
 
 ### Animation Coordination
 
@@ -94,7 +94,7 @@ Each feature operates independently while sharing a consistent routing and sched
 
 - Designed system architecture and modular structure  
 - Implemented runtime behavior logic and feature systems  
-- Debugged physics and animation conflicts using log analysis  
+- Debugged physics and animation conflicts using log analysis and reproduction  
 - Performed regression testing across multiple releases  
 - Maintained a production system used by ~19,000 users  
 
@@ -127,8 +127,8 @@ Each release focused on improving:
 
 ## Repository Structure
 Features/ → modular behavior systems
-Helpers/ → shared utilities
-Core Files → routing, ragdoll, coordination
+Helpers/ → shared utilities and state logic
+Core Files → routing, ragdoll, and coordination
 
 
 ---
