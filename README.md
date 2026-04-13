@@ -1,22 +1,22 @@
 # Physics-Gameplay-and-Animation-Systems
 
-A Cyberpunk 2077 REDscript project focused on runtime physics, gameplay reaction systems, ragdoll behavior, animation-state handling, and event-driven behavior routing.
+A Cyberpunk 2077 REDscript project focused on runtime physics behavior, gameplay reactions, animation-state handling, and event-driven systems design.
 
-This repository reflects 600+ hours of iterative systems design, debugging, testing, and tuning across modular gameplay and physics features. The work emphasizes controllable runtime behavior, configurable reaction logic, clean event routing, and practical tooling for experimenting with animation and physics interactions in a live game environment.
+This repository reflects 600+ hours of iterative implementation, debugging, testing, and tuning across modular gameplay and physics features. The project emphasizes controllable runtime behavior, configurable reaction logic, clean event routing, and practical systems development inside a live game environment.
 
-## Scope
+## Overview
 
-This project includes modular systems for:
+This repository contains modular REDscript systems for:
 
 - physics-driven reaction handling
 - impact and impulse routing
-- ragdoll and collapse behavior
-- rebound, stumble, and tumble logic
-- collision and post-impact body-state control
-- workspot, movement-state, and stair-related helpers
-- configurable runtime behavior through mod settings
+- ragdoll and body-state behavior
+- rebound, stumble, trip, and tumble logic
+- collision handling and post-impact control
+- movement-state, workspot, and stair-related helpers
+- configurable runtime behavior through Mod Settings
 
-## Technical focus
+## Technical Focus
 
 Key areas of work include:
 
@@ -27,36 +27,37 @@ Key areas of work include:
 - physics and reaction tuning
 - debugging and refinement of real-time gameplay behavior
 
-## Repository structure
+## Repository Structure
 
-### Core systems
-- `DeathRouter.reds`
-- `DeathImpulse.reds`
+### Core Systems
+- `Router.reds`
+- `Impulse.reds`
 - `Ragdoll.reds`
 - `OnHit.reds`
 - `Types.reds`
 - `ModSettings.reds`
 - `VanillaImpulseKiller.reds`
+- `GlobalNewImpulse.reds`
+- `HeadFalls.reds`
 
-### Feature modules
-- `1 GlobalNewImpulse.reds`
-- `2_Feature_HeadFalls.reds`
-- `Features/3Jolt.reds`
-- `Features/4 Keep Dead Body Collision.reds`
-- `Features/8 Splat_Bump_TripAnimation.reds`
-- `Features/9 Splat_Bump_LookAtBackup.reds`
-- `Features/10 MoveNPCwithFeet.reds`
-- `Features/ArcadeWeapons.reds`
-- `Features/RAMP SCHEDULERS.reds`
-- `Features/StealthUtils.reds`
-- `Features/Tumble.reds`
-- `Features/Twitch.reds`
+### Feature Modules
+Located in `Features/`, these files cover focused gameplay and physics behaviors such as:
 
-### Supporting helpers
-- `Helpers/Positions.reds`
-- `Helpers/HelpersWalkingRunning.reds`
-- `Helpers/Helpers2WorkspotsStairs.reds`
-- `Helpers/WorkspotLast.reds`
+- jolt and twitch systems
+- trip and look-at backup behavior
+- movement with feet
+- collision-related features
+- tumble logic
+- utility and scheduler support
+- arcade and weapon-related behaviors
+
+### Supporting Helpers
+Located in `Helpers/`, these files support:
+
+- position handling
+- walking and running state helpers
+- workspot and stair-related helpers
+- routing and shared utility behavior
 
 ## Requirements
 
@@ -74,11 +75,39 @@ Common dependencies may include:
 ## Installation
 
 1. Install the required Cyberpunk 2077 scripting frameworks.
-2. Place the repository's `.reds` files into the appropriate `r6/scripts` structure.
+2. Place the repository’s `.reds` files into the appropriate `r6/scripts` structure.
 3. Keep the folder layout intact if you want the existing `Features/` and `Helpers/` organization preserved.
 4. Launch the game and verify that the scripts compile successfully.
 5. Configure supported options through Mod Settings where applicable.
 
-## Project intent
+## Design Approach
 
-This repository is maintained as a systems-development project focused on real-time gameplay behavior, runtime control, and modular feature design. It serves both as an active implementation project and as a technical body of work demonstrating iteration, debugging, tuning, and architecture decisions in a complex scripted game environment.
+This project is organized around modular runtime systems rather than a single monolithic script. The goal is to make feature behavior easier to isolate, test, tune, and extend.
+
+The broader design priorities include:
+
+- clean separation of feature logic
+- configurable runtime controls
+- practical iteration inside a scripted game environment
+- reusable helper systems for shared state and positioning logic
+- maintainable event routing across multiple gameplay behaviors
+
+## Project Intent
+
+This repository is maintained as a systems-development project focused on runtime control, gameplay behavior design, and modular feature implementation. It serves both as an active technical project and as a body of work demonstrating architecture decisions, experimentation, debugging, and iterative refinement in a complex scripted environment.
+
+## Notes
+
+Behavior may vary depending on:
+
+- game version
+- framework versions
+- installed gameplay or AI mods
+- overlapping wrapped methods
+- script load order
+
+If multiple mods alter the same runtime systems, compatibility issues may occur.
+
+## License
+
+Add your preferred license or usage terms here.
