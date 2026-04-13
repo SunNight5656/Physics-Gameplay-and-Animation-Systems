@@ -1,113 +1,100 @@
-RuntimePhysicsSystems
+Runtime Physics and Gameplay Systems
+Overview
 
-A Cyberpunk 2077 REDscript project focused on runtime physics behavior, gameplay reactions, animation-state handling, and event-driven systems design.
+This project implements a modular, event-driven runtime system for controlling physics-driven animation behavior, including ragdoll transitions, impulse handling, and animation coordination.
 
-This repository reflects 600+ hours of iterative implementation, debugging, testing, and tuning across modular gameplay and physics features. The project emphasizes controllable runtime behavior, configurable reaction logic, clean event routing, and practical systems development inside a live game environment.
+The system was designed to improve realism, stability, and control beyond default engine behavior by introducing structured control over how characters respond to forces, collisions, and state transitions.
 
-## Overview
+It has been developed and maintained across multiple iterations and is currently deployed in a production environment supporting approximately 19,000 users (42,000 downloads).
 
-This repository contains modular REDscript systems for:
+Problem Statement
 
-- physics-driven reaction handling
-- impact and impulse routing
-- ragdoll and body-state behavior
-- rebound, stumble, trip, and tumble logic
-- collision handling and post-impact control
-- movement-state, workspot, and stair-related helpers
-- configurable runtime behavior through Mod Settings
+Default physics and animation systems often produce:
 
-## Technical Focus
+inconsistent or unrealistic ragdoll behavior
+poor control over impulse direction and magnitude
+unstable transitions between animation and physics states
 
-Key areas of work include:
+This project addresses those issues by introducing:
 
-- REDscript-based runtime systems
-- modular feature architecture
-- event-driven gameplay logic
-- animation-state and movement-state coordination
-- physics and reaction tuning
-- debugging and refinement of real-time gameplay behavior
+controlled impulse routing
+configurable timing and response behavior
+modular overrides for specific gameplay scenarios
 
-## Repository Structure
+The result is more predictable, realistic, and tunable physics-driven character behavior.
 
-### Core Systems
-- `Router.reds`
-- `Impulse.reds`
-- `Ragdoll.reds`
-- `OnHit.reds`
-- `Types.reds`
-- `ModSettings.reds`
-- `VanillaImpulseKiller.reds`
-- `GlobalNewImpulse.reds`
-- `HeadFalls.reds`
+Architecture
 
-### Feature Modules
-Located in `Features/`, these files cover focused gameplay and physics behaviors such as:
+The system follows a modular, event-driven architecture.
 
-- jolt and twitch systems
-- trip and look-at backup behavior
-- movement with feet
-- collision-related features
-- tumble logic
-- utility and scheduler support
-- arcade and weapon-related behaviors
+Core Design
+Event-driven runtime system
+Feature-based modular structure
+Centralized routing and scheduling
+Configurable behavior through runtime settings
+Structure
+Features/ – independent behavior modules (impulses, animation overrides, movement logic)
+Helpers/ – shared utilities and state management
+Core systems – routing, ragdoll control, and event coordination
+Execution Flow
+Event → Router → Feature Module → Physics / Animation Response
 
-### Supporting Helpers
-Located in `Helpers/`, these files support:
+Each feature operates independently while sharing a consistent routing and scheduling model.
 
-- position handling
-- walking and running state helpers
-- workspot and stair-related helpers
-- routing and shared utility behavior
+Key Systems
+Impulse System
+Controls direction, magnitude, and timing of physical impulses
+Supports multiple configurable behaviors (forward, vertical, directional)
+Allows fine-tuned control over physical reactions
+Ragdoll System
+Manages transitions between animation and physics states
+Prevents unstable or unrealistic motion
+Coordinates with impulse and animation systems
+Animation Coordination
+Aligns animation states with physics behavior
+Reduces conflicts between scripted animation and dynamic simulation
+Movement & Interaction Systems
+Handles environmental reactions (stairs, impacts, movement states)
+Applies context-aware physics adjustments
+Technical Highlights
+Event-driven system design
+Modular feature architecture
+Runtime physics and animation coordination
+Log-based debugging and issue reproduction
+Regression testing across multiple releases
+Configurable behavior through runtime settings
+My Role
+Designed system architecture and modular structure
+Implemented runtime behavior logic and feature systems
+Debugged physics and animation conflicts using log analysis and reproduction
+Performed regression testing across multiple releases
+Maintained a production system used by ~19,000 users
+Development Approach
 
-## Requirements
+The system was developed iteratively with a focus on:
 
-This project is intended for Cyberpunk 2077 environments using REDscript-based runtime scripting.
+isolating features into independent modules
+testing behavior under real runtime conditions
+refining stability and consistency over time
 
-Common dependencies may include:
+Each release focused on improving:
 
-- RED4ext
-- redscript
-- Codeware
-- TweakXL
-- ArchiveXL
-- Mod Settings
+system reliability
+behavioral realism
+maintainability of the codebase
+Example Use Cases
+Improving realism of character falls and impacts
+Controlling directional reactions to force
+Stabilizing animation-to-physics transitions
+Customizing behavior for specific gameplay scenarios
+Repository Structure
+Features/     → modular behavior systems
+Helpers/      → shared utilities and state logic
+Core Files    → routing, ragdoll, and system coordination
+Future Work
+Continued refinement of detection and response systems
+Additional modular features for specialized behaviors
+Improved configurability and tuning systems
+Notes
 
-## Installation
-
-1. Install the required Cyberpunk 2077 scripting frameworks.
-2. Place the repository’s `.reds` files into the appropriate `r6/scripts` structure.
-3. Keep the folder layout intact if you want the existing `Features/` and `Helpers/` organization preserved.
-4. Launch the game and verify that the scripts compile successfully.
-5. Configure supported options through Mod Settings where applicable.
-
-## Design Approach
-
-This project is organized around modular runtime systems rather than a single monolithic script. The goal is to make feature behavior easier to isolate, test, tune, and extend.
-
-The broader design priorities include:
-
-- clean separation of feature logic
-- configurable runtime controls
-- practical iteration inside a scripted game environment
-- reusable helper systems for shared state and positioning logic
-- maintainable event routing across multiple gameplay behaviors
-
-## Project Intent
-
-This repository is maintained as a systems-development project focused on runtime control, gameplay behavior design, and modular feature implementation. It serves both as an active technical project and as a body of work demonstrating architecture decisions, experimentation, debugging, and iterative refinement in a complex scripted environment.
-
-## Notes
-
-Behavior may vary depending on:
-
-- game version
-- framework versions
-- installed gameplay or AI mods
-- overlapping wrapped methods
-- script load order
-
-If multiple mods alter the same runtime systems, compatibility issues may occur.
-
-## License
-
-Add your preferred license or usage terms here.
+This project focuses on runtime system design, debugging, and behavior control rather than building a full standalone engine. The emphasis is on solving real-world physics and animation interaction problems within an existing environment.
