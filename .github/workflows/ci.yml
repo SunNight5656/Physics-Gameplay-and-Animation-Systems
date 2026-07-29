@@ -1,0 +1,32 @@
+name: SPLAT CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-and-package:
+    name: Validate and package SPLAT
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate package structure
+        shell: pwsh
+        run: ./scripts/validate-package.ps1
+
+      - name: Build test release
+        shell: pwsh
+        run: ./scripts/build-release.ps1 -Version "ci-test"
+
+      - name: Upload test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: SPLAT-ci-test
+          path: dist/SPLAT-ci-test.zip
