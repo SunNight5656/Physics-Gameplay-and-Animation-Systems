@@ -1,147 +1,276 @@
-# Runtime Physics and Gameplay Systems
+# SPLAT Physics — Runtime Physics and Gameplay Systems
 
 ## Overview
 
-This project implements a modular, event-driven runtime system for controlling physics-driven animation behavior, including ragdoll transitions, impulse handling, and animation coordination.
+SPLAT Physics is a modular physics and gameplay overhaul for **Cyberpunk 2077**. It provides extensive control over ragdoll behavior, character falls, directional impulses, bullet reactions, explosions, vehicle interactions, situational responses, and animation-to-physics transitions.
 
-The system was designed to improve realism, stability, and control beyond default engine behavior by introducing structured control over how characters respond to forces, collisions, and state transitions.
+The project has grown through more than **40 public releases** and has reached approximately **70,000 total downloads** and **30,000 unique downloads**.
 
-It has been developed and maintained across multiple iterations and is currently deployed in a production environment supporting approximately **19,000 users (42,000 downloads)**.
+SPLAT is both a production mod and an ongoing software-engineering project focused on runtime debugging, configurable system design, release management, regression prevention, and automated delivery.
 
 ---
 
 ## Problem Statement
 
-Default physics and animation systems often produce:
+Default physics and animation behavior can produce:
 
-- inconsistent or unrealistic ragdoll behavior  
-- poor control over impulse direction and magnitude  
-- unstable transitions between animation and physics states  
+* inconsistent ragdoll reactions
+* limited control over impulse direction and magnitude
+* unstable transitions between animation and physics
+* repeated or conflicting hit reactions
+* unrealistic falls, jolts, tumbles, and vehicle responses
+* limited configuration for different gameplay styles
 
-This project addresses those issues by introducing:
+SPLAT addresses these problems through a configurable runtime system that routes physics behavior according to character state, hit context, selected mode, weapon type, environmental conditions, and user-defined settings.
 
-- controlled impulse routing  
-- configurable timing and response behavior  
-- modular overrides for specific gameplay scenarios  
+---
 
-The result is more predictable, realistic, and tunable physics-driven character behavior.
+## Core Capabilities
+
+### Ragdoll and Fall Control
+
+* Head and body fall systems
+* Directional impulse handling
+* Animation-to-ragdoll transitions
+* Death and incapacitation routing
+* Ground-contact and settle behavior
+* Stair, slope, workspot, and movement-state handling
+
+### Bullet and Impact Reactions
+
+* Configurable bullet jolts
+* Per-hit impulse control
+* Body-part-aware reactions
+* Weapon-specific behavior
+* Suppression of unwanted vanilla impulses
+* Separate handling for living, incapacitated, and dead NPCs
+
+### Trip, Tumble, and Twitch Systems
+
+* Situational trip behavior
+* Directional tumble logic
+* Configurable twitch reactions
+* Randomized impulse ranges
+* Runtime scheduling and delay controls
+
+### Explosions and Vehicles
+
+* Explosion force, lift, and radius controls
+* Vehicle impulse handling
+* Motorcycle fall behavior
+* Vehicle occupant reaction protection
+* Grenade exception handling
+* Configurable weapon and explosion interactions
+
+### Runtime Configuration
+
+* Native Settings user interface
+* Multiple independent gameplay modes
+* Per-mode settings and visibility
+* Persistent default configuration
+* More than 200 adjustable parameters
+* Separate settings for head, body, jolts, explosions, vehicles, trip, tumble, settle, twitch, and randomization
+
+---
+
+## Gameplay Modes
+
+SPLAT supports multiple configurable modes:
+
+* **Realism Custom** — full manual configuration
+* **Realism Plus** — stronger realistic reactions
+* **Clint Eastwood / Dirty Harry** — exaggerated cinematic gun reactions
+* **Arnold Arcade** — intentionally extreme arcade-style physics
+
+Each mode maintains its own settings rather than relying on one shared configuration.
 
 ---
 
 ## Architecture
 
-The system follows a modular, event-driven architecture.
-
-### Core Design
-
-- Event-driven runtime system  
-- Feature-based modular structure  
-- Centralized routing and scheduling  
-- Configurable behavior through runtime settings  
-
-### Structure
-
-- **Features/** – independent behavior modules (impulses, animation overrides, movement logic)  
-- **Helpers/** – shared utilities and state management  
-- **Core systems** – routing, ragdoll control, and coordination  
+SPLAT uses a modular, event-driven architecture.
 
 ### Execution Flow
-Event → Router → Feature Module → Physics / Animation Response
 
+```text
+Game Event
+    ↓
+Context and State Checks
+    ↓
+Physics Router
+    ↓
+Feature-Specific Logic
+    ↓
+Scheduled Ragdoll or Impulse Event
+    ↓
+Runtime Physics Response
+```
 
-Each feature operates independently while sharing a consistent routing and scheduling model.
+Major systems are separated into focused REDscript modules, helper utilities, Native Settings schemas, and runtime configuration files.
 
 ---
 
-## Key Systems
+## Repository Structure
 
-### Impulse System
+```text
+src/
+├── archive/
+│   └── pc/
+│       └── mod/
+│           └── rig.archive
+├── bin/
+│   └── x64/
+│       └── plugins/
+│           └── cyber_engine_tweaks/
+│               └── mods/
+│                   └── splat_native_settings/
+└── r6/
+    └── scripts/
+        └── new Splat/
+            ├── Features/
+            ├── Helpers/
+            └── Core REDscript systems
+```
 
-- Controls direction, magnitude, and timing of physical impulses  
-- Supports multiple configurable behaviors  
-- Allows fine-tuned control over physical reactions  
+### `src/archive`
 
-### Ragdoll System
+Contains the custom rig archive used by the game.
 
-- Manages transitions between animation and physics states  
-- Prevents unstable or unrealistic motion  
-- Coordinates with impulse and animation systems  
+### `src/bin`
 
-### Animation Coordination
+Contains the Cyber Engine Tweaks and Native Settings implementation, including:
 
-- Aligns animation states with physics behavior  
-- Reduces conflicts between scripted animation and simulation  
+* Lua runtime code
+* mode schemas
+* section definitions
+* shipped default settings
+* interface visibility settings
 
-### Movement & Interaction Systems
+### `src/r6`
 
-- Handles environmental reactions (stairs, impacts, movement states)  
-- Applies context-aware physics adjustments  
+Contains the REDscript gameplay implementation, including:
+
+* physics routing
+* head and body falls
+* bullet jolts
+* trip and tumble systems
+* explosion and vehicle behavior
+* randomization
+* workspot and movement helpers
+* death and incapacitation handling
 
 ---
 
 ## Technical Highlights
 
-- Event-driven system design  
-- Modular feature architecture  
-- Runtime physics and animation coordination  
-- Log-based debugging and issue reproduction  
-- Regression testing across multiple releases  
-- Configurable behavior through runtime settings  
+* Event-driven runtime architecture
+* Modular REDscript feature organization
+* Lua and JSON-based configuration interface
+* More than 200 configurable parameters
+* Per-mode configuration persistence
+* Context-aware impulse routing
+* Runtime scheduling and delayed execution
+* Log-based debugging and issue reproduction
+* Regression testing across frequent public releases
+* Installable Cyberpunk package structure
+* Git-based version control and release history
 
 ---
 
-## My Role
+## Development and Release Engineering
 
-- Designed system architecture and modular structure  
-- Implemented runtime behavior logic and feature systems  
-- Debugged physics and animation conflicts using log analysis and reproduction  
-- Performed regression testing across multiple releases  
-- Maintained a production system used by ~19,000 users  
+The repository is being expanded into a complete CI/CD portfolio project.
+
+Planned delivery workflow:
+
+```text
+Source Change
+    ↓
+Repository Validation
+    ↓
+Configuration and Structure Checks
+    ↓
+Automated Release Packaging
+    ↓
+Version and Checksum Generation
+    ↓
+GitHub Release Artifact
+    ↓
+Approved Nexus Mods Deployment
+```
+
+Planned DevOps components include:
+
+* automated repository validation
+* PowerShell and Linux build scripts
+* GitHub Actions
+* Jenkins
+* release ZIP generation
+* version verification
+* SHA-256 checksums
+* secrets and dependency scanning
+* release approval controls
+* rollback documentation
+* deployment verification
 
 ---
 
 ## Development Approach
 
-The system was developed iteratively with a focus on:
+SPLAT has been developed iteratively through testing, user feedback, log analysis, and repeated runtime debugging.
 
-- isolating features into independent modules  
-- testing behavior under real runtime conditions  
-- refining stability and consistency over time  
+The development process includes:
 
-Each release focused on improving:
-
-- system reliability  
-- behavioral realism  
-- maintainability  
-
----
-
-## Example Use Cases
-
-- Improving realism of character falls and impacts  
-- Controlling directional reactions to force  
-- Stabilizing animation-to-physics transitions  
-- Customizing behavior for specific gameplay scenarios  
+* isolating systems into focused modules
+* reproducing physics and animation failures
+* tracing runtime event routes
+* comparing expected and actual behavior
+* testing changes in live gameplay
+* preventing regressions across releases
+* maintaining stable package structures
+* publishing updates for an active user base
 
 ---
 
-## Repository Structure
-Features/ → modular behavior systems
-Helpers/ → shared utilities and state logic
-Core Files → routing, ragdoll, and coordination
+## Project Responsibilities
 
+The project includes hands-on work in:
+
+* system architecture
+* gameplay and physics programming
+* REDscript and Lua development
+* JSON schema design
+* Git and branch management
+* release packaging
+* production debugging
+* log analysis
+* regression testing
+* user support
+* technical documentation
+* CI/CD development
+* AI-assisted software engineering
 
 ---
 
-## Future Work
+## Dependencies
 
-- Continued refinement of detection and response systems  
-- Additional modular features  
-- Improved configurability  
+SPLAT currently uses:
+
+* Cyber Engine Tweaks
+* Native Settings UI
+* redscript
+
+The repository contains SPLAT’s own source and packaged project files. External dependencies must be installed separately by the user.
 
 ---
 
-## Notes
+## Status
 
-This project focuses on runtime system design, debugging, and behavior control rather than building a full standalone engine.
+SPLAT remains under active development. Current work focuses on:
 
+* stabilizing runtime physics routes
+* expanding automated validation
+* preventing configuration regressions
+* improving release packaging
+* documenting the full delivery pipeline
+* converting the project into demonstrable DevOps and release-engineering experience
