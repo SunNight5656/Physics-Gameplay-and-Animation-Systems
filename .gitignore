@@ -1,0 +1,11 @@
+dist/
+
+*.zip
+
+meta.ini
+
+*.log
+*.tmp
+
+Thumbs.db
+Desktop.ini
