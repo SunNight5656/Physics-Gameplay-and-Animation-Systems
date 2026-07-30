@@ -1,0 +1,694 @@
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:5: public class SPLATSettingsState {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:29: private func Ensure() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:56: public func GetBridgeVersion() -> Int32 { return 139; }
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:57: public func GetSessionToken() -> Int32 { return this.m_sessionToken; }
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:58: public func SetSessionToken(value: Int32) -> Void { this.m_sessionToken = value; }
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:59: public func ResetAll() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:83: private func TargetRFC(scopeName: CName) -> ref<RFCModSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:93: private func TargetHIS(scopeName: CName) -> ref<HIS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:103: private func TargetGS(scopeName: CName) -> ref<GS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:113: private func TargetSHHJM(scopeName: CName) -> ref<SHHJM_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:123: private func ActiveModeIndex() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:133: private func ActiveRFC() -> ref<RFCModSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:141: private func ActiveHIS() -> ref<HIS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:149: private func ActiveGS() -> ref<GS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:157: private func ActiveSHHJM() -> ref<SHHJM_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:165: private func MarkRuntimeRead() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:169: public func GetRuntimeReadCount() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:173: public func Menu() -> ref<RFCModSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:220: public func Head() -> ref<HIS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:317: public func Body() -> ref<GS_Settings> { this.MarkRuntimeRead(); return this.ActiveGS(); }
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:318: public func Jolts() -> ref<SHHJM_Settings> { this.MarkRuntimeRead(); return this.ActiveSHHJM(); }
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:320: private func Set_GS_Bool_0(target: ref<GS_Settings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:339: private func Get_GS_Bool_0(target: ref<GS_Settings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:358: private func Has_GS_Bool_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:378: private func Set_GS_Float_0(target: ref<GS_Settings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:407: private func Get_GS_Float_0(target: ref<GS_Settings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:436: private func Has_GS_Float_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:466: private func Set_GS_Int_0(target: ref<GS_Settings>, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:471: private func Get_GS_Int_0(target: ref<GS_Settings>, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:476: private func Has_GS_Int_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:482: private func Set_HIS_Bool_0(target: ref<HIS_Settings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:498: private func Get_HIS_Bool_0(target: ref<HIS_Settings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:514: private func Has_HIS_Bool_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:531: private func Set_HIS_Float_0(target: ref<HIS_Settings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:573: private func Get_HIS_Float_0(target: ref<HIS_Settings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:615: private func Has_HIS_Float_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:658: private func Set_HIS_Int_0(target: ref<HIS_Settings>, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:669: private func Get_HIS_Int_0(target: ref<HIS_Settings>, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:680: private func Has_HIS_Int_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:692: private func Set_RFC_Bool_0(target: ref<RFCModSettings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:799: private func Get_RFC_Bool_0(target: ref<RFCModSettings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:906: private func Has_RFC_Bool_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1014: private func Set_RFC_Bool_1(target: ref<RFCModSettings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1112: private func Get_RFC_Bool_1(target: ref<RFCModSettings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1210: private func Has_RFC_Bool_1(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1309: private func Set_RFC_Bool_2(target: ref<RFCModSettings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1411: private func Get_RFC_Bool_2(target: ref<RFCModSettings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1513: private func Has_RFC_Bool_2(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1616: private func Set_RFC_Bool_3(target: ref<RFCModSettings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1667: private func Get_RFC_Bool_3(target: ref<RFCModSettings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1718: private func Has_RFC_Bool_3(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1770: private func Set_RFC_Float_0(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:1905: private func Get_RFC_Float_0(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2040: private func Has_RFC_Float_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2176: private func Set_RFC_Float_1(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2280: private func Get_RFC_Float_1(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2384: private func Has_RFC_Float_1(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2489: private func Set_RFC_Float_2(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2592: private func Get_RFC_Float_2(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2695: private func Has_RFC_Float_2(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2799: private func Set_RFC_Float_3(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:2902: private func Get_RFC_Float_3(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3005: private func Has_RFC_Float_3(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3109: private func Set_RFC_Float_4(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3219: private func Get_RFC_Float_4(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3329: private func Has_RFC_Float_4(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3440: private func Set_RFC_Float_5(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3479: private func Get_RFC_Float_5(target: ref<RFCModSettings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3518: private func Has_RFC_Float_5(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3558: private func Set_RFC_Int_0(target: ref<RFCModSettings>, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3578: private func Get_RFC_Int_0(target: ref<RFCModSettings>, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3598: private func Has_RFC_Int_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3619: private func Set_SHHJM_Bool_0(target: ref<SHHJM_Settings>, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3628: private func Get_SHHJM_Bool_0(target: ref<SHHJM_Settings>, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3637: private func Has_SHHJM_Bool_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3647: private func Set_SHHJM_Float_0(target: ref<SHHJM_Settings>, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3686: private func Get_SHHJM_Float_0(target: ref<SHHJM_Settings>, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3725: private func Has_SHHJM_Float_0(name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3765: private func SetScoped_RFC_Bool(scopeName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3821: private func GetScoped_RFC_Bool(scopeName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3834: private func SetScoped_RFC_Float(scopeName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3907: private func GetScoped_RFC_Float(scopeName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3923: private func SetScoped_RFC_Int(scopeName: CName, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3941: private func GetScoped_RFC_Int(scopeName: CName, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3947: private func SetScoped_HIS_Bool(scopeName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3965: private func GetScoped_HIS_Bool(scopeName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3971: private func SetScoped_HIS_Float(scopeName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3989: private func GetScoped_HIS_Float(scopeName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:3995: private func SetScoped_HIS_Int(scopeName: CName, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4013: private func GetScoped_HIS_Int(scopeName: CName, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4019: private func SetScoped_GS_Bool(scopeName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4037: private func GetScoped_GS_Bool(scopeName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4043: private func SetScoped_GS_Float(scopeName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4061: private func GetScoped_GS_Float(scopeName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4067: private func SetScoped_GS_Int(scopeName: CName, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4085: private func GetScoped_GS_Int(scopeName: CName, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4091: private func SetScoped_SHHJM_Bool(scopeName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4109: private func GetScoped_SHHJM_Bool(scopeName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4115: private func SetScoped_SHHJM_Float(scopeName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4133: private func GetScoped_SHHJM_Float(scopeName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4139: public func SetBool(scopeName: CName, groupName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4154: public func GetBool(scopeName: CName, groupName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4168: public func SetFloat(scopeName: CName, groupName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4175: public func GetFloat(scopeName: CName, groupName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4183: public func SetInt(scopeName: CName, groupName: CName, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4189: public func GetInt(scopeName: CName, groupName: CName, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4196: public func SetMode(index: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4205: public func GetMode() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4219: public func RunBridgeSelfTest() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4275: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4276: public func SPLATGetSettingsState() -> ref<SPLATSettingsState> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4283: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4284: public func SPLATGetRuntimeReadCount() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4288: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4289: public func SPLATGetBridgeVersion() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4293: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4294: public func SPLATGetSessionToken() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4298: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4299: public func SPLATSetSessionToken(value: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4303: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4304: public func SPLATResetAll() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4308: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4309: public func SPLATSetBool(scopeName: CName, groupName: CName, name: CName, value: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4313: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4314: public func SPLATGetBool(scopeName: CName, groupName: CName, name: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4318: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4319: public func SPLATSetFloat(scopeName: CName, groupName: CName, name: CName, value: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4323: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4324: public func SPLATGetFloat(scopeName: CName, groupName: CName, name: CName) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4328: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4329: public func SPLATSetInt(scopeName: CName, groupName: CName, name: CName, value: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4333: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4334: public func SPLATGetInt(scopeName: CName, groupName: CName, name: CName) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4338: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4339: public func SPLATSetMode(index: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4343: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4344: public func SPLATGetMode() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4348: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4349: public func SPLATRunBridgeSelfTest() -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4353: public class SPLATSettingsRuntime {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4354: public static func State() -> ref<SPLATSettingsState> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4362: public static func Menu() -> ref<RFCModSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4368: public static func Head() -> ref<HIS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4374: public static func Body() -> ref<GS_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\00_SPLATDirectSettingsSystem.reds:4380: public static func Jolts() -> ref<SHHJM_Settings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:3: private func RFC_SitOverrideBodyBlock(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:17: private func GS_OverrideForwardActive(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:33: private func GS_OverrideChestActive(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:49: private func GS_OverridePelvisActive(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:65: private func GS_OverrideKneesActive(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:81: private func GS_OverrideHeadActive(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:96: private func GS_IsWsStandCurrent(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:100: private func GS_IsStairsCurrent(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:105: private func GS_IsCowerCurrent(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:111: private func GS_IsRunCurrent(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:152: private func GS_IsStandCurrent(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:160: public func GS_CurrentOverrideForward(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:191: public func GS_CurrentOverrideChest(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:222: public func GS_CurrentOverridePelvis(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:253: public func GS_CurrentOverrideKnees(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:284: public func GS_CurrentOverrideHead(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:324: public func GS_ClearSituationSnap(p: ref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:334: public func GS_CaptureSituationSnap(p: ref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:345: private func GS_HardBlockImpulse(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:370: private func GS_Clamp01(v: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:376: private func GS_Clamp(v: Float, lo: Float, hi: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:382: private func GS_RollChancePct(pct: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:389: private func GS_StrengthToZ(pct: Float, s: ref<GS_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:399: private func GS_ApplyBodyOnlyMode(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:420: private func GS_StrengthToF(val: Float, s: ref<GS_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:424: private func GS_EaseIn(t: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:429: private func GS_ShouldRun(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:454: private func GS_RollForwardBack(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:474: private func GS_GetForwardDirMode(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:514: private func GS_GetForwardDir(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:518: private func GS_CacheMomentum(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:542: private func GS_MomentumScale(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:554: private func GS_GetBodyChestPoint(p: wref<NPCPuppet>, fallbackHeight: Float, out pos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:576: private func GS_GetPointAtHeight(p: wref<NPCPuppet>, height: Float, forwardOffset: Float, s: ref<GS_Settings>) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:589: private func GS_ApplyImpulseAtPoint(p: wref<NPCPuppet>, pos: Vector4, impulse: Vector4, radiusM: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:596: private func GS_ApplyForwardAtPoint(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:623: private func GS_ApplyForwardAtPointMode(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:646: private func GS_ApplyForwardOnlyMode(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:661: private func GS_Abs(v: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:666: private func GS_Pos(v: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:670: private func GS_Dot2(a: Vector4, b: Vector4) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:674: private func GS_GetRightDirFromForward(fwd: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:683: private func GS_ApplyImpulse(p: wref<NPCPuppet>, impulse: Vector4, radiusM: Float, zOffset: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:693: private func GS_VertSign(s: ref<GS_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:697: private func GS_ApplyVerticalAndForwardMode(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:723: private func GS_ScheduleRamp(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:767: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:797: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsLogicImpulse.reds:878: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsTypesSettings.reds:3: public class GS_Settings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsTypesSettings.reds:149: public class GS_ForwardEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsTypesSettings.reds:150: public class GS_EarlyStepEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\BodyFallsTypesSettings.reds:151: public class GS_ImpactStepEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathImpulseRouter.reds:3: public class RFC_DeathImpulseRouter {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathImpulseRouter.reds:5: public static func ShouldOwnArcadeDeath(puppet: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathImpulseRouter.reds:29: public static func RunArcadeOnDeathOnly(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathImpulseRouter.reds:100: public static func RunOnDeathImpulses(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathOverrideGates_updated.reds:9: public func RFC_ApplyDeathOverrideGates(p: wref<NPCPuppet>, c: RFCConfig) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathRouter.reds:6: public func RFC_ResetMasterDeathChance(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathRouter.reds:12: public func RFC_MasterDeathChancePass(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathRouter.reds:43: public func RFC_MasterDeathChanceBlocksImpulses(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathRouter.reds:48: public func RFC_BlockAllDeathImpulseLanes(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\DeathRouter.reds:58: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\HeadFallsTypesSetting.reds:3: public class HIS_Settings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\HeadFallsTypesSetting.reds:193: public class HIS_FireEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\HeadFallsTypesSetting.reds:198: public class HIS_ReboundEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\HeadFallsTypesSetting.reds:207: public class HIS_SituationalHeadEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\IncapacitatedRagdollHandoff.reds:6: public class RFC_IncapacitatedLifecycleHandoffEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\IncapacitatedRagdollHandoff.reds:8: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\IncapacitatedRagdollHandoff.reds:9: protected func OnIncapacitated() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\IncapacitatedRagdollHandoff.reds:36: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:5: private func RFC_Length3(v: Vector4) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:36: public static func RFC_IsPlayerAttack(victim: ref<GameObject>, ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:55: private func RFC_SHHJM_SourcePos(p: wref<NPCPuppet>, ad: ref<AttackData>, hitPos: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:83: public class RFC_TryGrenadeKickEvent extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:89: public class RFC_HitReactionGuardEvent extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:97: public class RFC_HitReactionCutEvent extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:105: public class RFC_InjuryShockEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:106: public class RFC_InjuryShockResetEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:108: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:109: protected func CanStandUpFromRagdoll(currentPosition: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:120: public func RFC_IsVehicleHit(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:127: private func RFC_IsBulletReactionCutSource(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:152: private func RFC_IsIncapacitatedTransition(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:166: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:167: private func OnHitAnimation(hitEvent: ref<gameHitEvent>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:182: private func RFC_StopOrdinaryHitReaction(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:196: public func RFC_SampleMove2D(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:232: private func GS_OverrideForward(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:236: private func GS_OverrideChest(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:242: public func RFC_ArcadeIsMeleeAttack(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:253: public func RFC_ArcadeChannelEnabled(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:265: private func RFC_ArcadeApplicationPoint(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:291: private func RFC_ArcadeNamedModeAllowsUnknownBullet(cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:297: public func RFC_ArcadeAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:362: private func RFC_ArcadeWeaponMul(ad: ref<AttackData>, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:411: private func RFC_ArcadeCanResetLatch(p: ref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:424: private func RFC_ArcadeApplyOnHit(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:557: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:596: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:614: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:643: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:657: private func RFC_ApplyAliveExplosionImpulse(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:750: private func RFC_ClassifyExplosion(ad: ref<AttackData>) -> RFC_ExplSrc {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:783: private func RFC_ExplEnabled(src: RFC_ExplSrc, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:793: private func RFC_ExplMul(src: RFC_ExplSrc, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:803: private func RFC_GrenadeCorpseKick_InstantScaled(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:871: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:921: public func RFC_GrenadeCorpseKick_Instant(puppet: ref<NPCPuppet>, hitPos: Vector4, cfg: RFCConfig) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:974: private func RFC_ScheduleGrenadeCorpseKick(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:1015: private func RFC_IsGrenadeExplosion(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:1029: private func RFC_SHHJM_ResolveOrDeadFallback(p: ref<NPCPuppet>, evt: ref<gameHitEvent>, hitPos: Vector4, s: ref<SHHJM_Settings>, out part: Int32, out anchorPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:1047: private func RFC_SHHJM_HardBlockHit(p: wref<NPCPuppet>, ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\OnHit.reds:1064: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:6: public func RFC_ResetDeadRagdollActivationLatch(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:10: public class RFC_ShoulderWaistDelayedFallEvent extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:16: private func RFC_GetShoulderWaistSlotPos(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:37: public func RFC_ApplyShoulderWaistFall(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:120: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:141: public func RFC_ScheduleShoulderWaistFall(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:172: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:260: private func RFC_ImpactNowT(p: ref<NPCPuppet>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:265: private func RFC_ImpactIsStairsLane(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:271: private func RFC_ImpactIsWSStandLane(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:277: private func RFC_ImpactIsCowerLane(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:283: private func RFC_ImpactIsRunLane(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:300: private func RFC_ImpactOverrideForward(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:304: private func RFC_ImpactOverrideChest(p: ref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Ragdoll_jol.reds:308: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\SPLATSettingsData.reds:5: public class RFCModSettings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:3: private func GetBool(key: String, fallback: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:7: private func GetFloat(key: String, fallback: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:11: private func RFC_ClampI(x: Int32, lo: Int32, hi: Int32) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:21: public func RFC_ClampT(t: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:25: private func RFC_ClampF(x: Float, lo: Float, hi: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:729: public class RFC {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Types.reds:730: public static func Cfg() -> RFCConfig {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:3: private func RFC_HeadHardBlock(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:28: private func RFC_SitOverrideHeadBlock(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:32: private static func HIS_ReboundRequiresHeadImpulse(s: ref<HIS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:35: private static func HIS_RollChancePct(chancePct: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:47: private static func HIS_ShouldTriggerHeadImpulse(s: ref<HIS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:51: private static func HIS_ShouldTriggerRebound(s: ref<HIS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:55: public func HIS_ApplyModeOverrides(s: ref<HIS_Settings>, c: RFCConfig) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:64: private static func HIS_ShouldRun(p: wref<NPCPuppet>, s: ref<HIS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:72: private static func HIS_IsOnGround(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:80: private static func HIS_GroundGateActive(baseDelay: Float, stepDelay: Float, stepIndex: Int32, gateDelay: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:87: private static func HIS_DeathGateActive(baseDelay: Float, stepDelay: Float, stepIndex: Int32, deathDelay: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:94: private static func HIS_GetHeadPos(p: wref<NPCPuppet>, out headPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:107: private static func HIS_GetNeckPos(p: wref<NPCPuppet>, out neckPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:120: private static func HIS_GetHeadTargetPos(p: wref<NPCPuppet>, s: ref<HIS_Settings>, out targetPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:147: private static func HIS_GetReboundProbePos(p: wref<NPCPuppet>, out probePos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:154: private static func HIS_GetLeftKneePos(p: wref<NPCPuppet>, out kneePos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:169: private static func HIS_GetRightKneePos(p: wref<NPCPuppet>, out kneePos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:184: private static func HIS_GetLeftFootPos(p: wref<NPCPuppet>, out footPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:201: private static func HIS_GetRightFootPos(p: wref<NPCPuppet>, out footPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:218: private static func HIS_GetFootMid(leftFootPos: Vector4, rightFootPos: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:222: private static func HIS_GetKneeMid(leftKneePos: Vector4, rightKneePos: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:228: private static func HIS_GetLeftReboundKneePos(p: wref<NPCPuppet>, out kneePos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:233: private static func HIS_GetRightReboundKneePos(p: wref<NPCPuppet>, out kneePos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:238: private static func HIS_GetUpperPos(p: wref<NPCPuppet>, out upperPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:253: private static func HIS_ReboundForwardDetectorPasses(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:333: private static func HIS_CaptureBasis(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:354: private static func HIS_CaptureForwardReboundStart(p: wref<NPCPuppet>, s: ref<HIS_Settings>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:382: private static func HIS_GetStepWeight(stepIndex: Int32, steps: Int32, rampMode: Int32) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:396: private static func HIS_Sign(v: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:401: private static func HIS_PickRange(minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:419: private static func HIS_PickRangeForPuppet(p: wref<NPCPuppet>, minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:429: private static func HIS_LaneMinOk(dirF: Float, minAbs: Float, lane: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:445: private static func HIS_BuildImpulseForStep(p: wref<NPCPuppet>, s: ref<HIS_Settings>, stepIndex: Int32, lane: Int32) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:539: private static func HIS_BuildReboundImpulseForStep(p: wref<NPCPuppet>, s: ref<HIS_Settings>, stepIndex: Int32, lane: Int32) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:619: private static func HIS_HeadOnlyRadius(radius: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:625: private static func HIS_SendRaw(p: wref<NPCPuppet>, s: ref<HIS_Settings>, radius: Float, impulse: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:636: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:651: public func HIS_ScheduleSituationalHeadDown(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:683: private static func HIS_SendStep(p: wref<NPCPuppet>, s: ref<HIS_Settings>, stepIndex: Int32, lane: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:694: private static func HIS_SendReboundStep(p: wref<NPCPuppet>, s: ref<HIS_Settings>, stepIndex: Int32, lane: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:702: private static func HIS_ScheduleMainSteps(p: wref<NPCPuppet>, s: ref<HIS_Settings>, lane: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:746: private static func HIS_ScheduleReboundSteps(p: wref<NPCPuppet>, s: ref<HIS_Settings>, lane: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:790: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:810: private static func HIS_ForwardReboundDetectorIsActive(s: ref<HIS_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:830: private static func HIS_ForwardReboundWatchElapsed(s: ref<HIS_Settings>, evt: ref<HIS_ReboundEvt>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:836: private static func HIS_ForwardReboundWatchShouldStopOnGround(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:852: private static func HIS_ForwardReboundWatchExpired(s: ref<HIS_Settings>, evt: ref<HIS_ReboundEvt>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:860: private static func HIS_RetryForwardRebound(p: wref<NPCPuppet>, evt: ref<HIS_ReboundEvt>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:882: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:961: public class RFC_HeadFallsLogicImpulse {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_HeadFallsLogicImpulse.reds:963: public static func RunOnDeathHeadFalls(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:6: public class SGK_TickEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:7: public class SGK_ResetCdEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:8: public class SGK_ApplyEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:14: public class SGK_ArmEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:40: private func SGK_TickDelay(t: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:47: private func SGK_Len2D(v: Vector4) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:51: private func SGK_Norm2D(v: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:59: private func SGK_Sched(go: wref<GameObject>, e: ref<Event>, t: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:71: private func SGK_GetLookAtNPC(p: wref<PlayerPuppet>) -> wref<NPCPuppet> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:85: private func SGK_IsValidCorpseTarget(npc: wref<NPCPuppet>, s: ref<RFCModSettings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:93: private func SGK_IsStickyNearbyValid(p: wref<PlayerPuppet>, npc: wref<NPCPuppet>, s: ref<RFCModSettings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:122: private func SGK_GetPreferredCorpseTarget(p: wref<PlayerPuppet>, s: ref<RFCModSettings>) -> wref<NPCPuppet> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:146: private func SGK_IsGroundReady(p: wref<PlayerPuppet>, npc: wref<NPCPuppet>, s: ref<RFCModSettings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:183: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:189: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:200: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:245: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:385: private func SGK_Start(p: wref<PlayerPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:393: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\ZZ_MoveNPCwithFeet.reds:400: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:7: public class AAT_EmotionSettings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:37: private func AAT_EmotionCfg() -> ref<AAT_EmotionSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:109: public class AAT_EmotionEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:113: public class AAT_WorkspotBackOffFallbackEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:121: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:126: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:137: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:200: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:211: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:255: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:265: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:277: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:341: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:353: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:379: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:388: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:397: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:435: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:457: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:465: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:474: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:483: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:499: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:526: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:532: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:567: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:580: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:621: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:713: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:789: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:838: @addMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:1164: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\00_AAA_Trip_Emotion.reds:1212: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:3: public class AAT_TripSettings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:27: private func AAT_TripCfg() -> ref<AAT_TripSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:97: public class AAT_TripResetEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:101: public class AAT_TripImpulseEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:107: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:119: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:127: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:147: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:182: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:206: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\01_AAA_Trip_OnTripAnimation.reds:269: @wrapMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:7: public class AAT_OnLookSettings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:30: private func AAT_OnLookCfg() -> ref<AAT_OnLookSettings> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:128: public class AAT_OnLookTickEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:129: public class AAT_OnLookResetCdEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:130: public class AAT_OnLookRagdollEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:133: public class AAT_OnLookImpulseEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:145: private func AAT_OnLookDelay(t: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:152: private func AAT_IsAggressiveNPC(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:162: private func AAT_OnLookSched(go: wref<GameObject>, e: ref<Event>, t: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:174: private func AAT_GetLookAtNPC(p: wref<PlayerPuppet>) -> wref<NPCPuppet> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:188: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:194: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:204: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:214: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:374: private func AAT_OnLookStart(p: wref<PlayerPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:382: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:389: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\02_AAA_Trip_OnLook.reds:396: @wrapMethod(ReactionManagerComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:8: public func RFC_ListHas(list: array<TweakDBID>, id: TweakDBID) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:18: public func RFC_Arcade_List_Handgun() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:331: public func RFC_Arcade_List_Magnum() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:482: public func RFC_Arcade_List_Shotgun() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:657: public func RFC_Arcade_List_Sniper() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:788: public func RFC_Arcade_List_SMG() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:935: public func RFC_Arcade_List_AR() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:1067: public func RFC_Arcade_List_LMG() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:1106: public func RFC_Arcade_List_Blunt() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ArcadeWeapons.reds:1231: public func RFC_Arcade_List_Blade() -> array<TweakDBID> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\GrenadeExceptions.reds:5: public func RFC_GrenadeExceptionMatches(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ImpulseSuppression.reds:5: public func RFC_TimeDilationBlocksImpulses(obj: wref<GameObject>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ImpulseSuppression.reds:14: public func RFC_TimeDilationBlocksImpulsesNow(obj: wref<GameObject>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:3: private func SHHJM_Len3(v: Vector4) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:7: private func SHHJM_NormalizeSafe(v: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:12: private func SHHJM_DistSq(a: Vector4, b: Vector4) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:17: private func SHHJM_Sched(go: wref<GameObject>, evt: ref<Event>, t: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:29: private func SHHJM_Now(go: wref<GameObject>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:36: private func SHHJM_HasGroundImpactSince(puppet: wref<NPCPuppet>, armedAt: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:46: private func SHHJM_IsOnGround(puppet: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:58: private func SHHJM_GetWaitForGround(part: Int32, s: ref<SHHJM_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:62: private func SHHJM_GetGroundWaitMax(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:66: private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, srcPos: Vector4, anchorPos: Vector4, fireDelay: Float, s: ref<SHHJM_Settings>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:117: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:172: private func SHHJM_GetSlotWorldPos(puppet: ref<NPCPuppet>, slotName: CName, out pos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:193: private func SHHJM_GetSlotWorldTransform(puppet: ref<NPCPuppet>, slotName: CName, out slotTransform: WorldTransform) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:211: private func SHHJM_GetExactPartAnchor(puppet: ref<NPCPuppet>, part: Int32, fallbackPos: Vector4, out anchorPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:240: private func SHHJM_ResolveBodyPartFromHitEvent(puppet: ref<NPCPuppet>, evt: ref<gameHitEvent>, hitPos: Vector4, out part: Int32, out anchorPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:287: private func SHHJM_IsFaceDownByRig(puppet: ref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:300: private func SHHJM_UpdateBestHit(hitPos: Vector4, partId: Int32, candidatePos: Vector4, thresholdSq: Float, out bestDistSq: Float, out bestPart: Int32, out bestPos: Vector4, out found: Bool) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:314: private func SHHJM_LerpPos(a: Vector4, b: Vector4, t: Float) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:323: private func SHHJM_BiasAnchorInward(puppet: ref<NPCPuppet>, part: Int32, anchorPos: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:352: private func SHHJM_GetApplyOffset(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:370: private func SHHJM_BiasAnchorInwardBySettings(puppet: ref<NPCPuppet>, part: Int32, anchorPos: Vector4, s: ref<SHHJM_Settings>) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:398: private func SHHJM_ResolveBodyPart(puppet: ref<NPCPuppet>, hitPos: Vector4, out part: Int32, out anchorPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:477: private func SHHJM_GetPartEnabled(part: Int32, s: ref<SHHJM_Settings>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:495: private func SHHJM_GetForwardStrength(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:513: private func SHHJM_GetVerticalStrength(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:531: private func SHHJM_GetRadius(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:550: private func SHHJM_GetHitDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:568: private func SHHJM_GetDeathDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:573: private func SHHJM_BuildImpulse(puppet: ref<NPCPuppet>, srcPos: Vector4, anchorPos: Vector4, part: Int32, s: ref<SHHJM_Settings>) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:589: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:628: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltLogicImpulse.reds:644: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltTypesSettings.reds:13: public class SHHJM_Settings {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltTypesSettings.reds:138: public class SHHJM_ApplyImpulseEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltTypesSettings.reds:146: public class SHHJM_WaitForGroundEvt extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltTypesSettings.reds:155: public class SHHJM_OnDeathApplyEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\JoltTypesSettings.reds:156: public class SHHJM_ForceRagdollEvt extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:5: private func RFC_USE_LEGACY_RAMP() -> Bool = false;
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:7: private func RFC_ApplyGravityBurst(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:71: private func RFC_Burst(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:98: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:99: public func RFC_WasRunningRecent(window: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:118: private func RFC_RampScale(stepIndex: Int32, steps: Int32, reverse: Bool, falloffMode: Int32) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:139: private func RFC_ShapeVec(baseVec: Vector4, scale: Float, altShape: Bool) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RAMP SCHEDULERS.reds:161: public func RFC_Burst(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:19: public func RFC_RandomResetProfile(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:29: private func RFC_RandomRollPct(pct: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:36: private func RFC_RandomCategoryEnabled(c: RFCConfig, category: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:59: private func RFC_RandomCanDisable(c: RFCConfig, category: Int32) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:68: private func RFC_RandomSetAllowed(p: wref<NPCPuppet>, category: Int32, allowed: Bool) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:75: public func RFC_RandomEnsureProfile(p: wref<NPCPuppet>, c: RFCConfig) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:123: private func RFC_RandomRangeWithT(minV: Float, maxV: Float, t: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:134: public func RFC_RandomAllowHead(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:140: public func RFC_RandomAllowBody(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:146: public func RFC_RandomHeadValue(p: wref<NPCPuppet>, c: RFCConfig, minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:154: public func RFC_RandomBodyValue(p: wref<NPCPuppet>, c: RFCConfig, minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:162: private func RFC_RandomShoulderWaistValue(p: wref<NPCPuppet>, c: RFCConfig, minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:170: private func RFC_RandomSituationalValue(p: wref<NPCPuppet>, c: RFCConfig, minV: Float, maxV: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\RandomImpulseSystem.reds:181: public func RFC_RandomizeConfig(p: wref<NPCPuppet>, c: RFCConfig) -> RFCConfig {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\StealthUtils.reds:4: public func RFC_IsStealthOrFinisher(p: wref<NPCPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\StealthUtils.reds:21: public func RFC_IsStealthOrFinisherEx(p: wref<NPCPuppet>, blackwallCountsAsStealth: Bool) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\StealthUtils.reds:29: public func RFC_Stealth_SchedForceRagdoll(p: wref<NPCPuppet>, delay: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:11: private func RFC_TMB_EstimateMove2D(p: ref<NPCPuppet>, out mx: Float, out my: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:55: private func RFC_TumbleDefaults() -> RFC_TumbleCfg {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:67: private func RFC_SafeNormalize(v: Vector4, fallback: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:73: private func RFC_Up() -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:77: private func RFC_ScheduleTumble_NoRaycast(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:131: private func RFC_RaycastDown_Ground(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:154: private func RFC_SafeNormalize(v: Vector4, fallback: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:160: private func RFC_Up() -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:165: private func RFC_DownSlopeDirFromNormal(n: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:177: private func RFC_ScheduleSideTumble_Torque(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Tumble.reds:297: private func RFC_ScheduleGravityRollResolve_Directional(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:3: func RFC_IsFaceDown(entity: ref<Entity>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:9: func RFC_IsFaceDownByBones(chestPos: Vector4, pelvisPos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:16: public class RFC_TwitchImpulseEvent extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:22: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:40: private func RFC_ScheduleTwitchImpulse(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\Twitch.reds:56: func RFC_ScheduleTwitch(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VanillaImpulseKiller.reds:3: public func RFC_IsMeleeLike(atkType: gamedataAttackType) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VanillaImpulseKiller.reds:10: private func RFC_PF_Now(p: wref<GameObject>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VanillaImpulseKiller.reds:14: private func RFC_BlockVanillaStumbleSlam(hr: ref<HitReactionComponent>, outImpulse: Float, frameImpulse: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VanillaImpulseKiller.reds:28: @wrapMethod(HitReactionComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VanillaImpulseKiller.reds:124: public func RFC_VanillaImpulseAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:16: public class RFC_VehKillSelfRightingEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:17: public class RFC_ArcadeBikeLeanCheckEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:19: @addMethod(VehicleObject)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:32: private func RFC_VehKillSelfRightingControls(vehicle: ref<VehicleObject>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:44: private func RFC_VehScheduleSelfRightingKill(vehicle: ref<VehicleObject>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:64: private func RFC_VehToppleBikeSigned(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:107: private func RFC_VehBikeShotToppleSide(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:127: private func RFC_VehTryArcadeBulletBikeTopple(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:149: public func RFC_VehArmArcadeRiderBikeTopple(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:190: public func RFC_VehStopDeadBikeDriverAI(bike: wref<BikeObject>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:205: public func RFC_VehConsumeArcadeRiderBikeTopple(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:238: private func RFC_VehTopplePlayerBikeFromLean(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:263: private func RFC_ArcadeBikeScheduleLeanCheck(player: ref<PlayerPuppet>, delay: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:273: @addMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:323: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:330: @wrapMethod(PlayerPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:337: private func RFC_VehIsUpsideDown(vehicle: ref<VehicleObject>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:348: private func RFC_VehMarkAllOccupants(vehicle: ref<VehicleObject>, seconds: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:402: private func RFC_VehClampF(x: Float, lo: Float, hi: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:408: private func RFC_VehLen2(dx: Float, dy: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:412: private func RFC_VehIsExplosion(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:423: private func RFC_VehIsMelee(ad: ref<AttackData>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:428: private func RFC_VehClassifySource(ad: ref<AttackData>) -> RFCVehicleHitSource {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:447: private func RFC_VehIsBadPos(v: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:451: private func RFC_VehIsTooClose2D(a: Vector4, b: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:455: private func RFC_VehChooseExplosionSource(vehicle: ref<VehicleObject>, ad: ref<AttackData>, fallback: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:470: private func RFC_VehPassesPlayerOnly(vehicle: ref<VehicleObject>, ad: ref<AttackData>, source: RFCVehicleHitSource) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:484: private func RFC_VehSourceUsesInstigator(source: RFCVehicleHitSource) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:492: private func RFC_VehGroupIsNone(g: RFCVehicleWeaponGroup) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:499: private func RFC_VehWeaponGroup(ad: ref<AttackData>) -> RFCVehicleWeaponGroup {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:539: private func RFC_VehGroupAllowed(g: RFCVehicleWeaponGroup, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:555: private func RFC_VehArcadeGroupAllowed(g: RFCVehicleWeaponGroup, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:574: private func RFC_VehGroupMul(g: RFCVehicleWeaponGroup, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:590: private func RFC_VehArcadeGroupMul(g: RFCVehicleWeaponGroup, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:606: private func RFC_VehExplosionMul(ad: ref<AttackData>, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:629: private func RFC_VehMassScale(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:638: private func RFC_VehApplyPhysicalImpulse(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:699: private func RFC_VehApplyPhysicalImpulseVector(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:748: private func RFC_VehExplosionFallbackSource(vehicle: ref<VehicleObject>, hitPos: Vector4, srcPos: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:786: private func RFC_VehExplosionFlipBite(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:827: private func RFC_VehApplyExplosionRadialImpulse(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:907: private func RFC_VehApplyExplosionMultiPointImpulse(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:998: private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:1010: private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleImpulses.reds:1164: @wrapMethod(VehicleObject)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\VehicleOccupantReactionGuard.reds:16: @wrapMethod(HitReactionComponent)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ZZ_MotorcycleDeathAnimation_CompileFix.reds:21: private func RFC_MotorcycleDeathAnim_HasTags(p: wref<ScriptedPuppet>, tags: array<CName>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ZZ_MotorcycleDeathAnimation_CompileFix.reds:28: private func RFC_MotorcycleDeathAnim_HasMotoTags(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ZZ_MotorcycleDeathAnimation_CompileFix.reds:49: private func RFC_MotorcycleDeathAnim_IsMotoContext(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ZZ_MotorcycleDeathAnimation_CompileFix.reds:75: private func RFC_MotorcycleDeathAnim_ForceCut(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Features\ZZ_MotorcycleDeathAnimation_CompileFix.reds:105: @wrapMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:5: public class DSF_Time {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:6: public static func Now(game: GameInstance) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:12: private func RFC_ClampT(t: Float) -> Float = MaxF(0.0, t);
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:17: public func RFC_Explode_MarkAt(p: wref<NPCPuppet>, pos: Vector4, dur: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:23: public func RFC_Explode_IsRecent(p: wref<NPCPuppet>) -> Bool =
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:26: public func RFC_Explode_Clear(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:32: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:41: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:42: public func RFC_BlockRFC(seconds: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:47: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:48: public func RFC_IsRFCBlocked() -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:53: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:54: public func RFC_ClearRFCBlock() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:58: public class RFC_MicroBrake extends Event {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:64: public class RFC_CutDeathAnimEvent extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:65: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:86: private func RFC_ScheduleCut(ds: ref<DelaySystem>, p: wref<NPCPuppet>, t: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:92: public func RFC_ApplyHeadSlam(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:135: public func RFC_ApplyLegUnfoldSettle(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:191: public func RFC_ApplyGlobalSettle(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:247: private func RFC_ClearDeathTracking(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:254: public class RFC_PostDeathClean extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:255: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:262: public class RFC_ForceRagdollSoon extends Event {}
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\DeathRouterHelper.reds:264: private func RFC_SafeT(d: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:11: private func RFC_HasToken(s: String, a: String, b: String) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:17: public func RFC_EnemyImpulseClassOf(puppet: wref<NPCPuppet>) -> RFCEnemyImpulseClass {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:93: public func RFC_EnemyAllowsArcade(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:112: public func RFC_EnemyAllowsBulletJolts(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:131: public func RFC_EnemyArcadeScale(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:150: public func RFC_EnemyBulletJoltScale(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:169: public func RFC_EnemyCanBypassCanRagdoll(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\EnemyTypeGates.reds:191: public func RFC_ScaleImpulse3(v: Vector4, scale: Float) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:6: public func RFC_GetReactCmp(p: wref<ScriptedPuppet>) -> ref<ReactionManagerComponent> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:23: public func RFC_DefaultSlopeImpulse() -> RFC_SlopeImpulseCfg {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:34: public func RFC_ApplyStairsImpulses(p: wref<NPCPuppet>, cfg: RFC_SlopeImpulseCfg) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:59: public func RFC_ApplyStairPlank(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:88: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:89: public func RFC_MarkStairsNow() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:93: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:94: public func RFC_WasStairsRecent(window: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:100: private func RFC_IsOnStairs(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:139: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:140: public func RFC_MarkCowerNow() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:144: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:145: public func RFC_WasCowerRecentCfg() -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:151: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:152: public func RFC_WasCoweringRecently(window: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:157: private func RFC_TryMarkCow(p: wref<ScriptedPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:163: public func RFC_HasPanicOrFearTags(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:201: public func RFC_IsInFearState(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:217: private func RFC_IsFearAtOrOverThreshold(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:227: private func RFC_HasRecentFearStim(p: wref<ScriptedPuppet>, recency: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:245: private func RFC_IsCoweringStrict(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Helpers2WorkspotsStairs.reds:273: public func RFC_IsPanicRun(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:7: public func RFC_CancelPlanarMomentum(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:52: private func RFC_GetPlanarSpeed(p: wref<ScriptedPuppet>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:66: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:67: public func RFC_WasWalkingRecent(window: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:73: private func RFC_IsClearlyWalking(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:99: public func RFC_IsWalking(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:119: private func RFC_IsClearlyRunning(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:131: public func RFC_IsRunning(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:165: public func RFC_GetPlanarSpeed(p: wref<ScriptedPuppet>) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:180: public func RFC_GetMoveDirCached(p: wref<NPCPuppet>, out dirX: Float, out dirY: Float, fallbackX: Float, fallbackY: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:218: public func RFC_IsWalking(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:236: public func RFC_IsClearlyWalking(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:264: public func RFC_GetMoveDirXY(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:301: private func RFC_IsClearlyStanding(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:318: private func RFC_HasAnyTag(p: wref<ScriptedPuppet>, tags: array<CName>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:330: public func RFC_CountAnyTags(p: wref<ScriptedPuppet>, tags: array<CName>) -> Int32 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:344: public func RFC_GetAIData(p: wref<ScriptedPuppet>) -> ref<AIReactionData> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:348: public func RFC_ObjectHasSE(obj: wref<GameObject>, seName: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\HelpersWalkingRunning.reds:353: public func RFC_StimHasAnyTags(p: wref<ScriptedPuppet>, tags: array<CName>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:16: public class RFC_RigNeutral {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:17: public static func Offsets() -> RFC_RigOffsets {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:34: public func RFC_GetFlatForward(puppet: ref<NPCPuppet>, out dirX: Float, out dirY: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:41: private func RFC_TryRigSlotPos(puppet: ref<NPCPuppet>, slotName: CName, out pos: Vector4) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:55: private func RFC_MidPoint(a: Vector4, b: Vector4) -> Vector4 {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\Positions.reds:64: public func RFC_BuildPositions(
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:30: private func RFC_WSClampF(x: Float, lo: Float, hi: Float) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:37: private func RFC_InAnyWorkspot(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:44: private func RFC_IsInWorkspotSys(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:53: private func RFC_GetWS(p: wref<ScriptedPuppet>) -> ref<WorkspotGameSystem> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:60: public func RFC_TryStopWorkspot(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:70: public func RFC_AllowPopFix(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:74: private func RFC_IsWorkspotOrPerch(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:111: public func RFC_WSConfigForKind(c: RFCConfig, k: RFC_WSKind) -> RFC_WSKindConfig {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:125: private func RFC_DetectWSKind(p: wref<ScriptedPuppet>) -> RFC_WSKind {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:183: private func RFC_IsVehTransition(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:206: private func RFC_IsCarContext(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:216: private func RFC_HasVehicleAnimTags(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:226: private func RFC_IsInCarOrMotoWS(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:240: private func RFC_IsVehicleSeatWorkspotLoose(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:267: private func RFC_HasCarTags(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:275: private func RFC_IsCarTransition(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:286: private func RFC_HasCarAnimTags(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:293: private func RFC_AllowRFC(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:310: public func RFC_GetMountedVehicle(obj: wref<GameObject>) -> wref<VehicleObject> {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:326: private func RFC_IsVehicleSeatSlotName(slotName: CName) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:344: private func RFC_IsNativeVehicleOccupantRaw(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:377: public func RFC_IsMountedToVehicle(p: wref<ScriptedPuppet>) -> Bool = RFC_IsNativeVehicleOccupantRaw(p);
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:379: func RFC_IsCarContext_TagFallback(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:398: private func RFC_MarkVehicleSeatShieldNPC(np: wref<NPCPuppet>, seconds: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:414: private func RFC_MarkVehicleExitShieldNPC(np: wref<NPCPuppet>, seconds: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:426: private func RFC_VehicleSeatShieldWindow(c: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:430: private func RFC_VehicleExitShieldWindow(c: RFCConfig) -> Float {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:441: public func RFC_IsVehicleContext(p: wref<ScriptedPuppet>) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:515: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:516: public func RFC_MarkWSKind(k: Int32) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:520: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:521: public func RFC_GetWSKindLastSeen() -> Int32 = this.rfc_wsKindLastSeen;
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:523: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:524: public func RFC_MarkWSSeen() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:528: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:529: public func RFC_GetWSLastSeen() -> Float = this.rfc_wsLastSeen;
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:531: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:532: public func RFC_MarkVehSeen() -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:540: public func RFC_CleanupFormerVehicleOccupantAfterDeath(p: wref<NPCPuppet>) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:571: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:572: public func RFC_MarkVehicleSeatShield(seconds: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:577: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:578: public func RFC_MarkVehicleExitShield(seconds: Float) -> Void {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:583: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:584: public func RFC_IsVehicleSeatShielded() -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:589: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:590: public func RFC_IsVehicleExitShielded() -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:595: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:596: public func RFC_WasVehRecent(window: Float) -> Bool {
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:601: @addMethod(NPCPuppet)
+I:\Project\dev\Physics-Gameplay-and-Animation-Systems\src\r6\scripts\new Splat\Helpers\WorkspotLast.reds:602: public func RFC_GetLastOrLiveKind() -> RFC_WSKind {

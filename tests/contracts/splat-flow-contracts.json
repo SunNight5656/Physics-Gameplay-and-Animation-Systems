@@ -1,0 +1,362 @@
+{
+  "description": "Required SPLAT gameplay routes and subsystem contracts. Matching is case-insensitive. orderedPatterns must appear in the listed order.",
+  "contracts": [
+    {
+      "name": "ON DEATH - event and routing order",
+      "file": "src/r6/scripts/new Splat/DeathRouter.reds",
+      "requiredPatterns": [
+        "protected cb func OnDeath",
+        "RFC_IsVehicleContext",
+        "RFC_ResetMasterDeathChance",
+        "RFC_StampMoveForGSSnap",
+        "GS_ClearSituationSnap",
+        "GS_CaptureSituationSnap",
+        "RFC_ApplyDeathOverrideGates",
+        "wrappedMethod(evt)",
+        "RFC_ScheduleCut",
+        "RFC_BodyFallsLogicImpulse.RunOnDeathBodyFalls",
+        "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls",
+        "RFC_DeathImpulseRouter.RunOnDeathImpulses"
+      ],
+      "orderedPatterns": [
+        "RFC_ResetMasterDeathChance",
+        "RFC_StampMoveForGSSnap",
+        "GS_ClearSituationSnap",
+        "GS_CaptureSituationSnap",
+        "RFC_ApplyDeathOverrideGates",
+        "wrappedMethod(evt)",
+        "RFC_BodyFallsLogicImpulse.RunOnDeathBodyFalls",
+        "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls",
+        "RFC_DeathImpulseRouter.RunOnDeathImpulses"
+      ]
+    },
+    {
+      "name": "ON HIT - main event route",
+      "file": "src/r6/scripts/new Splat/OnHit.reds",
+      "requiredPatterns": [
+        "OnHit",
+        "wrappedMethod(evt)",
+        "RFC_IsVehicleContext",
+        "RFC_TryStopWorkspot",
+        "SHHJM_QueueJolt"
+      ],
+      "orderedPatterns": [
+        "wrappedMethod(evt)",
+        "SHHJM_QueueJolt"
+      ]
+    },
+    {
+      "name": "BULLET JOLTS - queue and apply route",
+      "file": "src/r6/scripts/new Splat/Features/JoltLogicImpulse.reds",
+      "requiredPatterns": [
+        "SHHJM_QueueJolt",
+        "OnSHHJM_ApplyImpulseEvt",
+        "CreateRagdollApplyImpulseEvent"
+      ],
+      "orderedPatterns": [
+        "SHHJM_QueueJolt",
+        "OnSHHJM_ApplyImpulseEvt",
+        "CreateRagdollApplyImpulseEvent"
+      ]
+    },
+    {
+      "name": "BULLET JOLTS - settings and body-part events",
+      "file": "src/r6/scripts/new Splat/Features/JoltTypesSettings.reds",
+      "requiredPatterns": [
+        "head",
+        "torso",
+        "arm",
+        "leg",
+        "strength",
+        "radius",
+        "delay"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "BODY FALLS - death body route",
+      "file": "src/r6/scripts/new Splat/BodyFallsLogicImpulse.reds",
+      "requiredPatterns": [
+        "RunOnDeathBodyFalls",
+        "CreateRagdollApplyImpulseEvent",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "BODY FALLS - settings definitions",
+      "file": "src/r6/scripts/new Splat/BodyFallsTypesSettings.reds",
+      "requiredPatterns": [
+        "GS_Settings",
+        "enabled"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "HEAD FALLS - death head route",
+      "file": "src/r6/scripts/new Splat/ZZ_HeadFallsLogicImpulse.reds",
+      "requiredPatterns": [
+        "RunOnDeathHeadFalls",
+        "CreateRagdollApplyImpulseEvent",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "HEAD FALLS - settings and delayed events",
+      "file": "src/r6/scripts/new Splat/HeadFallsTypesSetting.reds",
+      "requiredPatterns": [
+        "HIS_Settings",
+        "head"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "DEATH IMPULSES - alternate death route",
+      "file": "src/r6/scripts/new Splat/DeathImpulseRouter.reds",
+      "requiredPatterns": [
+        "RunOnDeathImpulses",
+        "RFC_IsVehicleContext",
+        "CreateForceRagdollEvent",
+        "CreateRagdollApplyImpulseEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "DEATH OVERRIDE GATES",
+      "file": "src/r6/scripts/new Splat/DeathOverrideGates_updated.reds",
+      "requiredPatterns": [
+        "RFC_ApplyDeathOverrideGates"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "INCAPACITATED RAGDOLL HANDOFF",
+      "file": "src/r6/scripts/new Splat/IncapacitatedRagdollHandoff.reds",
+      "requiredPatterns": [
+        "Incapacitated",
+        "Ragdoll",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "EXPLOSIONS - OnHit isolation",
+      "file": "src/r6/scripts/new Splat/OnHit.reds",
+      "requiredPatterns": [
+        "explosion",
+        "grenade",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "GRENADE EXCEPTIONS",
+      "file": "src/r6/scripts/new Splat/Features/GrenadeExceptions.reds",
+      "requiredPatterns": [
+        "grenade",
+        "exception"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "VEHICLE IMPULSES - bullets explosions melee",
+      "file": "src/r6/scripts/new Splat/Features/VehicleImpulses.reds",
+      "requiredPatterns": [
+        "VehicleObject",
+        "PhysicalImpulseEvent",
+        "explosion",
+        "melee",
+        "motorcycle"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "VEHICLE OCCUPANT PROTECTION",
+      "file": "src/r6/scripts/new Splat/Features/VehicleOccupantReactionGuard.reds",
+      "requiredPatterns": [
+        "vehicle",
+        "occupant",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "MOTORCYCLE FALL CONTROL",
+      "file": "src/r6/scripts/new Splat/Features/ZZ_MotorcycleDeathAnimation_CompileFix.reds",
+      "requiredPatterns": [
+        "motorcycle"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "ARCADE WEAPON ROUTING",
+      "file": "src/r6/scripts/new Splat/Features/ArcadeWeapons.reds",
+      "requiredPatterns": [
+        "Arcade"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "VANILLA IMPULSE SUPPRESSION",
+      "file": "src/r6/scripts/new Splat/Features/VanillaImpulseKiller.reds",
+      "requiredPatterns": [
+        "Impulse"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "IMPULSE SUPPRESSION GATES",
+      "file": "src/r6/scripts/new Splat/Features/ImpulseSuppression.reds",
+      "requiredPatterns": [
+        "Impulse",
+        "RFC_IsVehicleContext"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "TRIP - emotion route",
+      "file": "src/r6/scripts/new Splat/Features/00_AAA_Trip_Emotion.reds",
+      "requiredPatterns": [
+        "Trip"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "TRIP - animation route",
+      "file": "src/r6/scripts/new Splat/Features/01_AAA_Trip_OnTripAnimation.reds",
+      "requiredPatterns": [
+        "Trip",
+        "Animation"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "TRIP - look route",
+      "file": "src/r6/scripts/new Splat/Features/02_AAA_Trip_OnLook.reds",
+      "requiredPatterns": [
+        "Look"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "TUMBLE - directional and stair scheduling",
+      "file": "src/r6/scripts/new Splat/Features/Tumble.reds",
+      "requiredPatterns": [
+        "Tumble",
+        "DelayEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "RAMP AND TUMBLE SCHEDULERS",
+      "file": "src/r6/scripts/new Splat/Features/RAMP SCHEDULERS.reds",
+      "requiredPatterns": [
+        "Ramp",
+        "DelayEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "TWITCH SYSTEM",
+      "file": "src/r6/scripts/new Splat/Features/Twitch.reds",
+      "requiredPatterns": [
+        "Twitch",
+        "DelayEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "RANDOM IMPULSE SYSTEM",
+      "file": "src/r6/scripts/new Splat/Features/RandomImpulseSystem.reds",
+      "requiredPatterns": [
+        "Random",
+        "Rand"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "WORKSPOT PROTECTION AND RELEASE",
+      "file": "src/r6/scripts/new Splat/Helpers/WorkspotLast.reds",
+      "requiredPatterns": [
+        "RFC_TryStopWorkspot",
+        "RFC_IsVehicleContext",
+        "Workspot"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "WORKSPOT AND STAIRS DETECTION",
+      "file": "src/r6/scripts/new Splat/Helpers/Helpers2WorkspotsStairs.reds",
+      "requiredPatterns": [
+        "Workspot",
+        "Stair"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "WALKING AND RUNNING DETECTION",
+      "file": "src/r6/scripts/new Splat/Helpers/HelpersWalkingRunning.reds",
+      "requiredPatterns": [
+        "Walking",
+        "Running"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "ENEMY TYPE GATES",
+      "file": "src/r6/scripts/new Splat/Helpers/EnemyTypeGates.reds",
+      "requiredPatterns": [
+        "Enemy"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "MOVE NPC WITH FEET",
+      "file": "src/r6/scripts/new Splat/ZZ_MoveNPCwithFeet.reds",
+      "requiredPatterns": [
+        "Move",
+        "Feet"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "FINAL RFC CONFIG AND MODE PRECEDENCE",
+      "file": "src/r6/scripts/new Splat/Types.reds",
+      "requiredPatterns": [
+        "RFCConfig",
+        "RFC.Cfg",
+        "vanillaMode"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "SAVED SETTINGS BACKEND",
+      "file": "src/r6/scripts/new Splat/SPLATSettingsData.reds",
+      "requiredPatterns": [
+        "Settings"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "CET TO REDSCRIPT SETTINGS BRIDGE",
+      "file": "src/r6/scripts/new Splat/00_SPLATDirectSettingsSystem.reds",
+      "requiredPatterns": [
+        "Set",
+        "Get",
+        "Has"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "NATIVE SETTINGS LUA",
+      "file": "src/bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/init.lua",
+      "requiredPatterns": [
+        "user_settings.json",
+        "user_ui.json",
+        "schema_index.json"
+      ],
+      "orderedPatterns": []
+    }
+  ]
+}

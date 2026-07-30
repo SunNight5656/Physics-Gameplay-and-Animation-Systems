@@ -1,0 +1,90 @@
+archive/pc/mod/rig.archive
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/init.lua
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/schema_index.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__arcade.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__body.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__bulletJolts.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__explosions.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__head.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__randomization.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__settle.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__situational.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__trip.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__tumble.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__twitch.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/arnoldArcade__vehicles.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__arcade.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__body.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__bulletJolts.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__explosions.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__head.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__randomization.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__settle.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__situational.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__trip.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__tumble.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__twitch.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/dirtyHarry__vehicles.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__arcade.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__body.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__bulletJolts.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__explosions.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__head.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__randomization.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__settle.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__situational.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__trip.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__tumble.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__twitch.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismCustom__vehicles.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__arcade.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__body.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__bulletJolts.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__explosions.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__head.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__randomization.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__settle.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__situational.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__trip.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__tumble.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__twitch.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/sections/realismPlus__vehicles.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/user_settings.json
+bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/user_ui.json
+r6/scripts/new Splat/00_SPLATDirectSettingsSystem.reds
+r6/scripts/new Splat/BodyFallsLogicImpulse.reds
+r6/scripts/new Splat/BodyFallsTypesSettings.reds
+r6/scripts/new Splat/DeathImpulseRouter.reds
+r6/scripts/new Splat/DeathOverrideGates_updated.reds
+r6/scripts/new Splat/DeathRouter.reds
+r6/scripts/new Splat/Features/00_AAA_Trip_Emotion.reds
+r6/scripts/new Splat/Features/01_AAA_Trip_OnTripAnimation.reds
+r6/scripts/new Splat/Features/02_AAA_Trip_OnLook.reds
+r6/scripts/new Splat/Features/ArcadeWeapons.reds
+r6/scripts/new Splat/Features/GrenadeExceptions.reds
+r6/scripts/new Splat/Features/ImpulseSuppression.reds
+r6/scripts/new Splat/Features/JoltLogicImpulse.reds
+r6/scripts/new Splat/Features/JoltTypesSettings.reds
+r6/scripts/new Splat/Features/RAMP SCHEDULERS.reds
+r6/scripts/new Splat/Features/RandomImpulseSystem.reds
+r6/scripts/new Splat/Features/StealthUtils.reds
+r6/scripts/new Splat/Features/Tumble.reds
+r6/scripts/new Splat/Features/Twitch.reds
+r6/scripts/new Splat/Features/VanillaImpulseKiller.reds
+r6/scripts/new Splat/Features/VehicleImpulses.reds
+r6/scripts/new Splat/Features/VehicleOccupantReactionGuard.reds
+r6/scripts/new Splat/Features/ZZ_MotorcycleDeathAnimation_CompileFix.reds
+r6/scripts/new Splat/HeadFallsTypesSetting.reds
+r6/scripts/new Splat/Helpers/DeathRouterHelper.reds
+r6/scripts/new Splat/Helpers/EnemyTypeGates.reds
+r6/scripts/new Splat/Helpers/Helpers2WorkspotsStairs.reds
+r6/scripts/new Splat/Helpers/HelpersWalkingRunning.reds
+r6/scripts/new Splat/Helpers/Positions.reds
+r6/scripts/new Splat/Helpers/WorkspotLast.reds
+r6/scripts/new Splat/IncapacitatedRagdollHandoff.reds
+r6/scripts/new Splat/OnHit.reds
+r6/scripts/new Splat/Ragdoll_jol.reds
+r6/scripts/new Splat/SPLATSettingsData.reds
+r6/scripts/new Splat/Types.reds
+r6/scripts/new Splat/ZZ_HeadFallsLogicImpulse.reds
+r6/scripts/new Splat/ZZ_MoveNPCwithFeet.reds
