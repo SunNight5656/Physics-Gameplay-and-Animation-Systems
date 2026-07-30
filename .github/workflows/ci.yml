@@ -9,24 +9,35 @@ on:
       - main
 
 jobs:
-  validate-and-package:
-    name: Validate and package SPLAT
+  regression-test-and-package:
+    name: Test and package SPLAT
     runs-on: windows-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate package structure
+      - name: Run complete SPLAT regression suite
         shell: pwsh
-        run: ./scripts/validate-package.ps1
+        run: ./tests/run-all-tests.ps1
 
       - name: Build test release
         shell: pwsh
         run: ./scripts/build-release.ps1 -Version "ci-test"
 
+      - name: Generate SHA-256 checksum
+        shell: pwsh
+        run: |
+          Get-FileHash "./dist/SPLAT-ci-test.zip" -Algorithm SHA256 |
+            ForEach-Object {
+              "$($_.Hash)  SPLAT-ci-test.zip"
+            } |
+            Set-Content "./dist/SPLAT-ci-test.sha256"
+
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
           name: SPLAT-ci-test
-          path: dist/SPLAT-ci-test.zip
+          path: |
+            dist/SPLAT-ci-test.zip
+            dist/SPLAT-ci-test.sha256
