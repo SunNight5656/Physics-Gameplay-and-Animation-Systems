@@ -25,6 +25,10 @@ $Tests = @(
     @{
         Name   = "EXACT SETTINGS STRUCTURE"
         Script = "tests\contracts\validate-settings-baseline.ps1"
+    },
+    @{
+        Name   = "OBSOLETE MENU CONTROLS"
+        Script = "tests\contracts\validate-obsolete-controls.ps1"
     }
 )
 $Passed = 0

@@ -8,7 +8,6 @@ local GLOBAL_PATH = TAB .. "/global"
 local IMPULSE_PATH = TAB .. "/global_impulse"
 local MOTORCYCLE_PATH = TAB .. "/global_motorcycles"
 local ANIMATION_PATH = TAB .. "/animation_controls"
-local GENERAL_PATH = TAB .. "/general_impulses"
 local VANILLA_PATH = TAB .. "/vanilla_impulse_control"
 
 local nativeSettings, schema, uiConfig
@@ -169,7 +168,7 @@ local function merge(value, defaults)
 end
 
 local function defaultUI()
-  local out = {version = STATE_VERSION, generalImpulses = false, impulseSections = {random = false, moveFeet = false, motorcycle = false}, modes = {}, gates = {}, situationalGroups = {}, bottomSections = {moveNpcFeet = false}}
+  local out = {version = STATE_VERSION, impulseSections = {random = false, moveFeet = false, motorcycle = false}, modes = {}, gates = {}, situationalGroups = {}, bottomSections = {moveNpcFeet = false}}
   for i, mode in ipairs(schema.modes) do
     out.modes[mode.key] = {showAll = (i == 1 and mode.key ~= "vanilla"), topics = {}}
     out.situationalGroups[mode.key] = {}
@@ -891,39 +890,6 @@ local function rebuildVanillaImpulseControl(mode)
   addSettings(VANILLA_PATH, settings, 1, "mode/" .. mode.key .. "/vanillaImpulse", again, true)
 end
 
-local function removeGeneralFallCategories(mode)
-  for _, key in ipairs({"head", "body"}) do
-    local topic = {key = key}
-    local path = topicPath(mode, topic)
-    if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
-    dynamicRefs[path] = nil
-  end
-end
-
-local function rebuildGeneralImpulses(mode)
-  clearDynamic(GENERAL_PATH)
-  removeGeneralFallCategories(mode)
-  local ref = nativeSettings.addSwitch(
-    GENERAL_PATH,
-    "Show General Impulses",
-    "Shows or hides General Head Falls and General Body Falls without changing their saved values.",
-    uiConfig.generalImpulses == true,
-    false,
-    function(value)
-      uiConfig.generalImpulses = value
-      uiDirty = true
-      defer(function() rebuildGeneralImpulses(mode) end)
-    end,
-    1
-  )
-  remember(GENERAL_PATH, ref)
-  if uiConfig.generalImpulses ~= true then return end
-  local head = {key = "head", label = "General Head Falls"}
-  local body = {key = "body", label = "General Body Falls"}
-  if topicExists(mode, head) then addTopicCategory(mode, head, 4) end
-  if topicExists(mode, body) then addTopicCategory(mode, body, 5) end
-end
-
 local function modeInsertIndex(targetModeIndex)
   local idx = 4
   for mi, mode in ipairs(schema.modes) do
@@ -951,23 +917,23 @@ local function removeModeCategories(mode)
       end
     end
   end
-  removeGeneralFallCategories(mode)
 end
 
 local function showModeCategories(mode, modeIndex)
   removeModeCategories(mode)
-  if nativeSettings.pathExists(GENERAL_PATH) then nativeSettings.removeSubcategory(GENERAL_PATH) end
   if nativeSettings.pathExists(VANILLA_PATH) then nativeSettings.removeSubcategory(VANILLA_PATH) end
-  dynamicRefs[GENERAL_PATH] = nil
   dynamicRefs[VANILLA_PATH] = nil
   if mode.key == "vanilla" then return end
   local idx = 4
-  nativeSettings.addSubcategory(GENERAL_PATH, "General Impulses", idx)
-  dynamicRefs[GENERAL_PATH] = {}
-  rebuildGeneralImpulses(mode)
-  idx = idx + 3
   local topicByKey = {}
   for _, topic in ipairs(schema.topics) do topicByKey[topic.key] = topic end
+  for _, key in ipairs({"head", "body"}) do
+    local topic = topicByKey[key]
+    if topic and topicExists(mode, topic) then
+      addTopicCategory(mode, topic, idx)
+      idx = idx + 1
+    end
+  end
   local approvedOrder = {"situational", "arcade", "explosions", "bulletJolts", "trip", "twitch", "settle", "tumble"}
   for _, key in ipairs(approvedOrder) do
     local topic = topicByKey[key]
