@@ -169,8 +169,8 @@ end
 
 local function defaultUI()
   local out = {version = STATE_VERSION, impulseSections = {random = false, moveFeet = false, motorcycle = false}, modes = {}, gates = {}, situationalGroups = {}, bottomSections = {moveNpcFeet = false}}
-  for i, mode in ipairs(schema.modes) do
-    out.modes[mode.key] = {showAll = (i == 1 and mode.key ~= "vanilla"), topics = {}}
+  for _, mode in ipairs(schema.modes) do
+    out.modes[mode.key] = {showAll = false, topics = {}}
     out.situationalGroups[mode.key] = {}
     for _, topic in ipairs(schema.topics) do out.modes[mode.key].topics[topic.key] = false end
   end
