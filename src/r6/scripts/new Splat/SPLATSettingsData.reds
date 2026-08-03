@@ -736,7 +736,7 @@ public let customTripEmotion_showEmotionSection: Bool = false;
 
   public let customTripEmotion_workspotBackOffFallbackDelaySec: Float = 3.00;
 
-  public let customTripEmotion_showPushReactionPopup: Bool = true;
+  public let customTripEmotion_showPushReactionPopup: Bool = false;
 
   public let customTripEmotion_allowAggressionCombat: Bool = true;
 
@@ -1159,7 +1159,7 @@ public let realismPlusTripEmotion_showEmotionSection: Bool = false;
 
   public let realismPlusTripEmotion_workspotBackOffFallbackDelaySec: Float = 3.00;
 
-  public let realismPlusTripEmotion_showPushReactionPopup: Bool = true;
+  public let realismPlusTripEmotion_showPushReactionPopup: Bool = false;
 
   public let realismPlusTripEmotion_allowAggressionCombat: Bool = true;
 
@@ -1478,7 +1478,7 @@ public let dirtyTripEmotion_showEmotionSection: Bool = false;
 
   public let dirtyTripEmotion_workspotBackOffFallbackDelaySec: Float = 3.00;
 
-  public let dirtyTripEmotion_showPushReactionPopup: Bool = true;
+  public let dirtyTripEmotion_showPushReactionPopup: Bool = false;
 
   public let dirtyTripEmotion_allowAggressionCombat: Bool = true;
 
@@ -1810,7 +1810,7 @@ public let arnoldTripEmotion_showEmotionSection: Bool = false;
 
   public let arnoldTripEmotion_workspotBackOffFallbackDelaySec: Float = 3.00;
 
-  public let arnoldTripEmotion_showPushReactionPopup: Bool = true;
+  public let arnoldTripEmotion_showPushReactionPopup: Bool = false;
 
   public let arnoldTripEmotion_allowAggressionCombat: Bool = true;
 

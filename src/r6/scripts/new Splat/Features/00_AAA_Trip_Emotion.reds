@@ -13,7 +13,7 @@ public let showEmotionSection: Bool = true;
   public let showAdvanced: Bool = false;
   public let workspotBackOffFallbackEnabled: Bool = true;
   public let workspotBackOffFallbackDelaySec: Float = 3.00;
-  public let showPushReactionPopup: Bool = true;
+  public let showPushReactionPopup: Bool = false;
 
   // Advanced On Look reaction pool.
   public let allowAggressionCombat: Bool = true;

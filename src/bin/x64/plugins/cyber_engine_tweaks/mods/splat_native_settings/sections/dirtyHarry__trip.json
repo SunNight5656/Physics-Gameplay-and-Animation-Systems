@@ -172,7 +172,7 @@
                          "mode":  "dirtyHarry",
                          "topic":  "trip",
                          "type":  "Bool",
-                         "default":  true,
+                         "default":  false,
                          "label":  "Show Push Reaction Popup",
                          "description":  "Shows the exact reaction every time an On Look push triggers, including the delayed workspot fallback.",
                          "dependencyName":  "hide",

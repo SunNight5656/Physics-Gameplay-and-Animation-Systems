@@ -29,6 +29,10 @@ $Tests = @(
     @{
         Name   = "OBSOLETE MENU CONTROLS"
         Script = "tests\contracts\validate-obsolete-controls.ps1"
+    },
+    @{
+        Name   = "TRIP DEBUG POPUP DEFAULTS"
+        Script = "tests\contracts\validate-trip-debug-defaults.ps1"
     }
 )
 $Passed = 0
