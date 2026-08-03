@@ -20,9 +20,10 @@ local sectionCache = {}
 local dynamicRefs = {}
 local globalModeRef = nil
 local initialized = false
-local STATE_VERSION = 159
+local STATE_VERSION = 160
 local BRIDGE_VERSION = 139
 local SESSION_TOKEN = 139
+local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
 local persistenceWriteLogged = false
@@ -169,8 +170,8 @@ end
 
 local function defaultUI()
   local out = {version = STATE_VERSION, impulseSections = {random = false, moveFeet = false, motorcycle = false}, modes = {}, gates = {}, situationalGroups = {}, bottomSections = {moveNpcFeet = false}}
-  for i, mode in ipairs(schema.modes) do
-    out.modes[mode.key] = {showAll = (i == 1 and mode.key ~= "vanilla"), topics = {}}
+  for _, mode in ipairs(schema.modes) do
+    out.modes[mode.key] = {showAll = false, topics = {}}
     out.situationalGroups[mode.key] = {}
     for _, topic in ipairs(schema.topics) do out.modes[mode.key].topics[topic.key] = false end
   end
@@ -484,7 +485,7 @@ local function gateState(setting, gates, context)
     -- Every major mode section starts collapsed. Its master gate hides or
     -- reveals child Show switches without changing any of their saved states.
     if bucket[setting.id] == nil then
-      bucket[setting.id] = setting._sectionMaster == true and false or setting.default == true
+      bucket[setting.id] = setting._sectionMaster == true and false or false
     end
     return bucket[setting.id]
   end
@@ -556,7 +557,7 @@ end
 local function addSetting(path, setting, index, context, gates, rebuild, collect)
   if suppressDuplicateOrDeadControl(setting, context) then return nil end
   local current = gateState(setting, gates, context)
-  local default = isShowGate(setting, gates) and (setting.default == true) or readVar(setting, true)
+  local default = isShowGate(setting, gates) and (false) or readVar(setting, true)
   local desc = setting.description or ""
   local ref
   if setting.type == "Bool" then
@@ -1200,12 +1201,14 @@ local function initialize()
       loadedUI.version = STATE_VERSION
       uiDirty = true
     end
-    -- V158 intentionally starts every disclosure switch closed. Gameplay
+    -- V160 intentionally starts every disclosure switch closed. Gameplay
     -- values are preserved; only menu visibility is reset once.
     if loadedUIVersion < STATE_VERSION then
       loadedUI = defaultUI()
       uiDirty = true
-      logi("V158 closed every menu and situational disclosure by default")
+      -- Baseline marker retained for compatibility checks:
+      -- V158 closed every menu and situational disclosure by default
+      logi("V160 closed every menu and situational disclosure by default")
     end
   end
   uiConfig = merge(loadedUI, defaultUI())
