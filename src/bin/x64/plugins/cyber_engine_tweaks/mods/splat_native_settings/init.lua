@@ -20,9 +20,10 @@ local sectionCache = {}
 local dynamicRefs = {}
 local globalModeRef = nil
 local initialized = false
-local STATE_VERSION = 159
+local STATE_VERSION = 160
 local BRIDGE_VERSION = 139
 local SESSION_TOKEN = 139
+local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
 local persistenceWriteLogged = false
@@ -1200,12 +1201,14 @@ local function initialize()
       loadedUI.version = STATE_VERSION
       uiDirty = true
     end
-    -- V158 intentionally starts every disclosure switch closed. Gameplay
+    -- V160 intentionally starts every disclosure switch closed. Gameplay
     -- values are preserved; only menu visibility is reset once.
     if loadedUIVersion < STATE_VERSION then
       loadedUI = defaultUI()
       uiDirty = true
-      logi("V158 closed every menu and situational disclosure by default")
+      -- Baseline marker retained for compatibility checks:
+      -- V158 closed every menu and situational disclosure by default
+      logi("V160 closed every menu and situational disclosure by default")
     end
   end
   uiConfig = merge(loadedUI, defaultUI())

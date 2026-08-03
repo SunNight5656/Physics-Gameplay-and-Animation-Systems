@@ -7,6 +7,23 @@ $Failures = New-Object System.Collections.Generic.List[string]
 $InitPath = Join-Path $MenuRoot "init.lua"
 $InitText = Get-Content -LiteralPath $InitPath -Raw
 
+$StateVersionMatch = [regex]::Match($InitText, 'local STATE_VERSION\s*=\s*(\d+)')
+if (-not $StateVersionMatch.Success) {
+    [void]$Failures.Add("init.lua does not declare STATE_VERSION.")
+    $StateVersion = 0
+}
+else {
+    $StateVersion = [int]$StateVersionMatch.Groups[1].Value
+}
+
+if ($StateVersion -le 159) {
+    [void]$Failures.Add("STATE_VERSION was not advanced beyond the broken v159 visibility state.")
+}
+
+if ($InitText -notmatch 'if\s+loadedUIVersion\s*<\s*STATE_VERSION\s+then\s*\r?\n\s*loadedUI\s*=\s*defaultUI\(\)') {
+    [void]$Failures.Add("Older MO2 Overwrite visibility state is not reset through defaultUI().")
+}
+
 $ClosedModeDefault = 'out\.modes\[mode\.key\]\s*=\s*\{showAll\s*=\s*false,\s*topics\s*=\s*\{\}\}'
 
 if ($InitText -notmatch $ClosedModeDefault) {
@@ -27,6 +44,10 @@ if ($InitText -notmatch 'isShowGate\(setting,\s*gates\)\s+and\s+\(?false\)?\s+or
 
 $PackagedStatePath = Join-Path $MenuRoot "user_ui.json"
 $PackagedState = Get-Content -LiteralPath $PackagedStatePath -Raw | ConvertFrom-Json
+
+if ([int]$PackagedState.version -ne $StateVersion) {
+    [void]$Failures.Add("Packaged user_ui.json version does not match STATE_VERSION.")
+}
 
 foreach ($ModeProperty in $PackagedState.modes.PSObject.Properties) {
     $ModeName = $ModeProperty.Name
