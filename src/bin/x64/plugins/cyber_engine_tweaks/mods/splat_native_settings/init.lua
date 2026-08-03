@@ -484,7 +484,7 @@ local function gateState(setting, gates, context)
     -- Every major mode section starts collapsed. Its master gate hides or
     -- reveals child Show switches without changing any of their saved states.
     if bucket[setting.id] == nil then
-      bucket[setting.id] = setting._sectionMaster == true and false or setting.default == true
+      bucket[setting.id] = setting._sectionMaster == true and false or false
     end
     return bucket[setting.id]
   end
@@ -556,7 +556,7 @@ end
 local function addSetting(path, setting, index, context, gates, rebuild, collect)
   if suppressDuplicateOrDeadControl(setting, context) then return nil end
   local current = gateState(setting, gates, context)
-  local default = isShowGate(setting, gates) and (setting.default == true) or readVar(setting, true)
+  local default = isShowGate(setting, gates) and (false) or readVar(setting, true)
   local desc = setting.description or ""
   local ref
   if setting.type == "Bool" then

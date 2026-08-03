@@ -17,6 +17,14 @@ if ($InitText -match 'showAll\s*=\s*\(i\s*==\s*1') {
     [void]$Failures.Add("defaultUI() still automatically opens the first mode.")
 }
 
+if ($InitText -notmatch 'bucket\[setting\.id\]\s*=\s*setting\._sectionMaster\s*==\s*true\s+and\s+false\s+or\s+false') {
+    [void]$Failures.Add("New UI visibility gates do not default to false.")
+}
+
+if ($InitText -notmatch 'isShowGate\(setting,\s*gates\)\s+and\s+\(?false\)?\s+or') {
+    [void]$Failures.Add("Native Settings can still reset a Show control to true.")
+}
+
 $PackagedStatePath = Join-Path $MenuRoot "user_ui.json"
 $PackagedState = Get-Content -LiteralPath $PackagedStatePath -Raw | ConvertFrom-Json
 
@@ -34,6 +42,37 @@ foreach ($ModeProperty in $PackagedState.modes.PSObject.Properties) {
         }
     }
 }
+
+function Find-TrueVisibilityValues {
+    param(
+        [object]$Node,
+        [string]$Path = "root"
+    )
+
+    if ($null -eq $Node) { return }
+
+    if ($Node -is [bool]) {
+        if ($Node) { [void]$Failures.Add("Packaged UI visibility is true: $Path") }
+        return
+    }
+
+    if ($Node -is [string] -or $Node -is [ValueType]) { return }
+
+    if ($Node -is [System.Collections.IEnumerable] -and $Node -isnot [PSCustomObject]) {
+        $Index = 0
+        foreach ($Item in $Node) {
+            Find-TrueVisibilityValues -Node $Item -Path "$Path[$Index]"
+            $Index++
+        }
+        return
+    }
+
+    foreach ($Property in $Node.PSObject.Properties) {
+        Find-TrueVisibilityValues -Node $Property.Value -Path "$Path.$($Property.Name)"
+    }
+}
+
+Find-TrueVisibilityValues -Node $PackagedState
 
 if ($Failures.Count -gt 0) {
     Write-Host "[FAIL] Default menu visibility is not fully collapsed:" -ForegroundColor Red
