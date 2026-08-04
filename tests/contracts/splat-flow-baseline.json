@@ -1,7 +1,7 @@
 ﻿{
     "schemaVersion":  1,
-    "generatedAt":  "2026-08-01T19:33:33.3199661-07:00",
-    "sourceCommit":  "90c0686121a13b80ded7168505a6b6cb13cd465d",
+    "generatedAt":  "2026-08-03T15:33:21.1652344-07:00",
+    "sourceCommit":  "e6b576eff434038be0012ddad85c722841ec66b1",
     "description":  "Exact SPLAT function definitions, annotations, and call order captured from the known-good source.",
     "contracts":  [
                       {
@@ -10145,9 +10145,6 @@
                                         "addImpulseSectionToggle",
                                         "addSettings",
                                         "tostring",
-                                        "pcall",
-                                        "function",
-                                        "nativeSettings.refresh",
                                         "buildMenu",
                                         "nativeSettings.addTab",
                                         "function",
@@ -10164,9 +10161,6 @@
                                         "removeModeCategories",
                                         "showModeCategories",
                                         "tonumber",
-                                        "pcall",
-                                        "function",
-                                        "nativeSettings.refresh",
                                         "addSetting",
                                         "ipairs",
                                         "sharedPath",

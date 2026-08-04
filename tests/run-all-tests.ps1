@@ -27,8 +27,16 @@ $Tests = @(
         Script = "tests\contracts\validate-settings-baseline.ps1"
     },
     @{
+        Name   = "DEFAULT MENU VISIBILITY"
+        Script = "tests\contracts\validate-default-menu-visibility.ps1"
+    },
+    @{
         Name   = "OBSOLETE MENU CONTROLS"
         Script = "tests\contracts\validate-obsolete-controls.ps1"
+    },
+    @{
+        Name   = "SINGLE MODE SELECTOR"
+        Script = "tests\contracts\validate-single-mode-selector.ps1"
     },
     @{
         Name   = "TRIP DEBUG POPUP DEFAULTS"
