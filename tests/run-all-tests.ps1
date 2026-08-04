@@ -33,6 +33,10 @@ $Tests = @(
     @{
         Name   = "OBSOLETE MENU CONTROLS"
         Script = "tests\contracts\validate-obsolete-controls.ps1"
+    },
+    @{
+        Name   = "SINGLE MODE SELECTOR"
+        Script = "tests\contracts\validate-single-mode-selector.ps1"
     }
 )
 $Passed = 0

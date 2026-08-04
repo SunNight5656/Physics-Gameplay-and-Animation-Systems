@@ -1095,7 +1095,8 @@ rebuildGlobalImpulseControls = function(section)
     end
   end
 
-  pcall(function() if nativeSettings.refresh then nativeSettings.refresh() end end)
+  -- Native Settings 1.4+ applies add/remove operations to an open tab directly.
+  -- A full refresh here repopulates persistent controls, including the mode selector.
 end
 
 local function buildMenu()
@@ -1118,7 +1119,8 @@ local function buildMenu()
       removeModeCategories(candidate)
     end
     showModeCategories(active, tonumber(active.enumIndex) or 1)
-    pcall(function() if nativeSettings.refresh then nativeSettings.refresh() end end)
+    -- Keep the original mode selector alive; the dynamic category APIs already
+    -- update the open Native Settings tab without a full-tab refresh.
   end
   globalModeRef = addSetting(GLOBAL_PATH, modeSetting, 1, "global", {}, rebuildSelectedMenu, false)
   globalStaticCount = 1
