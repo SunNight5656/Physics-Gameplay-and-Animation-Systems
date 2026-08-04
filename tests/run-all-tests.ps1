@@ -37,6 +37,10 @@ $Tests = @(
     @{
         Name   = "SINGLE MODE SELECTOR"
         Script = "tests\contracts\validate-single-mode-selector.ps1"
+    },
+    @{
+        Name   = "TRIP DEBUG POPUP DEFAULTS"
+        Script = "tests\contracts\validate-trip-debug-defaults.ps1"
     }
 )
 $Passed = 0
