@@ -21,8 +21,8 @@ local dynamicRefs = {}
 local globalModeRef = nil
 local initialized = false
 local STATE_VERSION = 160
-local BRIDGE_VERSION = 139
-local SESSION_TOKEN = 139
+local BRIDGE_VERSION = 140
+local SESSION_TOKEN = 140
 local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
@@ -391,6 +391,49 @@ local function migrateObsoleteShoulderButtSettings()
   end
 end
 
+local function migrateArcadeAttackSourceSettings()
+  local values = settingsStore.values or {}
+  local migrated = 0
+  local removed = 0
+
+  local function boolValue(entry, fallback)
+    if type(entry) == "table" and entry.value ~= nil then return entry.value == true end
+    if type(entry) == "boolean" then return entry end
+    return fallback
+  end
+
+  local function setIfMissing(key, value)
+    if values[key] == nil then
+      values[key] = {type = "Bool", value = value == true}
+      migrated = migrated + 1
+    end
+  end
+
+  local function migrateMode(mode, prefix)
+    local base = mode .. "|RFCModSettings."
+    local oldKey = base .. prefix .. "_arcadePlayerOnly"
+    local oldEntry = values[oldKey]
+    if oldEntry == nil then return end
+
+    local playerOnly = boolValue(oldEntry, true)
+    setIfMissing(base .. prefix .. "_arcadeAllowPlayerBullet", true)
+    setIfMissing(base .. prefix .. "_arcadeAllowNPCBullet", not playerOnly)
+    setIfMissing(base .. prefix .. "_arcadeAllowPlayerMelee", true)
+    setIfMissing(base .. prefix .. "_arcadeAllowNPCMelee", not playerOnly)
+
+    values[oldKey] = nil
+    removed = removed + 1
+  end
+
+  migrateMode("dirtyHarry", "dirty")
+  migrateMode("arnoldArcade", "arnold")
+
+  if migrated > 0 or removed > 0 then
+    settingsDirty = true
+    logi("Migrated legacy Arcade Player Only values into " .. tostring(migrated) .. " independent attack-source values")
+  end
+end
+
 local function buildRestoreQueue()
   restoreQueue = {}
   restoreCursor = 1
@@ -445,9 +488,49 @@ end
 
 local function topicPath(mode, topic) return TAB .. "/mode_" .. mode.key .. "_" .. topic.key end
 local function topicExists(mode, topic) return sectionFile(mode.key, topic.key) ~= nil end
+local VANILLA_IMPULSE_VALUE_SUFFIXES = {
+  vanillaimpulsesenabled = true,
+  vanillaallowhandgun = true,
+  vanillaallowmagnum = true,
+  vanillaallowshotgun = true,
+  vanillaallowsniper = true,
+  vanillaallowsmg = true,
+  vanillaallowar = true,
+  vanillaallowlmg = true,
+  vanillaallowblunt = true,
+  vanillaallowblade = true
+}
+
+local function endsWithPlain(value, suffix)
+  if type(value) ~= "string" or type(suffix) ~= "string" then return false end
+  if #value < #suffix then return false end
+  return value:sub(#value - #suffix + 1) == suffix
+end
+
+local function isVanillaImpulseShowSetting(setting)
+  if not setting or setting.uiOnly ~= true or setting.type ~= "Bool" then
+    return false
+  end
+
+  local name = string.lower(tostring(setting.name or ""))
+  return endsWithPlain(name, "arcade_vanillaimpulsecontrol")
+end
+
+local function isVanillaImpulseValueSetting(setting)
+  if not setting or setting.uiOnly == true then return false end
+
+  local name = string.lower(tostring(setting.name or ""))
+  for suffix, allowed in pairs(VANILLA_IMPULSE_VALUE_SUFFIXES) do
+    if allowed and endsWithPlain(name, suffix) then
+      return true
+    end
+  end
+  return false
+end
+
 local function isVanillaImpulseSetting(setting)
-  local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
-  return marker:find("vanilla", 1, true) ~= nil
+  return isVanillaImpulseShowSetting(setting)
+    or isVanillaImpulseValueSetting(setting)
 end
 local function isMotorcycleSetting(setting)
   local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
@@ -651,6 +734,44 @@ local function copySettingEarly(setting)
   return out
 end
 
+local function firstUIOnlyBool(settings)
+  for _, setting in ipairs(settings or {}) do
+    if setting.uiOnly == true and setting.type == "Bool" then
+      return setting
+    end
+  end
+  return nil
+end
+
+local function stableGateOpen(setting, context)
+  if not setting then return true end
+  local bucket = uiGateBucket(context)
+  if bucket[setting.id] == nil then bucket[setting.id] = false end
+  return bucket[setting.id] == true
+end
+
+local function addStableShowSwitch(path, setting, context, rebuild, label, description)
+  if not setting then return nil end
+  local bucket = uiGateBucket(context)
+  if bucket[setting.id] == nil then bucket[setting.id] = false end
+
+  -- This option is intentionally not added to dynamicRefs. Child options may
+  -- rebuild, but the category never becomes empty while Native Settings is open.
+  return nativeSettings.addSwitch(
+    path,
+    label or setting.label,
+    description or setting.description or "",
+    bucket[setting.id] == true,
+    false,
+    function(value)
+      bucket[setting.id] = value
+      uiDirty = true
+      if rebuild then defer(rebuild) end
+    end,
+    1
+  )
+end
+
 local function situationalGroupPath(mode, groupKey)
   return TAB .. "/mode_" .. mode.key .. "_situational_" .. groupKey
 end
@@ -662,40 +783,50 @@ local function rebuildTopic(mode, topic)
   if not data then return end
   local context = "mode/" .. mode.key .. "/" .. topic.key
   local function again() rebuildTopic(mode, topic) end
-  if topic.key == "arcade" then
-    local bullet = filteredSettings(data.settings or {}, isVanillaImpulseSetting, true)
-    local combined = {}
-    for _, setting in ipairs(bullet) do table.insert(combined, setting) end
-    local arcadeMaster = nil
-    for _, setting in ipairs(bullet) do
-      if setting.uiOnly == true and setting.type == "Bool" then arcadeMaster = setting.id; break end
+
+  if topic.key == "arcade" or topic.key == "explosions" then
+    local master = firstUIOnlyBool(data.settings or {})
+    if master and not stableGateOpen(master, context) then
+      return
     end
+
+    local combined = {}
+    local seen = {}
+    for _, setting in ipairs(data.settings or {}) do
+      if not master or setting.id ~= master.id then
+        table.insert(combined, setting)
+        seen[setting.id] = true
+      end
+    end
+
     local vehicles = loadSection(mode.key, "vehicles")
     if vehicles then
-      local vehicleMaster = nil
+      local vehicleMaster = firstUIOnlyBool(vehicles.settings or {})
       for _, setting in ipairs(vehicles.settings or {}) do
-        if setting.uiOnly == true and setting.type == "Bool" then vehicleMaster = setting.id; break end
-      end
-      for _, setting in ipairs(vehicles.settings or {}) do
-        if setting.id ~= vehicleMaster and not isMotorcycleSetting(setting) and not isVehicleExplosionSetting(setting) then
+        local include = false
+        if topic.key == "arcade" then
+          include = setting.id ~= (vehicleMaster and vehicleMaster.id or "")
+            and not isMotorcycleSetting(setting)
+            and not isVehicleExplosionSetting(setting)
+        else
+          include = isVehicleExplosionSetting(setting)
+        end
+
+        if include and not seen[setting.id] then
           local copy = copySettingEarly(setting)
-          if copy.dependency == vehicleMaster then
-            copy.dependency = arcadeMaster
-            copy.dependencyName = arcadeMaster and (arcadeMaster:match("([^.]+)$") or "") or ""
+          if vehicleMaster and copy.dependency == vehicleMaster.id then
+            -- The category's stable Show switch already owns top-level
+            -- visibility, so copied vehicle sections become children here.
+            copy.dependency = nil
+            copy.dependencyName = ""
           end
           table.insert(combined, copy)
+          seen[copy.id] = true
         end
       end
     end
-    addSettings(path, combined, 1, context, again, true)
-    return
-  elseif topic.key == "explosions" then
-    addSettings(path, data.settings or {}, 1, context, again, true)
-    local vehicles = loadSection(mode.key, "vehicles")
-    if vehicles then
-      addSettings(path, filteredSettings(vehicles.settings or {}, isVehicleExplosionSetting, false),
-        500, "mode/" .. mode.key .. "/vehicleExplosions", again, true)
-    end
+
+    addSettings(path, combined, 2, context, again, true)
     return
   elseif topic.key ~= "situational" then
     addSettings(path, data.settings or {}, 1, context, again, true)
@@ -879,16 +1010,91 @@ local function addTopicCategory(mode, topic, index)
   local path = topicPath(mode, topic)
   nativeSettings.addSubcategory(path, topic.label, index)
   dynamicRefs[path] = {}
+
+  if topic.key == "arcade" or topic.key == "explosions" then
+    local data = loadSection(mode.key, topic.key)
+    local master = data and firstUIOnlyBool(data.settings or {}) or nil
+    local context = "mode/" .. mode.key .. "/" .. topic.key
+    local function again() rebuildTopic(mode, topic) end
+    local label = master and master.label or "Show Controls"
+    local description = master and master.description or ""
+
+    if topic.key == "arcade" then
+      label = "Show Bullet and Melee Push Controls"
+      description = "Shows or hides the Bullet and Melee Push sections without changing any saved physics values."
+    elseif topic.key == "explosions" then
+      label = "Show Explosion Push Controls"
+      description = "Shows or hides the Explosion Push sections without changing any saved physics values."
+    end
+
+    addStableShowSwitch(path, master, context, again, label, description)
+  end
+
   rebuildTopic(mode, topic)
+end
+
+local function vanillaImpulseParts(mode)
+  local data = loadSection(mode.key, "arcade")
+  local master = nil
+  local values = {}
+  if not data then return master, values end
+
+  for _, setting in ipairs(data.settings or {}) do
+    if isVanillaImpulseShowSetting(setting) then
+      master = copySettingEarly(setting)
+      master.label = "Show Vanilla Impulse Controls"
+      master.description = "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+      master.dependency = nil
+      master.dependencyName = ""
+    elseif isVanillaImpulseValueSetting(setting) then
+      local copy = copySettingEarly(setting)
+      copy.dependency = nil
+      copy.dependencyName = ""
+      if endsWithPlain(string.lower(tostring(copy.name or "")), "vanillaimpulsesenabled") then
+        copy.label = "Enable Selected Vanilla Impulses"
+      end
+      table.insert(values, copy)
+    end
+  end
+
+  return master, values
 end
 
 local function rebuildVanillaImpulseControl(mode)
   clearDynamic(VANILLA_PATH)
-  local data = loadSection(mode.key, "arcade")
-  if not data then return end
-  local settings = filteredSettings(data.settings or {}, isVanillaImpulseSetting, false)
+  local master, values = vanillaImpulseParts(mode)
+  local context = "mode/" .. mode.key .. "/vanillaImpulse"
+  if master and not stableGateOpen(master, context) then
+    return
+  end
+
   local function again() rebuildVanillaImpulseControl(mode) end
-  addSettings(VANILLA_PATH, settings, 1, "mode/" .. mode.key .. "/vanillaImpulse", again, true)
+  addSettings(
+    VANILLA_PATH,
+    values,
+    2,
+    context,
+    again,
+    true
+  )
+end
+
+local function addVanillaImpulseControl(mode, index)
+  nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse Control", index)
+  dynamicRefs[VANILLA_PATH] = {}
+
+  local master = vanillaImpulseParts(mode)
+  local context = "mode/" .. mode.key .. "/vanillaImpulse"
+  local function again() rebuildVanillaImpulseControl(mode) end
+  addStableShowSwitch(
+    VANILLA_PATH,
+    master,
+    context,
+    again,
+    "Show Vanilla Impulse Controls",
+    "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+  )
+  rebuildVanillaImpulseControl(mode)
 end
 
 local function modeInsertIndex(targetModeIndex)
@@ -948,9 +1154,7 @@ local function showModeCategories(mode, modeIndex)
         idx = idx + 1
       end
       if topic.key == "explosions" then
-        nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse Control", idx)
-        dynamicRefs[VANILLA_PATH] = {}
-        rebuildVanillaImpulseControl(mode)
+        addVanillaImpulseControl(mode, idx)
         idx = idx + 1
       end
     end
@@ -1225,6 +1429,7 @@ local function initialize()
   settingsStore = merge(loadedSettings, defaultSettingsStore())
   if type(settingsStore.values) ~= "table" then settingsStore.values = {} end
   migrateObsoleteShoulderButtSettings()
+  migrateArcadeAttackSourceSettings()
 
   -- One-time migration: an earlier test build shipped V's unfinished lean
   -- topple toggle enabled. Force that experimental control off once, then let
@@ -1250,7 +1455,7 @@ local function initialize()
       settingsDirty = true
       saveSettingsNow(true)
     end
-    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 139 expected; V155 audited menu rebuild active")
+    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 140 expected; V155 audited menu rebuild active")
   end
 end
 
@@ -1297,6 +1502,7 @@ local function registerPlayerLifecycleObserver()
 end
 
 registerForEvent("onInit", function()
+  logi("TEST BUILD MARKER: SPLAT_ISSUE19_STABLE_THREE_SECTIONS_H")
   registerPlayerLifecycleObserver()
   initialize()
   if not initialized then return end
