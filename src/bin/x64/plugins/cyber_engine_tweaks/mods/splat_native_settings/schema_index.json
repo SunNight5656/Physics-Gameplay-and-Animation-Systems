@@ -1,5 +1,5 @@
 {
-  "version": 157,
+  "version": 161,
   "title": "Splat Physics 11.1",
   "modeSettingId": "RFCModSettings.splatPresetMode",
   "modes": [
@@ -619,12 +619,63 @@
           "type": "Bool",
           "default": false,
           "label": "Enable injury shock ragdoll",
-          "description": "Realism Custom setting. Gives eligible surviving NPCs a random chance to collapse after a bullet injury. This is separate from animation cutoff.",
+          "description": "Gives eligible surviving NPCs a random chance to collapse after an allowed bullet injury, then returns recovery ownership to the game's normal live-ragdoll AI flow.",
           "dependencyName": "showInjuryShockControls",
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9289,
           "order": 955
+        },
+        {
+          "id": "explosions.injuryShockAllowBosses",
+          "class": "RFCModSettings",
+          "name": "injuryShockAllowBosses",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Bool",
+          "default": false,
+          "label": "Enable Injury Shock on Bosses",
+          "description": "Allows Boss and MaxTac rarity actors to use Injury Shock. Disabled by default.",
+          "dependencyName": "showInjuryShockControls",
+          "dependency": "explosions.showInjuryShockControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 0,
+          "order": 956
+        },
+        {
+          "id": "explosions.injuryShockAllowSubBosses",
+          "class": "RFCModSettings",
+          "name": "injuryShockAllowSubBosses",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Bool",
+          "default": false,
+          "label": "Enable Injury Shock on Sub-Bosses",
+          "description": "Allows Elite rarity actors to use Injury Shock. Disabled by default.",
+          "dependencyName": "showInjuryShockControls",
+          "dependency": "explosions.showInjuryShockControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 0,
+          "order": 957
+        },
+        {
+          "id": "explosions.injuryShockAllowNPCSources",
+          "class": "RFCModSettings",
+          "name": "injuryShockAllowNPCSources",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Bool",
+          "default": false,
+          "label": "Allow NPCs to Cause Injury Shock",
+          "description": "OFF = only V's bullets can trigger Injury Shock. ON = an NPC's bullets can also trigger Injury Shock on another NPC.",
+          "dependencyName": "showInjuryShockControls",
+          "dependency": "explosions.showInjuryShockControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 0,
+          "order": 958
         },
         {
           "id": "explosions.injuryShockChancePct",
@@ -636,12 +687,12 @@
           "type": "Float",
           "default": 15.0,
           "label": "Injury shock chance (%)",
-          "description": "Chance that an eligible nonlethal player-bullet injury becomes a temporary shock collapse.",
+          "description": "Chance that an eligible nonlethal bullet injury from an allowed source becomes a temporary shock collapse.",
           "dependencyName": "showInjuryShockControls",
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9301,
-          "order": 956,
+          "order": 959,
           "min": 0.0,
           "max": 100.0,
           "step": 1.0
@@ -661,7 +712,7 @@
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9313,
-          "order": 957,
+          "order": 960,
           "min": 0.0,
           "max": 50.0,
           "step": 0.1
@@ -681,7 +732,7 @@
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9325,
-          "order": 958,
+          "order": 961,
           "min": 0.0,
           "max": 50.0,
           "step": 0.1
@@ -701,7 +752,7 @@
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9337,
-          "order": 959,
+          "order": 962,
           "min": 0.0,
           "max": 50.0,
           "step": 0.1
@@ -721,7 +772,7 @@
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9349,
-          "order": 960,
+          "order": 963,
           "min": 0.0,
           "max": 50.0,
           "step": 0.1
@@ -741,7 +792,7 @@
           "dependency": "explosions.showInjuryShockControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9358,
-          "order": 961
+          "order": 964
         }
       ]
     }

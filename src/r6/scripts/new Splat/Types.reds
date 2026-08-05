@@ -214,6 +214,9 @@ public struct RFCConfig {
   public let hitReactionCutoffEnabled: Bool;  // stop ordinary live bullet reaction animation
   public let hitReactionCutoffDelay: Float;   // delay before returning to normal upper-body control
   public let injuryShockEnabled: Bool;
+  public let injuryShockAllowBosses: Bool;
+  public let injuryShockAllowSubBosses: Bool;
+  public let injuryShockAllowNPCSources: Bool;
   public let injuryShockChance: Float;
   public let injuryShockDelay: Float;
   public let injuryShockRandomDelay: Float;
@@ -233,6 +236,11 @@ public struct RFCConfig {
   public let arcadeMulBlade: Float;
 
   public let arcadePlayerOnly: Bool;
+  public let arcadeAllowPlayerBullet: Bool;
+  public let arcadeAllowNPCBullet: Bool;
+  public let arcadeAllowPlayerMelee: Bool;
+  public let arcadeAllowNPCMelee: Bool;
+  public let arcadeIndependentSourceControls: Bool;
 
   // Enemy type gates / scales for arcade and Bullet Jolts
   public let enemyTypeFiltersEnabled: Bool;
@@ -260,7 +268,9 @@ public struct RFCConfig {
   // Vehicle Impulses — cars pushed by explosions, bullets, melee, and Gorilla Arms
   public let vehicleImpulseEnabled: Bool;
   public let showVehicleImpulsesAdvanced: Bool;
-  public let vehicleImpulsePlayerOnly: Bool;
+  public let vehicleImpulsePlayerOnly: Bool; // legacy vehicle-melee source gate
+  public let vehicleBulletPlayerOnly: Bool;
+  public let vehicleExplosionPlayerOnly: Bool;
   public let vehicleImpulseCooldown: Float;
   public let vehicleImpulseMassCompensation: Bool;
   public let vehicleImpulseReferenceMass: Float;
@@ -786,6 +796,11 @@ public class RFC {
     c.shoulderHipImpactRadius = RFC_ClampF(menu.shoulderHipImpactRadius, 0.1, 12.0);
 
     c.arcadePlayerOnly = menu.arcadePlayerOnly;
+    c.arcadeIndependentSourceControls = false;
+    c.arcadeAllowPlayerBullet = true;
+    c.arcadeAllowNPCBullet = !c.arcadePlayerOnly;
+    c.arcadeAllowPlayerMelee = true;
+    c.arcadeAllowNPCMelee = !c.arcadePlayerOnly;
     c.explPlayerOnly = menu.explPlayerOnly;
 
     c.grenadeExceptionFrag = menu.grenadeExceptionFrag;
@@ -826,6 +841,8 @@ public class RFC {
     c.vehicleImpulseEnabled = menu.vehicleImpulseEnabled;
     c.showVehicleImpulsesAdvanced = menu.showVehicleImpulsesAdvanced;
     c.vehicleImpulsePlayerOnly = menu.vehicleImpulsePlayerOnly;
+    c.vehicleBulletPlayerOnly = menu.vehicleBulletPlayerOnly;
+    c.vehicleExplosionPlayerOnly = menu.vehicleExplosionPlayerOnly;
     c.vehicleImpulseCooldown = RFC_ClampF(menu.vehicleImpulseCooldown, 0.0, 3.0);
     c.vehicleImpulseMassCompensation = menu.vehicleImpulseMassCompensation;
     c.vehicleImpulseReferenceMass = RFC_ClampF(menu.vehicleImpulseReferenceMass, 100.0, 16900.0);
@@ -1265,6 +1282,9 @@ public class RFC {
       c.hitReactionCutoffEnabled = menu.hitReactionCutoffEnabled;
       c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 2.0);
       c.injuryShockEnabled = menu.injuryShockEnabled;
+      c.injuryShockAllowBosses = menu.injuryShockAllowBosses;
+      c.injuryShockAllowSubBosses = menu.injuryShockAllowSubBosses;
+      c.injuryShockAllowNPCSources = menu.injuryShockAllowNPCSources;
       c.injuryShockChance = RFC_ClampF(menu.injuryShockChancePct * 0.01, 0.0, 1.0);
       c.injuryShockDelay = RFC_ClampF(menu.injuryShockDelay, 0.0, 50.0);
       c.injuryShockRandomDelay = RFC_ClampF(menu.injuryShockRandomDelay, 0.0, 50.0);
@@ -1534,6 +1554,9 @@ c.hitReactionsDisabled = menu.hitReactionsDisabled;
 c.hitReactionCutoffEnabled = menu.hitReactionCutoffEnabled;
 c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 2.0);
 c.injuryShockEnabled = menu.injuryShockEnabled;
+c.injuryShockAllowBosses = menu.injuryShockAllowBosses;
+c.injuryShockAllowSubBosses = menu.injuryShockAllowSubBosses;
+c.injuryShockAllowNPCSources = menu.injuryShockAllowNPCSources;
 c.injuryShockChance = RFC_ClampF(menu.injuryShockChancePct * 0.01, 0.0, 1.0);
 c.injuryShockDelay = RFC_ClampF(menu.injuryShockDelay, 0.0, 50.0);
 c.injuryShockRandomDelay = RFC_ClampF(menu.injuryShockRandomDelay, 0.0, 50.0);
@@ -2038,6 +2061,11 @@ if c.splatPresetMode == EnumInt(RFCSplatPresetMode.Realism) {
   c.vehicleUseArcadeWeaponMultipliers = false;
   c.vehicleAllowUnknownBullet = true;
   c.arcadePlayerOnly = menu.realismPlusMode_arcadePlayerOnly;
+  c.arcadeIndependentSourceControls = false;
+  c.arcadeAllowPlayerBullet = true;
+  c.arcadeAllowNPCBullet = !c.arcadePlayerOnly;
+  c.arcadeAllowPlayerMelee = true;
+  c.arcadeAllowNPCMelee = !c.arcadePlayerOnly;
   c.arcadeOnHitEnabled = menu.realismPlusMode_arcadeOnHitEnabled;
   c.arcadeOnDeathEnabled = menu.realismPlusMode_arcadeOnDeathEnabled;
   c.arcadeBulletStrength = RFC_ClampF(menu.realismPlusMode_arcadeBulletStrength, 0.0, 80.0);
@@ -2325,6 +2353,11 @@ if c.splatPresetMode == EnumInt(RFCSplatPresetMode.Realism) {
   c.vehicleUseArcadeWeaponMultipliers = false;
   c.vehicleAllowUnknownBullet = true;
   c.arcadePlayerOnly = menu.dirty_arcadePlayerOnly;
+  c.arcadeIndependentSourceControls = false;
+  c.arcadeAllowPlayerBullet = true;
+  c.arcadeAllowNPCBullet = !c.arcadePlayerOnly;
+  c.arcadeAllowPlayerMelee = true;
+  c.arcadeAllowNPCMelee = !c.arcadePlayerOnly;
   c.arcadeOnHitEnabled = menu.dirty_arcadeOnHitEnabled;
   c.arcadeOnDeathEnabled = menu.dirty_arcadeOnDeathEnabled;
   c.arcadeBulletStrength = RFC_ClampF(menu.dirty_arcadeBulletStrength, 0.0, 80.0);
@@ -2464,6 +2497,11 @@ if c.splatPresetMode == EnumInt(RFCSplatPresetMode.Realism) {
   c.vehicleUseArcadeWeaponMultipliers = false;
   c.vehicleAllowUnknownBullet = true;
   c.arcadePlayerOnly = menu.arnold_arcadePlayerOnly;
+  c.arcadeIndependentSourceControls = false;
+  c.arcadeAllowPlayerBullet = true;
+  c.arcadeAllowNPCBullet = !c.arcadePlayerOnly;
+  c.arcadeAllowPlayerMelee = true;
+  c.arcadeAllowNPCMelee = !c.arcadePlayerOnly;
   c.arcadeOnHitEnabled = menu.arnold_arcadeOnHitEnabled;
   c.arcadeOnDeathEnabled = menu.arnold_arcadeOnDeathEnabled;
   c.arcadeBulletStrength = RFC_ClampF(menu.arnold_arcadeBulletStrength, 0.0, 80.0);

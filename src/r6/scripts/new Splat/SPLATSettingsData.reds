@@ -523,7 +523,12 @@ public let showVehicleWipSettings: Bool = false;
 
   public let vehicleExitShieldTime: Float = 0.850000;
 
+  // Legacy source gate remains dedicated to vehicle melee push.
   public let vehicleImpulsePlayerOnly: Bool = true;
+
+  // Issue #19: independent source gates for the two vehicle target lanes.
+  public let vehicleBulletPlayerOnly: Bool = true;
+  public let vehicleExplosionPlayerOnly: Bool = true;
 
   public let vehicleImpulseCooldown: Float = 0.0;
 
@@ -1291,6 +1296,14 @@ public let realismPlusTripOnLook_showOnLookSection: Bool = false;
 
   public let dirty_arcadePlayerOnly: Bool = true;
 
+  public let dirty_arcadeAllowPlayerBullet: Bool = true;
+
+  public let dirty_arcadeAllowNPCBullet: Bool = false;
+
+  public let dirty_arcadeAllowPlayerMelee: Bool = true;
+
+  public let dirty_arcadeAllowNPCMelee: Bool = false;
+
   public let dirty_arcadeOnHitEnabled: Bool = true;
 
   public let dirty_arcadeOnDeathEnabled: Bool = true;
@@ -1609,6 +1622,14 @@ public let dirtyTripOnLook_showOnLookSection: Bool = false;
   public let arnold_arcadeBulletsEnabled: Bool = true;
 
   public let arnold_arcadePlayerOnly: Bool = true;
+
+  public let arnold_arcadeAllowPlayerBullet: Bool = true;
+
+  public let arnold_arcadeAllowNPCBullet: Bool = false;
+
+  public let arnold_arcadeAllowPlayerMelee: Bool = true;
+
+  public let arnold_arcadeAllowNPCMelee: Bool = false;
 
   public let arnold_arcadeOnHitEnabled: Bool = true;
 
@@ -2005,6 +2026,12 @@ public let showHitReactionAnimationControls: Bool = false;
 public let showInjuryShockControls: Bool = false;
 
   public let injuryShockEnabled: Bool = false;
+
+  public let injuryShockAllowBosses: Bool = false;
+
+  public let injuryShockAllowSubBosses: Bool = false;
+
+  public let injuryShockAllowNPCSources: Bool = false;
 
   public let injuryShockChancePct: Float = 15.000000;
 
