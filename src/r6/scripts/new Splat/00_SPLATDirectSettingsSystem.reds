@@ -53,7 +53,7 @@ public class SPLATSettingsState {
     this.m_arnoldArcade_menu.splatPresetMode = RFCSplatPresetMode.Arnold;
   }
 
-  public func GetBridgeVersion() -> Int32 { return 139; }
+  public func GetBridgeVersion() -> Int32 { return 141; }
   public func GetSessionToken() -> Int32 { return this.m_sessionToken; }
   public func SetSessionToken(value: Int32) -> Void { this.m_sessionToken = value; }
   public func ResetAll() -> Void {
@@ -195,6 +195,9 @@ public class SPLATSettingsState {
     out.arcadeIncapRagdollDelay = this.m_global_menu.arcadeIncapRagdollDelay;
     out.hitReactionsDisabled = this.m_global_menu.hitReactionsDisabled;
     out.injuryShockEnabled = this.m_global_menu.injuryShockEnabled;
+    out.injuryShockAllowBosses = this.m_global_menu.injuryShockAllowBosses;
+    out.injuryShockAllowSubBosses = this.m_global_menu.injuryShockAllowSubBosses;
+    out.injuryShockAllowNPCSources = this.m_global_menu.injuryShockAllowNPCSources;
     out.injuryShockChancePct = this.m_global_menu.injuryShockChancePct;
     out.injuryShockDelay = this.m_global_menu.injuryShockDelay;
     out.injuryShockRandomDelay = this.m_global_menu.injuryShockRandomDelay;
@@ -739,6 +742,10 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeAllowSMG") { target.arnold_arcadeAllowSMG = value; return true; };
     if Equals(name, n"arnold_arcadeAllowShotgun") { target.arnold_arcadeAllowShotgun = value; return true; };
     if Equals(name, n"arnold_arcadeAllowSniper") { target.arnold_arcadeAllowSniper = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowPlayerBullet") { target.arnold_arcadeAllowPlayerBullet = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowNPCBullet") { target.arnold_arcadeAllowNPCBullet = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowPlayerMelee") { target.arnold_arcadeAllowPlayerMelee = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowNPCMelee") { target.arnold_arcadeAllowNPCMelee = value; return true; };
     if Equals(name, n"arnold_arcadeBulletsEnabled") { target.arnold_arcadeBulletsEnabled = value; return true; };
     if Equals(name, n"arnold_arcadeMeleeEnabled") { target.arnold_arcadeMeleeEnabled = value; return true; };
     if Equals(name, n"arnold_arcadeOnDeathEnabled") { target.arnold_arcadeOnDeathEnabled = value; return true; };
@@ -846,6 +853,10 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeAllowSMG") { return target.arnold_arcadeAllowSMG; };
     if Equals(name, n"arnold_arcadeAllowShotgun") { return target.arnold_arcadeAllowShotgun; };
     if Equals(name, n"arnold_arcadeAllowSniper") { return target.arnold_arcadeAllowSniper; };
+    if Equals(name, n"arnold_arcadeAllowPlayerBullet") { return target.arnold_arcadeAllowPlayerBullet; };
+    if Equals(name, n"arnold_arcadeAllowNPCBullet") { return target.arnold_arcadeAllowNPCBullet; };
+    if Equals(name, n"arnold_arcadeAllowPlayerMelee") { return target.arnold_arcadeAllowPlayerMelee; };
+    if Equals(name, n"arnold_arcadeAllowNPCMelee") { return target.arnold_arcadeAllowNPCMelee; };
     if Equals(name, n"arnold_arcadeBulletsEnabled") { return target.arnold_arcadeBulletsEnabled; };
     if Equals(name, n"arnold_arcadeMeleeEnabled") { return target.arnold_arcadeMeleeEnabled; };
     if Equals(name, n"arnold_arcadeOnDeathEnabled") { return target.arnold_arcadeOnDeathEnabled; };
@@ -953,6 +964,10 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeAllowSMG") { return true; };
     if Equals(name, n"arnold_arcadeAllowShotgun") { return true; };
     if Equals(name, n"arnold_arcadeAllowSniper") { return true; };
+    if Equals(name, n"arnold_arcadeAllowPlayerBullet") { return true; };
+    if Equals(name, n"arnold_arcadeAllowNPCBullet") { return true; };
+    if Equals(name, n"arnold_arcadeAllowPlayerMelee") { return true; };
+    if Equals(name, n"arnold_arcadeAllowNPCMelee") { return true; };
     if Equals(name, n"arnold_arcadeBulletsEnabled") { return true; };
     if Equals(name, n"arnold_arcadeMeleeEnabled") { return true; };
     if Equals(name, n"arnold_arcadeOnDeathEnabled") { return true; };
@@ -1037,6 +1052,10 @@ public class SPLATSettingsState {
     if Equals(name, n"dirty_arcadeAllowSMG") { target.dirty_arcadeAllowSMG = value; return true; };
     if Equals(name, n"dirty_arcadeAllowShotgun") { target.dirty_arcadeAllowShotgun = value; return true; };
     if Equals(name, n"dirty_arcadeAllowSniper") { target.dirty_arcadeAllowSniper = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowPlayerBullet") { target.dirty_arcadeAllowPlayerBullet = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowNPCBullet") { target.dirty_arcadeAllowNPCBullet = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowPlayerMelee") { target.dirty_arcadeAllowPlayerMelee = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowNPCMelee") { target.dirty_arcadeAllowNPCMelee = value; return true; };
     if Equals(name, n"dirty_arcadeBulletsEnabled") { target.dirty_arcadeBulletsEnabled = value; return true; };
     if Equals(name, n"dirty_arcadeMeleeEnabled") { target.dirty_arcadeMeleeEnabled = value; return true; };
     if Equals(name, n"dirty_arcadeOnDeathEnabled") { target.dirty_arcadeOnDeathEnabled = value; return true; };
@@ -1094,6 +1113,9 @@ public class SPLATSettingsState {
     if Equals(name, n"grenadeEnabled") { target.grenadeEnabled = value; return true; };
     if Equals(name, n"hitReactionsDisabled") { target.hitReactionsDisabled = value; return true; };
     if Equals(name, n"injuryShockEnabled") { target.injuryShockEnabled = value; return true; };
+    if Equals(name, n"injuryShockAllowBosses") { target.injuryShockAllowBosses = value; return true; };
+    if Equals(name, n"injuryShockAllowSubBosses") { target.injuryShockAllowSubBosses = value; return true; };
+    if Equals(name, n"injuryShockAllowNPCSources") { target.injuryShockAllowNPCSources = value; return true; };
     if Equals(name, n"injuryShockLimbsOnly") { target.injuryShockLimbsOnly = value; return true; };
     if Equals(name, n"disableAllImpulsesDuringTimeDilation") { target.disableAllImpulsesDuringTimeDilation = value; return true; };
     if Equals(name, n"killImpulsesEverywhere") { target.killImpulsesEverywhere = value; return true; };
@@ -1135,6 +1157,10 @@ public class SPLATSettingsState {
     if Equals(name, n"dirty_arcadeAllowSMG") { return target.dirty_arcadeAllowSMG; };
     if Equals(name, n"dirty_arcadeAllowShotgun") { return target.dirty_arcadeAllowShotgun; };
     if Equals(name, n"dirty_arcadeAllowSniper") { return target.dirty_arcadeAllowSniper; };
+    if Equals(name, n"dirty_arcadeAllowPlayerBullet") { return target.dirty_arcadeAllowPlayerBullet; };
+    if Equals(name, n"dirty_arcadeAllowNPCBullet") { return target.dirty_arcadeAllowNPCBullet; };
+    if Equals(name, n"dirty_arcadeAllowPlayerMelee") { return target.dirty_arcadeAllowPlayerMelee; };
+    if Equals(name, n"dirty_arcadeAllowNPCMelee") { return target.dirty_arcadeAllowNPCMelee; };
     if Equals(name, n"dirty_arcadeBulletsEnabled") { return target.dirty_arcadeBulletsEnabled; };
     if Equals(name, n"dirty_arcadeMeleeEnabled") { return target.dirty_arcadeMeleeEnabled; };
     if Equals(name, n"dirty_arcadeOnDeathEnabled") { return target.dirty_arcadeOnDeathEnabled; };
@@ -1192,6 +1218,9 @@ public class SPLATSettingsState {
     if Equals(name, n"grenadeEnabled") { return target.grenadeEnabled; };
     if Equals(name, n"hitReactionsDisabled") { return target.hitReactionsDisabled; };
     if Equals(name, n"injuryShockEnabled") { return target.injuryShockEnabled; };
+    if Equals(name, n"injuryShockAllowBosses") { return target.injuryShockAllowBosses; };
+    if Equals(name, n"injuryShockAllowSubBosses") { return target.injuryShockAllowSubBosses; };
+    if Equals(name, n"injuryShockAllowNPCSources") { return target.injuryShockAllowNPCSources; };
     if Equals(name, n"injuryShockLimbsOnly") { return target.injuryShockLimbsOnly; };
     if Equals(name, n"disableAllImpulsesDuringTimeDilation") { return target.disableAllImpulsesDuringTimeDilation; };
     if Equals(name, n"killImpulsesEverywhere") { return target.killImpulsesEverywhere; };
@@ -1233,6 +1262,10 @@ public class SPLATSettingsState {
     if Equals(name, n"dirty_arcadeAllowSMG") { return true; };
     if Equals(name, n"dirty_arcadeAllowShotgun") { return true; };
     if Equals(name, n"dirty_arcadeAllowSniper") { return true; };
+    if Equals(name, n"dirty_arcadeAllowPlayerBullet") { return true; };
+    if Equals(name, n"dirty_arcadeAllowNPCBullet") { return true; };
+    if Equals(name, n"dirty_arcadeAllowPlayerMelee") { return true; };
+    if Equals(name, n"dirty_arcadeAllowNPCMelee") { return true; };
     if Equals(name, n"dirty_arcadeBulletsEnabled") { return true; };
     if Equals(name, n"dirty_arcadeMeleeEnabled") { return true; };
     if Equals(name, n"dirty_arcadeOnDeathEnabled") { return true; };
@@ -1290,6 +1323,9 @@ public class SPLATSettingsState {
     if Equals(name, n"grenadeEnabled") { return true; };
     if Equals(name, n"hitReactionsDisabled") { return true; };
     if Equals(name, n"injuryShockEnabled") { return true; };
+    if Equals(name, n"injuryShockAllowBosses") { return true; };
+    if Equals(name, n"injuryShockAllowSubBosses") { return true; };
+    if Equals(name, n"injuryShockAllowNPCSources") { return true; };
     if Equals(name, n"injuryShockLimbsOnly") { return true; };
     if Equals(name, n"disableAllImpulsesDuringTimeDilation") { return true; };
     if Equals(name, n"killImpulsesEverywhere") { return true; };
@@ -1634,8 +1670,10 @@ public class SPLATSettingsState {
     if Equals(name, n"vehicleAllowSniper") { target.vehicleAllowSniper = value; return true; };
     if Equals(name, n"vehicleAllowUnknownBullet") { target.vehicleAllowUnknownBullet = value; return true; };
     if Equals(name, n"vehicleBulletEnabled") { target.vehicleBulletEnabled = value; return true; };
+    if Equals(name, n"vehicleBulletPlayerOnly") { target.vehicleBulletPlayerOnly = value; return true; };
     if Equals(name, n"vehicleExitShieldEnabled") { target.vehicleExitShieldEnabled = value; return true; };
     if Equals(name, n"vehicleExplosionEnabled") { target.vehicleExplosionEnabled = value; return true; };
+    if Equals(name, n"vehicleExplosionPlayerOnly") { target.vehicleExplosionPlayerOnly = value; return true; };
     if Equals(name, n"vehicleImpulseClampEnabled") { target.vehicleImpulseClampEnabled = value; return true; };
     if Equals(name, n"vehicleImpulseEnabled") { target.vehicleImpulseEnabled = value; return true; };
     if Equals(name, n"vehicleImpulseMassCompensation") { target.vehicleImpulseMassCompensation = value; return true; };
@@ -1685,8 +1723,10 @@ public class SPLATSettingsState {
     if Equals(name, n"vehicleAllowSniper") { return target.vehicleAllowSniper; };
     if Equals(name, n"vehicleAllowUnknownBullet") { return target.vehicleAllowUnknownBullet; };
     if Equals(name, n"vehicleBulletEnabled") { return target.vehicleBulletEnabled; };
+    if Equals(name, n"vehicleBulletPlayerOnly") { return target.vehicleBulletPlayerOnly; };
     if Equals(name, n"vehicleExitShieldEnabled") { return target.vehicleExitShieldEnabled; };
     if Equals(name, n"vehicleExplosionEnabled") { return target.vehicleExplosionEnabled; };
+    if Equals(name, n"vehicleExplosionPlayerOnly") { return target.vehicleExplosionPlayerOnly; };
     if Equals(name, n"vehicleImpulseClampEnabled") { return target.vehicleImpulseClampEnabled; };
     if Equals(name, n"vehicleImpulseEnabled") { return target.vehicleImpulseEnabled; };
     if Equals(name, n"vehicleImpulseMassCompensation") { return target.vehicleImpulseMassCompensation; };
@@ -1736,8 +1776,10 @@ public class SPLATSettingsState {
     if Equals(name, n"vehicleAllowSniper") { return true; };
     if Equals(name, n"vehicleAllowUnknownBullet") { return true; };
     if Equals(name, n"vehicleBulletEnabled") { return true; };
+    if Equals(name, n"vehicleBulletPlayerOnly") { return true; };
     if Equals(name, n"vehicleExitShieldEnabled") { return true; };
     if Equals(name, n"vehicleExplosionEnabled") { return true; };
+    if Equals(name, n"vehicleExplosionPlayerOnly") { return true; };
     if Equals(name, n"vehicleImpulseClampEnabled") { return true; };
     if Equals(name, n"vehicleImpulseEnabled") { return true; };
     if Equals(name, n"vehicleImpulseMassCompensation") { return true; };

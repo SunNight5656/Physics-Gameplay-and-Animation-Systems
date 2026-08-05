@@ -146,6 +146,52 @@ private func RFC_IsBulletReactionCutSource(ad: ref<AttackData>) -> Bool {
   return IsDefined(ad.GetWeapon() as WeaponObject);
 }
 
+// Injury Shock source rules confirmed in standalone Test R.
+// V always qualifies. NPC bullets qualify only when their toggle is enabled.
+private func RFC_InjuryShockSourceAllowed(
+  victim: wref<NPCPuppet>,
+  ad: ref<AttackData>,
+  cfg: RFCConfig
+) -> Bool {
+  let instigatorNPC: ref<NPCPuppet>;
+
+  if !IsDefined(victim) || !RFC_IsBulletReactionCutSource(ad) {
+    return false;
+  }
+
+  if RFC_IsPlayerAttack(victim, ad) {
+    return true;
+  }
+
+  if !cfg.injuryShockAllowNPCSources {
+    return false;
+  }
+
+  instigatorNPC = ad.GetInstigator() as NPCPuppet;
+  return IsDefined(instigatorNPC) && instigatorNPC != victim;
+}
+
+// Bosses and sub-bosses are separate opt-in classes and default OFF.
+private func RFC_InjuryShockActorClassAllowed(
+  victim: wref<NPCPuppet>,
+  cfg: RFCConfig
+) -> Bool {
+  if !IsDefined(victim) {
+    return false;
+  }
+
+  switch victim.GetNPCRarity() {
+    case gamedataNPCRarity.Boss:
+    case gamedataNPCRarity.MaxTac:
+      return cfg.injuryShockAllowBosses;
+
+    case gamedataNPCRarity.Elite:
+      return cfg.injuryShockAllowSubBosses;
+  }
+
+  return true;
+}
+
 // The defeated/incapacitated pipeline publishes IsAboutToBeDefeated before
 // GetWasIncapacitated is committed. Check every public state the game itself
 // uses so the handoff is classified correctly during the falling animation.
@@ -248,6 +294,36 @@ public func RFC_ArcadeIsMeleeAttack(ad: ref<AttackData>) -> Bool {
   return Equals(at, gamedataAttackType.Melee)
     || Equals(at, gamedataAttackType.QuickMelee)
     || Equals(at, gamedataAttackType.StrongMelee);
+}
+
+// Source controls are deliberately separate from target controls. The selected
+// mode decides whether V or an NPC may enter the enabled NPC/vehicle push lane.
+// Unknown/environmental instigators are not treated as NPC attacks.
+public func RFC_ArcadeAttackSourceAllowed(
+  victim: ref<GameObject>,
+  ad: ref<AttackData>,
+  cfg: RFCConfig
+) -> Bool {
+  if !IsDefined(victim) || !IsDefined(ad) {
+    return false;
+  }
+
+  let isMelee: Bool = RFC_ArcadeIsMeleeAttack(ad);
+  if RFC_IsPlayerAttack(victim, ad) {
+    return isMelee ? cfg.arcadeAllowPlayerMelee : cfg.arcadeAllowPlayerBullet;
+  }
+
+  let instigator: ref<GameObject> = ad.GetInstigator();
+  if !IsDefined(instigator) {
+    return false;
+  }
+
+  let npcInstigator: ref<NPCPuppet> = instigator as NPCPuppet;
+  if IsDefined(npcInstigator) {
+    return isMelee ? cfg.arcadeAllowNPCMelee : cfg.arcadeAllowNPCBullet;
+  }
+
+  return false;
 }
 
 public func RFC_ArcadeChannelEnabled(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
@@ -613,40 +689,61 @@ protected cb func OnRFC_HitReactionCutEvent(evt: ref<RFC_HitReactionCutEvent>) -
 
 @addMethod(NPCPuppet)
 protected cb func OnRFC_InjuryShockEvent(evt: ref<RFC_InjuryShockEvent>) -> Bool {
-  if !IsDefined(evt) || RFC_IsVehicleContext(this) || this.IsDead() || this.IsIncapacitated() {
-    this.m_RFC_InjuryShockPending = false;
+  let cfg: RFCConfig;
+  let ds: ref<DelaySystem>;
+  let getUpDelay: Float;
+
+  // Match the confirmed standalone behavior: the pending latch ends when the
+  // delayed collapse starts; the hold latch owns only minimum ground time.
+  this.m_RFC_InjuryShockPending = false;
+
+  if !IsDefined(evt)
+    || RFC_IsVehicleContext(this)
+    || this.IsDead()
+    || this.IsIncapacitated() {
     this.m_RFC_InjuryShockHoldActive = false;
     return true;
   }
 
-  let cfg: RFCConfig = RFC.Cfg();
-  if cfg.vanillaMode || RFC_TimeDilationBlocksImpulses(this, cfg) || !cfg.injuryShockEnabled || !ScriptedPuppet.CanRagdoll(this) {
-    this.m_RFC_InjuryShockPending = false;
+  cfg = RFC.Cfg();
+  if cfg.vanillaMode
+    || RFC_TimeDilationBlocksImpulses(this, cfg)
+    || !cfg.injuryShockEnabled
+    || !RFC_InjuryShockActorClassAllowed(this, cfg)
+    || !ScriptedPuppet.CanRagdoll(this) {
     this.m_RFC_InjuryShockHoldActive = false;
     return true;
   }
 
-  let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
-  let getUpDelay: Float = ClampF(cfg.injuryShockGetUpDelay, 0.0, 50.0) + RandRangeF(0.0, ClampF(cfg.injuryShockGetUpRandomDelay, 0.0, 50.0));
+  getUpDelay = ClampF(cfg.injuryShockGetUpDelay, 0.0, 50.0)
+    + RandRangeF(0.0, ClampF(cfg.injuryShockGetUpRandomDelay, 0.0, 50.0));
+
+  ds = GameInstance.GetDelaySystem(this.GetGame());
+  this.m_RFC_InjuryShockHoldActive = getUpDelay > 0.0;
+
   if IsDefined(ds) {
-    this.m_RFC_InjuryShockHoldActive = true;
+    // Ordinary live-NPC ragdoll only. The game's native recovery loop remains
+    // responsible for standing up and returning the actor to its original AI.
     ds.DelayEvent(this, CreateForceRagdollEvent(n"Splat_InjuryShock"), 0.000, false);
-    ds.DelayEvent(this, new RFC_InjuryShockResetEvent(), getUpDelay, false);
+
+    if this.m_RFC_InjuryShockHoldActive {
+      ds.DelayEvent(this, new RFC_InjuryShockResetEvent(), getUpDelay, false);
+    }
   } else {
     this.QueueEvent(CreateForceRagdollEvent(n"Splat_InjuryShock"));
-    this.m_RFC_InjuryShockPending = false;
     this.m_RFC_InjuryShockHoldActive = false;
   }
+
   return true;
 }
 
 @addMethod(NPCPuppet)
 protected cb func OnRFC_InjuryShockResetEvent(evt: ref<RFC_InjuryShockResetEvent>) -> Bool {
+  // Do not force Combat/Flee/Alerted and do not queue another ragdoll-state
+  // event. Clearing the hold lets the already-running native recovery loop
+  // return control to the actor's regular AI.
   this.m_RFC_InjuryShockPending = false;
   this.m_RFC_InjuryShockHoldActive = false;
-  if !this.IsDead() && !this.IsIncapacitated() && this.IsRagdolling() {
-    this.QueueEvent(new CheckPuppetRagdollStateEvent());
-  }
   return true;
 }
 
@@ -1261,7 +1358,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 
   let allowArcadeImpulse: Bool = RFC_ArcadeChannelEnabled(ad, cfg)
     && cfg.arcadeOnHitEnabled
-    && (!cfg.arcadePlayerOnly || RFC_IsPlayerAttack(this, ad))
+    && RFC_ArcadeAttackSourceAllowed(this, ad, cfg)
     && RFC_ArcadeAllowedByWeapon(ad, cfg);
   let isPlayerBulletReactionSource: Bool = RFC_IsPlayerAttack(this, ad)
     && RFC_IsBulletReactionCutSource(ad);
@@ -1272,10 +1369,12 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // Injury Shock is separate from normal reaction cutoff. Arcade remains
   // independent and may apply on the same hit that queues the later collapse.
   if cfg.injuryShockEnabled
-    && isPlayerBulletReactionSource
+    && RFC_InjuryShockSourceAllowed(this, ad, cfg)
+    && RFC_InjuryShockActorClassAllowed(this, cfg)
     && !this.IsDead()
     && !this.IsIncapacitated()
     && !this.m_RFC_InjuryShockPending
+    && !this.m_RFC_InjuryShockHoldActive
     && cfg.injuryShockChance > 0.0
     && SHHJM_ResolveBodyPart(this, hitPos, injuryShockPart, injuryShockAnchor)
     && injuryShockPart != 0

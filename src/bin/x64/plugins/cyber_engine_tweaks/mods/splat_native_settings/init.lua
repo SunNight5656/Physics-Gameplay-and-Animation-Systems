@@ -20,9 +20,9 @@ local sectionCache = {}
 local dynamicRefs = {}
 local globalModeRef = nil
 local initialized = false
-local STATE_VERSION = 160
-local BRIDGE_VERSION = 140
-local SESSION_TOKEN = 140
+local STATE_VERSION = 161
+local BRIDGE_VERSION = 141
+local SESSION_TOKEN = 141
 local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
@@ -1455,7 +1455,7 @@ local function initialize()
       settingsDirty = true
       saveSettingsNow(true)
     end
-    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 140 expected; V155 audited menu rebuild active")
+    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 141 expected; V155 audited menu rebuild active")
   end
 end
 
@@ -1502,7 +1502,7 @@ local function registerPlayerLifecycleObserver()
 end
 
 registerForEvent("onInit", function()
-  logi("TEST BUILD MARKER: SPLAT_ISSUE19_STABLE_THREE_SECTIONS_H")
+  logi("TEST BUILD MARKER: SPLAT_ISSUE9_INJURY_SHOCK_INTEGRATED_S")
   registerPlayerLifecycleObserver()
   initialize()
   if not initialized then return end
