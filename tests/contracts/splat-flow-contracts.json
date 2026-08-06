@@ -8,41 +8,45 @@
         "protected cb func OnDeath",
         "RFC_IsVehicleContext",
         "RFC_ResetMasterDeathChance",
-        "RFC_StampMoveForGSSnap",
         "GS_ClearSituationSnap",
         "GS_CaptureSituationSnap",
         "RFC_ApplyDeathOverrideGates",
         "wrappedMethod(evt)",
         "RFC_ScheduleCut",
-        "RFC_BodyFallsLogicImpulse.RunOnDeathBodyFalls",
+        "RFC_DeathImpulseRouter.RunArcadeOnDeathOnly",
         "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls",
-        "RFC_DeathImpulseRouter.RunOnDeathImpulses"
+        "RFC_ScheduleTwitch"
       ],
       "orderedPatterns": [
         "RFC_ResetMasterDeathChance",
-        "RFC_StampMoveForGSSnap",
         "GS_ClearSituationSnap",
         "GS_CaptureSituationSnap",
         "RFC_ApplyDeathOverrideGates",
         "wrappedMethod(evt)",
-        "RFC_BodyFallsLogicImpulse.RunOnDeathBodyFalls",
+        "RFC_DeathImpulseRouter.RunArcadeOnDeathOnly",
         "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls",
-        "RFC_DeathImpulseRouter.RunOnDeathImpulses"
+        "RFC_ScheduleTwitch"
       ]
     },
     {
       "name": "ON HIT - main event route",
       "file": "src/r6/scripts/new Splat/OnHit.reds",
       "requiredPatterns": [
-        "OnHit",
-        "wrappedMethod(evt)",
+        "@wrapMethod(NPCPuppet)",
+        "protected cb func OnHit",
+        "RFC_TimeDilationBlocksImpulses",
         "RFC_IsVehicleContext",
-        "RFC_TryStopWorkspot",
-        "SHHJM_QueueJolt"
+        "RFC_Explode_MarkAt",
+        "wrappedMethod(evt)",
+        "SHHJM_QueueJolt",
+        "RFC_ArcadeChannelEnabled",
+        "RFC_ApplyAliveExplosionImpulse"
       ],
       "orderedPatterns": [
+        "RFC_Explode_MarkAt",
         "wrappedMethod(evt)",
-        "SHHJM_QueueJolt"
+        "SHHJM_QueueJolt",
+        "RFC_ApplyAliveExplosionImpulse"
       ]
     },
     {
@@ -77,9 +81,11 @@
       "name": "BODY FALLS - death body route",
       "file": "src/r6/scripts/new Splat/BodyFallsLogicImpulse.reds",
       "requiredPatterns": [
-        "RunOnDeathBodyFalls",
-        "CreateRagdollApplyImpulseEvent",
-        "RFC_IsVehicleContext"
+        "GS_CaptureSituationSnap",
+        "GS_HardBlockImpulse",
+        "GS_ShouldRun",
+        "GS_ApplyImpulseAtPoint",
+        "CreateRagdollApplyImpulseEvent"
       ],
       "orderedPatterns": []
     },
@@ -115,12 +121,19 @@
       "name": "DEATH IMPULSES - alternate death route",
       "file": "src/r6/scripts/new Splat/DeathImpulseRouter.reds",
       "requiredPatterns": [
+        "RunArcadeOnDeathOnly",
         "RunOnDeathImpulses",
-        "RFC_IsVehicleContext",
+        "RFC_ArcadeAttackSourceAllowed",
+        "RFC_ArcadeAllowedByWeapon",
         "CreateForceRagdollEvent",
         "CreateRagdollApplyImpulseEvent"
       ],
-      "orderedPatterns": []
+      "orderedPatterns": [
+        "RFC_ArcadeAttackSourceAllowed",
+        "RFC_ArcadeAllowedByWeapon",
+        "CreateForceRagdollEvent",
+        "CreateRagdollApplyImpulseEvent"
+      ]
     },
     {
       "name": "DEATH OVERRIDE GATES",
@@ -144,11 +157,23 @@
       "name": "EXPLOSIONS - OnHit isolation",
       "file": "src/r6/scripts/new Splat/OnHit.reds",
       "requiredPatterns": [
-        "explosion",
-        "grenade",
-        "RFC_IsVehicleContext"
+        "RFC_IsGrenadeExplosion",
+        "RFC_Explode_MarkAt",
+        "RFC_ClassifyExplosion",
+        "RFC_ExplEnabled",
+        "RFC_ExplMul",
+        "RFC_ApplyAliveExplosionImpulse",
+        "RFC_GrenadeExceptionMatches"
       ],
-      "orderedPatterns": []
+      "orderedPatterns": [
+        "RFC_IsGrenadeExplosion",
+        "RFC_Explode_MarkAt",
+        "wrappedMethod(evt)",
+        "RFC_ClassifyExplosion",
+        "RFC_ExplEnabled",
+        "RFC_ExplMul",
+        "RFC_ApplyAliveExplosionImpulse"
+      ]
     },
     {
       "name": "GRENADE EXCEPTIONS",
@@ -163,21 +188,34 @@
       "name": "VEHICLE IMPULSES - bullets explosions melee",
       "file": "src/r6/scripts/new Splat/Features/VehicleImpulses.reds",
       "requiredPatterns": [
-        "VehicleObject",
-        "PhysicalImpulseEvent",
-        "explosion",
-        "melee",
-        "motorcycle"
+        "RFC_VehClassifySource",
+        "vehicleBulletPlayerOnly",
+        "vehicleExplosionPlayerOnly",
+        "vehicleImpulsePlayerOnly",
+        "RFC_VehApplyExplosionRadialImpulse",
+        "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyPhysicalImpulse",
+        "RFC_GrenadeExceptionMatches"
       ],
-      "orderedPatterns": []
+      "orderedPatterns": [
+        "RFC_VehClassifySource",
+        "vehicleBulletPlayerOnly",
+        "vehicleExplosionPlayerOnly",
+        "vehicleImpulsePlayerOnly",
+        "RFC_VehApplyExplosionRadialImpulse",
+        "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyPhysicalImpulse"
+      ]
     },
     {
       "name": "VEHICLE OCCUPANT PROTECTION",
       "file": "src/r6/scripts/new Splat/Features/VehicleOccupantReactionGuard.reds",
       "requiredPatterns": [
-        "vehicle",
-        "occupant",
-        "RFC_IsVehicleContext"
+        "OnSetNewHitReactionBehaviorData",
+        "RFC_IsVehicleContext",
+        "m_cumulatedPhysicalImpulse = 0.0",
+        "m_ragdollImpulse = 0.0",
+        "wrappedMethod(evt)"
       ],
       "orderedPatterns": []
     },
@@ -193,7 +231,15 @@
       "name": "ARCADE WEAPON ROUTING",
       "file": "src/r6/scripts/new Splat/Features/ArcadeWeapons.reds",
       "requiredPatterns": [
-        "Arcade"
+        "RFC_Arcade_List_Handgun",
+        "RFC_Arcade_List_Magnum",
+        "RFC_Arcade_List_Shotgun",
+        "RFC_Arcade_List_Sniper",
+        "RFC_Arcade_List_SMG",
+        "RFC_Arcade_List_AR",
+        "RFC_Arcade_List_LMG",
+        "RFC_Arcade_List_Blunt",
+        "RFC_Arcade_List_Blade"
       ],
       "orderedPatterns": []
     },
@@ -201,7 +247,11 @@
       "name": "VANILLA IMPULSE SUPPRESSION",
       "file": "src/r6/scripts/new Splat/Features/VanillaImpulseKiller.reds",
       "requiredPatterns": [
-        "Impulse"
+        "GetPhysicalImpulse",
+        "RFC_BlockVanillaStumbleSlam",
+        "RFC_VanillaImpulseAllowedByWeapon",
+        "killImpulsesEverywhere",
+        "killImpulsesVehiclesOnly"
       ],
       "orderedPatterns": []
     },
@@ -209,8 +259,9 @@
       "name": "IMPULSE SUPPRESSION GATES",
       "file": "src/r6/scripts/new Splat/Features/ImpulseSuppression.reds",
       "requiredPatterns": [
-        "Impulse",
-        "RFC_IsVehicleContext"
+        "RFC_TimeDilationBlocksImpulses",
+        "RFC_TimeDilationBlocksImpulsesNow",
+        "disableAllImpulsesDuringTimeDilation"
       ],
       "orderedPatterns": []
     },
@@ -218,7 +269,10 @@
       "name": "TRIP - emotion route",
       "file": "src/r6/scripts/new Splat/Features/00_AAA_Trip_Emotion.reds",
       "requiredPatterns": [
-        "Trip"
+        "AAT_Emotion_Apply",
+        "AAT_Emotion_TriggerOutput",
+        "OnAAT_EmotionEvt",
+        "showPushReactionPopup"
       ],
       "orderedPatterns": []
     },
@@ -226,8 +280,10 @@
       "name": "TRIP - animation route",
       "file": "src/r6/scripts/new Splat/Features/01_AAA_Trip_OnTripAnimation.reds",
       "requiredPatterns": [
-        "Trip",
-        "Animation"
+        "OnBumpEvent",
+        "AAT_TripFire",
+        "AAT_TripScheduleImpulseBurst",
+        "CreateRagdollApplyImpulseEvent"
       ],
       "orderedPatterns": []
     },
@@ -235,7 +291,10 @@
       "name": "TRIP - look route",
       "file": "src/r6/scripts/new Splat/Features/02_AAA_Trip_OnLook.reds",
       "requiredPatterns": [
-        "Look"
+        "OnProximityLookatEvent",
+        "AAT_OnLookStart",
+        "OnAAT_OnLookRagdollEvt",
+        "OnAAT_OnLookImpulseEvt"
       ],
       "orderedPatterns": []
     },
@@ -243,8 +302,10 @@
       "name": "TUMBLE - directional and stair scheduling",
       "file": "src/r6/scripts/new Splat/Features/Tumble.reds",
       "requiredPatterns": [
-        "Tumble",
-        "DelayEvent"
+        "RFC_ScheduleTumble_NoRaycast",
+        "RFC_RaycastDown_Ground",
+        "RFC_ScheduleSideTumble_Torque",
+        "RFC_ScheduleGravityRollResolve_Directional"
       ],
       "orderedPatterns": []
     },
@@ -252,8 +313,10 @@
       "name": "RAMP AND TUMBLE SCHEDULERS",
       "file": "src/r6/scripts/new Splat/Features/RAMP SCHEDULERS.reds",
       "requiredPatterns": [
-        "Ramp",
-        "DelayEvent"
+        "RFC_ApplyGravityBurst",
+        "RFC_Burst",
+        "RFC_RampScale",
+        "RFC_ShapeVec"
       ],
       "orderedPatterns": []
     },
@@ -261,8 +324,10 @@
       "name": "TWITCH SYSTEM",
       "file": "src/r6/scripts/new Splat/Features/Twitch.reds",
       "requiredPatterns": [
-        "Twitch",
-        "DelayEvent"
+        "OnRFC_TwitchImpulseEvent",
+        "RFC_ScheduleTwitchImpulse",
+        "RFC_ScheduleTwitch",
+        "CreateRagdollApplyImpulseEvent"
       ],
       "orderedPatterns": []
     },
@@ -270,8 +335,11 @@
       "name": "RANDOM IMPULSE SYSTEM",
       "file": "src/r6/scripts/new Splat/Features/RandomImpulseSystem.reds",
       "requiredPatterns": [
-        "Random",
-        "Rand"
+        "RFC_RandomEnsureProfile",
+        "RFC_RandomRangeWithT",
+        "RFC_RandomShoulderWaistValue",
+        "RFC_RandomSituationalValue",
+        "RFC_RandomizeConfig"
       ],
       "orderedPatterns": []
     },
@@ -280,8 +348,10 @@
       "file": "src/r6/scripts/new Splat/Helpers/WorkspotLast.reds",
       "requiredPatterns": [
         "RFC_TryStopWorkspot",
+        "RFC_IsWorkspotOrPerch",
         "RFC_IsVehicleContext",
-        "Workspot"
+        "RFC_MarkVehicleSeatShield",
+        "RFC_MarkVehicleExitShield"
       ],
       "orderedPatterns": []
     },
@@ -289,8 +359,11 @@
       "name": "WORKSPOT AND STAIRS DETECTION",
       "file": "src/r6/scripts/new Splat/Helpers/Helpers2WorkspotsStairs.reds",
       "requiredPatterns": [
-        "Workspot",
-        "Stair"
+        "RFC_ApplyStairsImpulses",
+        "RFC_MarkStairsNow",
+        "RFC_IsOnStairs",
+        "RFC_IsCoweringStrict",
+        "RFC_IsPanicRun"
       ],
       "orderedPatterns": []
     },
@@ -298,8 +371,12 @@
       "name": "WALKING AND RUNNING DETECTION",
       "file": "src/r6/scripts/new Splat/Helpers/HelpersWalkingRunning.reds",
       "requiredPatterns": [
-        "Walking",
-        "Running"
+        "RFC_WasWalkingRecent",
+        "RFC_IsClearlyWalking",
+        "RFC_IsWalking",
+        "RFC_IsClearlyRunning",
+        "RFC_IsRunning",
+        "RFC_GetMoveDirXY"
       ],
       "orderedPatterns": []
     },
@@ -307,7 +384,11 @@
       "name": "ENEMY TYPE GATES",
       "file": "src/r6/scripts/new Splat/Helpers/EnemyTypeGates.reds",
       "requiredPatterns": [
-        "Enemy"
+        "RFC_EnemyImpulseClassOf",
+        "RFC_InjuryShockActorClassOf",
+        "RFC_EnemyAllowsInjuryShock",
+        "RFC_EnemyAllowsArcade",
+        "RFC_EnemyAllowsBulletJolts"
       ],
       "orderedPatterns": []
     },
@@ -315,8 +396,10 @@
       "name": "MOVE NPC WITH FEET",
       "file": "src/r6/scripts/new Splat/ZZ_MoveNPCwithFeet.reds",
       "requiredPatterns": [
-        "Move",
-        "Feet"
+        "SGK_IsValidCorpseTarget",
+        "SGK_GetPreferredCorpseTarget",
+        "OnSGK_ApplyEvt",
+        "SGK_Start"
       ],
       "orderedPatterns": []
     },
@@ -324,9 +407,14 @@
       "name": "FINAL RFC CONFIG AND MODE PRECEDENCE",
       "file": "src/r6/scripts/new Splat/Types.reds",
       "requiredPatterns": [
-        "RFCConfig",
-        "RFC.Cfg",
-        "vanillaMode"
+        "public static func Cfg",
+        "SPLATSettingsRuntime.Menu",
+        "SPLATSettingsRuntime.Head",
+        "splatPresetMode",
+        "vanillaMode",
+        "injuryShockAllowBosses",
+        "injuryShockAllowSubBosses",
+        "injuryShockAllowNPCSources"
       ],
       "orderedPatterns": []
     },
@@ -342,9 +430,14 @@
       "name": "CET TO REDSCRIPT SETTINGS BRIDGE",
       "file": "src/r6/scripts/new Splat/00_SPLATDirectSettingsSystem.reds",
       "requiredPatterns": [
-        "Set",
-        "Get",
-        "Has"
+        "GetBridgeVersion",
+        "SetScoped_RFC_Bool",
+        "SetScoped_RFC_Float",
+        "SetScoped_RFC_Int",
+        "SPLATSetBool",
+        "SPLATSetFloat",
+        "SPLATSetInt",
+        "SPLATSetMode"
       ],
       "orderedPatterns": []
     },
@@ -352,9 +445,62 @@
       "name": "NATIVE SETTINGS LUA",
       "file": "src/bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/init.lua",
       "requiredPatterns": [
+        "local STATE_VERSION = 161",
+        "schema_index.json",
         "user_settings.json",
         "user_ui.json",
-        "schema_index.json"
+        "buildRestoreQueue",
+        "processRestoreQueue",
+        "globalModeRef = addSetting"
+      ],
+      "orderedPatterns": [
+        "schema_index.json",
+        "user_ui.json",
+        "user_settings.json",
+        "buildRestoreQueue",
+        "processRestoreQueue"
+      ]
+    },
+    {
+      "name": "STEALTH AND FINISHER ROUTING",
+      "file": "src/r6/scripts/new Splat/Features/StealthUtils.reds",
+      "requiredPatterns": [
+        "RFC_IsStealthOrFinisherEx",
+        "RFC_Stealth_SchedForceRagdoll",
+        "CreateForceRagdollEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "DEATH ROUTER HELPERS",
+      "file": "src/r6/scripts/new Splat/Helpers/DeathRouterHelper.reds",
+      "requiredPatterns": [
+        "RFC_Explode_MarkAt",
+        "RFC_Explode_IsRecent",
+        "RFC_ScheduleCut",
+        "OnRFC_CutDeathAnimEvent",
+        "CreateForceRagdollEvent"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "RIG POSITION BUILDING",
+      "file": "src/r6/scripts/new Splat/Helpers/Positions.reds",
+      "requiredPatterns": [
+        "RFC_GetFlatForward",
+        "RFC_TryRigSlotPos",
+        "RFC_BuildPositions"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "RAGDOLL ENABLED AND IMPACT ROUTES",
+      "file": "src/r6/scripts/new Splat/Ragdoll_jol.reds",
+      "requiredPatterns": [
+        "OnRagdollEnabledEvent",
+        "OnRagdollImpactEvent",
+        "RFC_ScheduleShoulderWaistFall",
+        "RFC_ApplyShoulderWaistFall"
       ],
       "orderedPatterns": []
     }
