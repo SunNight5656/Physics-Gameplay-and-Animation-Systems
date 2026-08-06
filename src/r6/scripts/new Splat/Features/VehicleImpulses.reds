@@ -167,7 +167,9 @@ public func RFC_VehArmArcadeRiderBikeTopple(
       return false;
   }
 
-  if cfg.vehicleImpulsePlayerOnly && !RFC_VehPassesPlayerOnly(bike, ad, source) { return false; }
+  if cfg.vehicleBulletPlayerOnly && !RFC_VehPassesPlayerOnly(bike, ad, source) {
+    return false;
+  }
 
   let srcPos: Vector4 = ad.GetAttackPosition();
   let instigator: ref<GameObject> = ad.GetInstigator();
@@ -421,8 +423,7 @@ private func RFC_VehIsExplosion(ad: ref<AttackData>) -> Bool {
 }
 
 private func RFC_VehIsMelee(ad: ref<AttackData>) -> Bool {
-  if !IsDefined(ad) { return false; }
-  return Equals(ad.GetAttackType(), gamedataAttackType.Melee);
+  return RFC_ArcadeIsMeleeAttack(ad);
 }
 
 private func RFC_VehClassifySource(ad: ref<AttackData>) -> RFCVehicleHitSource {
@@ -470,14 +471,8 @@ private func RFC_VehChooseExplosionSource(vehicle: ref<VehicleObject>, ad: ref<A
 private func RFC_VehPassesPlayerOnly(vehicle: ref<VehicleObject>, ad: ref<AttackData>, source: RFCVehicleHitSource) -> Bool {
   if !IsDefined(vehicle) || !IsDefined(ad) { return false; }
 
-  // Explosion/grenade AttackData is not reliable about who owns the blast by the
-  // time VehicleObject.OnHit receives it. If Player Only blocks here, grenades
-  // become random. Keep bullet/melee strict, but let explosion hits through.
-  switch source {
-    case RFCVehicleHitSource.Explosion:
-      return true;
-  }
-
+  // V Only is a strict attack-source gate. Missing or non-player ownership does
+  // not enter the custom vehicle push lane.
   return RFC_IsPlayerAttack(vehicle, ad);
 }
 
@@ -1023,7 +1018,26 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
 
   let ad: ref<AttackData> = evt.attackData;
   let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
-  if cfg.vehicleImpulsePlayerOnly && !RFC_VehPassesPlayerOnly(vehicle, ad, source) { return; }
+
+  switch source {
+    case RFCVehicleHitSource.Bullet:
+      if cfg.vehicleBulletPlayerOnly && !RFC_VehPassesPlayerOnly(vehicle, ad, source) {
+        return;
+      }
+      break;
+
+    case RFCVehicleHitSource.Explosion:
+      if cfg.vehicleExplosionPlayerOnly && !RFC_VehPassesPlayerOnly(vehicle, ad, source) {
+        return;
+      }
+      break;
+
+    case RFCVehicleHitSource.Melee:
+      if cfg.vehicleImpulsePlayerOnly && !RFC_VehPassesPlayerOnly(vehicle, ad, source) {
+        return;
+      }
+      break;
+  }
 
   // Restore the proven standalone button actuator as the first bullet action.
   // Weapon filters, push multipliers and the general vehicle cooldown control

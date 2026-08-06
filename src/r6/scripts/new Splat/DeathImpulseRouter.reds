@@ -14,7 +14,7 @@ public class RFC_DeathImpulseRouter {
     if !IsDefined(ad)
       || !RFC_ArcadeChannelEnabled(ad, c)
       || !RFC_EnemyAllowsArcade(puppet, c)
-      || (c.arcadePlayerOnly && !RFC_IsPlayerAttack(puppet, ad))
+      || !RFC_ArcadeAttackSourceAllowed(puppet, ad, c)
       || !RFC_ArcadeAllowedByWeapon(ad, c) {
       return false;
     }
@@ -115,7 +115,7 @@ public class RFC_DeathImpulseRouter {
     let ad2: ref<AttackData> = puppet.rfc_lastAttack;
     if RFC_ArcadeChannelEnabled(ad2, c)
       && RFC_EnemyAllowsArcade(puppet, c)
-      && (!c.arcadePlayerOnly || RFC_IsPlayerAttack(puppet, ad2))
+      && RFC_ArcadeAttackSourceAllowed(puppet, ad2, c)
       && IsDefined(ad2)
       && RFC_ArcadeAllowedByWeapon(ad2, c) {
       let at2: gamedataAttackType = ad2.GetAttackType();

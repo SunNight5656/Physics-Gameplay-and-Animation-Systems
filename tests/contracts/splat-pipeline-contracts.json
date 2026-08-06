@@ -1,0 +1,418 @@
+{
+  "description": "Stable feature-route contracts. Each step is scoped to the named function, so unrelated edits and call-count changes do not invalidate the pipeline.",
+  "pipelines": [
+    {
+      "name": "DEATH — core handoff and regular fall routing",
+      "steps": [
+        {
+          "label": "NPCPuppet.OnDeath",
+          "file": "src/r6/scripts/new Splat/DeathRouter.reds",
+          "function": "OnDeath",
+          "required": [
+            "RFC_IsVehicleContext(this)",
+            "RFC_ResetMasterDeathChance(this)",
+            "GS_ClearSituationSnap(this)",
+            "GS_CaptureSituationSnap(this)",
+            "RFC_ApplyDeathOverrideGates(this, c)",
+            "wrappedMethod(evt)",
+            "RFC_DeathImpulseRouter.RunArcadeOnDeathOnly",
+            "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls"
+          ],
+          "ordered": [
+            "RFC_ResetMasterDeathChance(this)",
+            "GS_ClearSituationSnap(this)",
+            "GS_CaptureSituationSnap(this)",
+            "RFC_ApplyDeathOverrideGates(this, c)",
+            "wrappedMethod(evt)",
+            "RFC_DeathImpulseRouter.RunArcadeOnDeathOnly",
+            "RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "EXPLOSIONS — OnHit classification, isolation, and NPC impulse",
+      "steps": [
+        {
+          "label": "OnHit pre-wrap explosion marker and post-wrap impulse",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnHit",
+          "required": [
+            "RFC_IsGrenadeExplosion(evt.attackData)",
+            "RFC_Explode_MarkAt(this, evt.hitPosition, 2.00)",
+            "wrappedMethod(evt)",
+            "RFC_GrenadeExceptionMatches(ad, cfg)",
+            "RFC_ClassifyExplosion(ad)",
+            "RFC_ExplEnabled(src, cfg)",
+            "RFC_ExplMul(src, cfg)",
+            "RFC_ApplyAliveExplosionImpulse"
+          ],
+          "ordered": [
+            "RFC_Explode_MarkAt(this, evt.hitPosition, 2.00)",
+            "wrappedMethod(evt)",
+            "RFC_GrenadeExceptionMatches(ad, cfg)",
+            "RFC_ClassifyExplosion(ad)",
+            "RFC_ExplEnabled(src, cfg)",
+            "RFC_ExplMul(src, cfg)",
+            "RFC_ApplyAliveExplosionImpulse"
+          ]
+        },
+        {
+          "label": "radial impulse actuator",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "RFC_ApplyAliveExplosionImpulse",
+          "required": [
+            "CreateForceRagdollEvent",
+            "CreateRagdollApplyImpulseEvent"
+          ],
+          "ordered": [
+            "CreateForceRagdollEvent",
+            "CreateRagdollApplyImpulseEvent"
+          ],
+          "counts": [
+            {
+              "pattern": "CreateRagdollApplyImpulseEvent",
+              "minimum": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "EXPLOSIONS — lethal OnDeath isolation and corpse kick",
+      "steps": [
+        {
+          "label": "death explosion isolation",
+          "file": "src/r6/scripts/new Splat/DeathRouter.reds",
+          "function": "OnDeath",
+          "required": [
+            "RFC_Explode_IsRecent(this)",
+            "RFC_BlockAllDeathImpulseLanes(this)",
+            "wrappedMethod(evt)",
+            "RFC_TryStopWorkspot(this)",
+            "new RFC_TryGrenadeKickEvent()",
+            "ds.DelayEvent(this, explosionKick"
+          ],
+          "ordered": [
+            "RFC_Explode_IsRecent(this)",
+            "RFC_BlockAllDeathImpulseLanes(this)",
+            "wrappedMethod(evt)",
+            "RFC_TryStopWorkspot(this)",
+            "new RFC_TryGrenadeKickEvent()",
+            "ds.DelayEvent(this, explosionKick"
+          ]
+        },
+        {
+          "label": "corpse explosion event",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnRFC_TryGrenadeKickEvent",
+          "required": [
+            "RFC_IsGrenadeExplosion",
+            "RFC_GrenadeExceptionMatches",
+            "RFC_ClassifyExplosion",
+            "RFC_ExplEnabled",
+            "RFC_ExplMul",
+            "RFC_GrenadeCorpseKick_InstantScaled"
+          ],
+          "ordered": [
+            "RFC_IsGrenadeExplosion",
+            "RFC_GrenadeExceptionMatches",
+            "RFC_ClassifyExplosion",
+            "RFC_ExplEnabled",
+            "RFC_ExplMul",
+            "RFC_GrenadeCorpseKick_InstantScaled"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ARCADE — NPC OnHit source, channel, weapon, and delayed actuator",
+      "steps": [
+        {
+          "label": "OnHit gates",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnHit",
+          "required": [
+            "RFC_ArcadeChannelEnabled(ad, cfg)",
+            "cfg.arcadeOnHitEnabled",
+            "RFC_ArcadeAttackSourceAllowed(this, ad, cfg)",
+            "RFC_ArcadeAllowedByWeapon(ad, cfg)",
+            "new RFC_HitReactionGuardEvent()",
+            "arcadeGuardEvt.allowArcadeImpulse = allowArcadeImpulse"
+          ],
+          "ordered": [
+            "RFC_ArcadeChannelEnabled(ad, cfg)",
+            "RFC_ArcadeAttackSourceAllowed(this, ad, cfg)",
+            "RFC_ArcadeAllowedByWeapon(ad, cfg)",
+            "new RFC_HitReactionGuardEvent()"
+          ]
+        },
+        {
+          "label": "guard event actuator",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnRFC_HitReactionGuardEvent",
+          "required": [
+            "evt.allowArcadeImpulse",
+            "cfg.arcadeOnHitEnabled",
+            "RFC_ArcadeChannelEnabled(evt.attackData, cfg)",
+            "RFC_ArcadeApplyOnHit"
+          ],
+          "ordered": [
+            "evt.allowArcadeImpulse",
+            "cfg.arcadeOnHitEnabled",
+            "RFC_ArcadeChannelEnabled(evt.attackData, cfg)",
+            "RFC_ArcadeApplyOnHit"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ARCADE — NPC OnDeath source, channel, weapon, and impulse",
+      "steps": [
+        {
+          "label": "death router entry",
+          "file": "src/r6/scripts/new Splat/DeathRouter.reds",
+          "function": "OnDeath",
+          "required": [
+            "RFC_DeathImpulseRouter.RunArcadeOnDeathOnly"
+          ]
+        },
+        {
+          "label": "arcade death ownership gates",
+          "file": "src/r6/scripts/new Splat/DeathImpulseRouter.reds",
+          "function": "ShouldOwnArcadeDeath",
+          "required": [
+            "RFC_ArcadeChannelEnabled",
+            "RFC_EnemyAllowsArcade",
+            "RFC_ArcadeAttackSourceAllowed",
+            "RFC_ArcadeAllowedByWeapon"
+          ],
+          "ordered": [
+            "RFC_ArcadeChannelEnabled",
+            "RFC_EnemyAllowsArcade",
+            "RFC_ArcadeAttackSourceAllowed",
+            "RFC_ArcadeAllowedByWeapon"
+          ]
+        },
+        {
+          "label": "arcade death actuator",
+          "file": "src/r6/scripts/new Splat/DeathImpulseRouter.reds",
+          "function": "RunArcadeOnDeathOnly",
+          "required": [
+            "ShouldOwnArcadeDeath",
+            "RFC_TryStopWorkspot",
+            "CreateForceRagdollEvent",
+            "CreateRagdollApplyImpulseEvent"
+          ],
+          "ordered": [
+            "ShouldOwnArcadeDeath",
+            "RFC_TryStopWorkspot",
+            "CreateForceRagdollEvent",
+            "CreateRagdollApplyImpulseEvent"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "VEHICLES — OnHit dispatch and separate V Only lanes",
+      "steps": [
+        {
+          "label": "VehicleObject.OnHit",
+          "file": "src/r6/scripts/new Splat/Features/VehicleImpulses.reds",
+          "function": "OnHit",
+          "required": [
+            "RFC_VehScheduleSelfRightingKill(this)",
+            "wrappedMethod(evt)",
+            "RFC_VehTryApply(this, evt, cfg)"
+          ],
+          "ordered": [
+            "RFC_VehScheduleSelfRightingKill(this)",
+            "wrappedMethod(evt)",
+            "RFC_VehTryApply(this, evt, cfg)"
+          ]
+        },
+        {
+          "label": "source-specific vehicle routes",
+          "file": "src/r6/scripts/new Splat/Features/VehicleImpulses.reds",
+          "function": "RFC_VehTryApply",
+          "required": [
+            "RFC_VehClassifySource(ad)",
+            "cfg.vehicleBulletPlayerOnly",
+            "cfg.vehicleExplosionPlayerOnly",
+            "cfg.vehicleImpulsePlayerOnly",
+            "RFC_GrenadeExceptionMatches(ad, cfg)",
+            "RFC_VehApplyExplosionRadialImpulse",
+            "RFC_VehApplyExplosionMultiPointImpulse",
+            "RFC_VehApplyPhysicalImpulse"
+          ],
+          "ordered": [
+            "RFC_VehClassifySource(ad)",
+            "cfg.vehicleBulletPlayerOnly",
+            "cfg.vehicleExplosionPlayerOnly",
+            "cfg.vehicleImpulsePlayerOnly",
+            "RFC_GrenadeExceptionMatches(ad, cfg)",
+            "RFC_VehApplyExplosionRadialImpulse",
+            "RFC_VehApplyExplosionMultiPointImpulse",
+            "RFC_VehApplyPhysicalImpulse"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "INJURY SHOCK — source and actor gates through native recovery",
+      "steps": [
+        {
+          "label": "OnHit Injury Shock gate",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnHit",
+          "required": [
+            "cfg.injuryShockEnabled",
+            "RFC_InjuryShockSourceAllowed(this, ad, cfg)",
+            "RFC_InjuryShockActorClassAllowed(this, cfg)",
+            "cfg.injuryShockChance",
+            "cfg.injuryShockLimbsOnly",
+            "new RFC_InjuryShockEvent()"
+          ],
+          "ordered": [
+            "RFC_InjuryShockSourceAllowed(this, ad, cfg)",
+            "RFC_InjuryShockActorClassAllowed(this, cfg)",
+            "cfg.injuryShockChance",
+            "cfg.injuryShockLimbsOnly",
+            "new RFC_InjuryShockEvent()"
+          ]
+        },
+        {
+          "label": "collapse and minimum ground hold",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnRFC_InjuryShockEvent",
+          "required": [
+            "CreateForceRagdollEvent(n\"Splat_InjuryShock\")",
+            "new RFC_InjuryShockResetEvent()",
+            "cfg.injuryShockGetUpDelay",
+            "cfg.injuryShockGetUpRandomDelay"
+          ],
+          "ordered": [
+            "cfg.injuryShockGetUpDelay",
+            "CreateForceRagdollEvent(n\"Splat_InjuryShock\")",
+            "new RFC_InjuryShockResetEvent()"
+          ]
+        },
+        {
+          "label": "native AI recovery release",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnRFC_InjuryShockResetEvent",
+          "required": [
+            "m_RFC_InjuryShockPending = false",
+            "m_RFC_InjuryShockHoldActive = false"
+          ],
+          "forbidden": [
+            "CheckPuppetRagdollStateEvent",
+            "Combat",
+            "Flee",
+            "Alerted",
+            "CreateForceRagdollEvent"
+          ]
+        },
+        {
+          "label": "boss and sub-boss classification",
+          "file": "src/r6/scripts/new Splat/Helpers/EnemyTypeGates.reds",
+          "function": "RFC_EnemyAllowsInjuryShock",
+          "required": [
+            "RFC_InjuryShockActorClassOf",
+            "cfg.injuryShockAllowBosses",
+            "cfg.injuryShockAllowSubBosses"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BULLET JOLTS — OnHit capture, queue, and apply",
+      "steps": [
+        {
+          "label": "OnHit queue",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnHit",
+          "required": [
+            "c.bulletJoltsEnabled",
+            "RFC_EnemyAllowsBulletJolts",
+            "RFC_SHHJM_ResolveOrDeadFallback",
+            "SHHJM_GetPartEnabled",
+            "SHHJM_QueueJolt"
+          ],
+          "ordered": [
+            "RFC_EnemyAllowsBulletJolts",
+            "RFC_SHHJM_ResolveOrDeadFallback",
+            "SHHJM_GetPartEnabled",
+            "wrappedMethod(evt)",
+            "SHHJM_QueueJolt"
+          ]
+        },
+        {
+          "label": "jolt apply",
+          "file": "src/r6/scripts/new Splat/Features/JoltLogicImpulse.reds",
+          "function": "OnSHHJM_ApplyImpulseEvt",
+          "required": [
+            "CreateRagdollApplyImpulseEvent",
+            "SHHJM_BuildImpulse"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "WORKSPOTS AND VEHICLE OCCUPANTS — damage allowed, custom impulses blocked",
+      "steps": [
+        {
+          "label": "OnHit mounted path",
+          "file": "src/r6/scripts/new Splat/OnHit.reds",
+          "function": "OnHit",
+          "required": [
+            "RFC_IsVehicleContext(this)",
+            "wrappedMethod(evt)",
+            "RFC_VehArmArcadeRiderBikeTopple",
+            "RFC_VehConsumeArcadeRiderBikeTopple"
+          ],
+          "ordered": [
+            "RFC_IsVehicleContext(this)",
+            "RFC_VehArmArcadeRiderBikeTopple",
+            "wrappedMethod(evt)",
+            "RFC_VehConsumeArcadeRiderBikeTopple"
+          ]
+        },
+        {
+          "label": "occupant reaction guard",
+          "file": "src/r6/scripts/new Splat/Features/VehicleOccupantReactionGuard.reds",
+          "function": "OnSetNewHitReactionBehaviorData",
+          "required": [
+            "wrappedMethod",
+            "RFC_IsVehicleContext"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MENU — one selector, dynamic sections, and persistence replay",
+      "steps": [
+        {
+          "label": "Native Settings init",
+          "file": "src/bin/x64/plugins/cyber_engine_tweaks/mods/splat_native_settings/init.lua",
+          "required": [
+            "local STATE_VERSION = 161",
+            "local BRIDGE_VERSION = 141",
+            "globalModeRef = addSetting(GLOBAL_PATH, modeSetting",
+            "removeModeCategories(candidate)",
+            "showModeCategories(active",
+            "buildRestoreQueue()",
+            "processRestoreQueue()",
+            "PlayerPuppet.OnGameAttached"
+          ],
+          "counts": [
+            {
+              "pattern": "globalModeRef = addSetting(GLOBAL_PATH, modeSetting",
+              "exact": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

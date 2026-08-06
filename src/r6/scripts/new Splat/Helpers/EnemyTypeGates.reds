@@ -8,6 +8,14 @@ public enum RFCEnemyImpulseClass {
   Robot = 4
 }
 
+// Injury Shock uses a separate actor classification so adding sub-boss support
+// cannot change the existing Arcade/Jolt enemy filters.
+public enum RFCInjuryShockActorClass {
+  Standard = 0,
+  Boss = 1,
+  SubBoss = 2
+}
+
 private func RFC_HasToken(s: String, a: String, b: String) -> Bool {
   if StrContains(s, a) { return true; }
   if StrContains(s, b) { return true; }
@@ -88,6 +96,64 @@ public func RFC_EnemyImpulseClassOf(puppet: wref<NPCPuppet>) -> RFCEnemyImpulseC
   }
 
   return RFCEnemyImpulseClass.Standard;
+}
+
+public func RFC_InjuryShockActorClassOf(puppet: wref<NPCPuppet>) -> RFCInjuryShockActorClass {
+  let idStr: String;
+  let record: wref<Character_Record>;
+  let tags: array<CName>;
+
+  if !IsDefined(puppet) {
+    return RFCInjuryShockActorClass.Standard;
+  }
+
+  // The game's rarity is the authoritative boss signal. Keep the record-name
+  // fallbacks for quest records that inherit boss behavior without exposing a
+  // Boss rarity at the moment SPLAT receives the hit.
+  if EnumInt(puppet.GetNPCRarity()) == EnumInt(gamedataNPCRarity.Boss) {
+    return RFCInjuryShockActorClass.Boss;
+  }
+
+  idStr = TDBID.ToStringDEBUG(puppet.GetRecordID());
+  if RFC_HasToken(idStr, "boss", "Boss")
+    || RFC_HasToken(idStr, "smasher", "Smasher")
+    || RFC_HasToken(idStr, "oda", "Oda")
+    || RFC_HasToken(idStr, "hansen", "Hansen")
+    || RFC_HasToken(idStr, "placide", "Placide")
+    || RFC_HasToken(idStr, "sasquatch", "Sasquatch") {
+    return RFCInjuryShockActorClass.Boss;
+  }
+
+  // MiniBoss is the game's explicit sub-boss tag. The record-name fallbacks
+  // cover custom/quest records that encode the class in the record ID.
+  record = TweakDBInterface.GetCharacterRecord(puppet.GetRecordID());
+  if IsDefined(record) {
+    tags = record.Tags();
+    if ArrayContains(tags, n"MiniBoss") {
+      return RFCInjuryShockActorClass.SubBoss;
+    }
+  }
+
+  if RFC_HasToken(idStr, "miniboss", "MiniBoss")
+    || RFC_HasToken(idStr, "mini_boss", "Mini_Boss")
+    || RFC_HasToken(idStr, "subboss", "SubBoss")
+    || RFC_HasToken(idStr, "sub_boss", "Sub_Boss")
+    || RFC_HasToken(idStr, "cyberpsycho", "Cyberpsycho") {
+    return RFCInjuryShockActorClass.SubBoss;
+  }
+
+  return RFCInjuryShockActorClass.Standard;
+}
+
+public func RFC_EnemyAllowsInjuryShock(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Bool {
+  switch RFC_InjuryShockActorClassOf(puppet) {
+    case RFCInjuryShockActorClass.Boss:
+      return cfg.injuryShockAllowBosses;
+    case RFCInjuryShockActorClass.SubBoss:
+      return cfg.injuryShockAllowSubBosses;
+  }
+
+  return true;
 }
 
 public func RFC_EnemyAllowsArcade(puppet: wref<NPCPuppet>, cfg: RFCConfig) -> Bool {
