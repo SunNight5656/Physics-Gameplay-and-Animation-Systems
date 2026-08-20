@@ -1,0 +1,521 @@
+﻿
+  src\r6\scripts\new Splat\OnHit.reds:1:module RealisticPush
+  src\r6\scripts\new Splat\OnHit.reds:2:
+> src\r6\scripts\new Splat\OnHit.reds:3:// Shared fields/helpers moved to RFC_OnHitShared.reds
+  src\r6\scripts\new Splat\OnHit.reds:4:
+  src\r6\scripts\new Splat\OnHit.reds:5:private func RFC_Length3(v: Vector4) -> Float {
+  src\r6\scripts\new Splat\OnHit.reds:6:  return SqrtF(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+  src\r6\scripts\new Splat\OnHit.reds:7:}
+  src\r6\scripts\new Splat\OnHit.reds:8:
+  src\r6\scripts\new Splat\OnHit.reds:9:// Fields
+  src\r6\scripts\new Splat\OnHit.reds:10:
+  src\r6\scripts\new Splat\OnHit.reds:11:@addField(NPCPuppet) public let rfc_mv_lastT: Float;
+  src\r6\scripts\new Splat\OnHit.reds:12:@addField(NPCPuppet) public let rfc_mv_lastX: Float;
+  src\r6\scripts\new Splat\OnHit.reds:13:@addField(NPCPuppet) public let rfc_mv_lastY: Float;
+  src\r6\scripts\new Splat\OnHit.reds:14:@addField(NPCPuppet) public let rfc_mv_vx: Float;
+  src\r6\scripts\new Splat\OnHit.reds:15:@addField(NPCPuppet) public let rfc_mv_vy: Float;
+  src\r6\scripts\new Splat\OnHit.reds:16:
+  src\r6\scripts\new Splat\OnHit.reds:17:@addField(NPCPuppet) public let rfc_lastAttack: ref<AttackData>;
+  src\r6\scripts\new Splat\OnHit.reds:18:
+  src\r6\scripts\new Splat\OnHit.reds:19:@addField(NPCPuppet) public let m_RFC_ArcadeKickDone: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:20:@addField(NPCPuppet) public let m_RFC_ArcadeDeathT: Float;
+  src\r6\scripts\new Splat\OnHit.reds:21:@addField(NPCPuppet) private let m_RFC_InjuryShockPending: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:22:@addField(NPCPuppet) private let m_RFC_InjuryShockHoldActive: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:23:
+  src\r6\scripts\new Splat\OnHit.reds:164:}
+  src\r6\scripts\new Splat\OnHit.reds:165:
+  src\r6\scripts\new Splat\OnHit.reds:166:@wrapMethod(NPCPuppet)
+> src\r6\scripts\new Splat\OnHit.reds:167:private func OnHitAnimation(hitEvent: ref<gameHitEvent>) -> Void {
+  src\r6\scripts\new Splat\OnHit.reds:168:  if IsDefined(hitEvent) {
+  src\r6\scripts\new Splat\OnHit.reds:169:    let cfg: RFCConfig = RFC.Cfg();
+  src\r6\scripts\new Splat\OnHit.reds:170:    if !cfg.vanillaMode
+  src\r6\scripts\new Splat\OnHit.reds:171:      && cfg.hitReactionsDisabled
+  src\r6\scripts\new Splat\OnHit.reds:172:      && !this.IsDead()
+  src\r6\scripts\new Splat\OnHit.reds:173:      && !RFC_IsIncapacitatedTransition(this)
+  src\r6\scripts\new Splat\OnHit.reds:174:      && RFC_IsPlayerAttack(this, hitEvent.attackData)
+  src\r6\scripts\new Splat\OnHit.reds:175:      && RFC_IsBulletReactionCutSource(hitEvent.attackData) {
+  src\r6\scripts\new Splat\OnHit.reds:176:      return;
+  src\r6\scripts\new Splat\OnHit.reds:177:    }
+  src\r6\scripts\new Splat\OnHit.reds:178:  }
+  src\r6\scripts\new Splat\OnHit.reds:179:  wrappedMethod(hitEvent);
+  src\r6\scripts\new Splat\OnHit.reds:180:}
+  src\r6\scripts\new Splat\OnHit.reds:181:
+  src\r6\scripts\new Splat\OnHit.reds:182:private func RFC_StopOrdinaryHitReaction(p: wref<NPCPuppet>) -> Void {
+  src\r6\scripts\new Splat\OnHit.reds:183:  if !IsDefined(p) {
+  src\r6\scripts\new Splat\OnHit.reds:184:    return;
+  src\r6\scripts\new Splat\OnHit.reds:185:  }
+  src\r6\scripts\new Splat\OnHit.reds:186:
+  src\r6\scripts\new Splat\OnHit.reds:187:  let hitComponent: ref<HitReactionComponent> = p.GetHitReactionComponent();
+  src\r6\scripts\new Splat\OnHit.reds:357:  return !cfg.arcadeUseWeaponAllowList || 
+RFC_ArcadeNamedModeAllowsUnknownBullet(cfg);
+  src\r6\scripts\new Splat\OnHit.reds:358:}
+  src\r6\scripts\new Splat\OnHit.reds:359:
+> src\r6\scripts\new Splat\OnHit.reds:360:// Arcade OnHit shove
+  src\r6\scripts\new Splat\OnHit.reds:361:
+  src\r6\scripts\new Splat\OnHit.reds:362:private func RFC_ArcadeWeaponMul(ad: ref<AttackData>, cfg: RFCConfig) -> 
+Float {
+  src\r6\scripts\new Splat\OnHit.reds:363:  if !IsDefined(ad) {
+  src\r6\scripts\new Splat\OnHit.reds:364:    return 1.0;
+  src\r6\scripts\new Splat\OnHit.reds:365:  }
+  src\r6\scripts\new Splat\OnHit.reds:366:
+  src\r6\scripts\new Splat\OnHit.reds:367:  // Never apply arcade scaling for explosions or vehicle impacts
+  src\r6\scripts\new Splat\OnHit.reds:368:  let at: gamedataAttackType = ad.GetAttackType();
+  src\r6\scripts\new Splat\OnHit.reds:369:  if ad.HasFlag(hitFlag.VehicleImpact) {
+  src\r6\scripts\new Splat\OnHit.reds:370:    return 0.0;
+  src\r6\scripts\new Splat\OnHit.reds:371:  }
+  src\r6\scripts\new Splat\OnHit.reds:372:  if AttackData.IsExplosion(at) || AttackData.IsAreaOfEffect(at) || 
+ad.HasFlag(hitFlag.Explosion) {
+  src\r6\scripts\new Splat\OnHit.reds:373:    return 0.0;
+  src\r6\scripts\new Splat\OnHit.reds:374:  }
+  src\r6\scripts\new Splat\OnHit.reds:375:
+  src\r6\scripts\new Splat\OnHit.reds:376:  let w: ref<WeaponObject> = ad.GetWeapon() as WeaponObject;
+  src\r6\scripts\new Splat\OnHit.reds:377:
+  src\r6\scripts\new Splat\OnHit.reds:378:  // No WeaponObject includes thrown items, but true melee here is 
+fists/Gorilla.
+  src\r6\scripts\new Splat\OnHit.reds:379:  if !IsDefined(w) {
+  src\r6\scripts\new Splat\OnHit.reds:380:    if RFC_ArcadeIsMeleeAttack(ad) {
+  src\r6\scripts\new Splat\OnHit.reds:421:  return true;
+  src\r6\scripts\new Splat\OnHit.reds:422:}
+  src\r6\scripts\new Splat\OnHit.reds:423:
+> src\r6\scripts\new Splat\OnHit.reds:424:private func RFC_ArcadeApplyOnHit(
+  src\r6\scripts\new Splat\OnHit.reds:425:  npc: ref<NPCPuppet>,
+  src\r6\scripts\new Splat\OnHit.reds:426:  hitPos: Vector4,
+  src\r6\scripts\new Splat\OnHit.reds:427:  srcPos: Vector4,
+  src\r6\scripts\new Splat\OnHit.reds:428:  cfg: RFCConfig
+  src\r6\scripts\new Splat\OnHit.reds:429:) -> Void {
+  src\r6\scripts\new Splat\OnHit.reds:430:  if !IsDefined(npc) {
+  src\r6\scripts\new Splat\OnHit.reds:431:    return;
+  src\r6\scripts\new Splat\OnHit.reds:432:  }
+  src\r6\scripts\new Splat\OnHit.reds:433:
+  src\r6\scripts\new Splat\OnHit.reds:434:  if RFC_TimeDilationBlocksImpulses(npc, cfg) {
+  src\r6\scripts\new Splat\OnHit.reds:435:    return;
+  src\r6\scripts\new Splat\OnHit.reds:436:  }
+  src\r6\scripts\new Splat\OnHit.reds:437:
+  src\r6\scripts\new Splat\OnHit.reds:438:  if RFC_IsVehicleContext(npc) {
+  src\r6\scripts\new Splat\OnHit.reds:439:    return;
+  src\r6\scripts\new Splat\OnHit.reds:440:  }
+  src\r6\scripts\new Splat\OnHit.reds:441:
+  src\r6\scripts\new Splat\OnHit.reds:442:  if npc.IsDead() {
+  src\r6\scripts\new Splat\OnHit.reds:443:    return;
+  src\r6\scripts\new Splat\OnHit.reds:444:  }
+  src\r6\scripts\new Splat\OnHit.reds:540:    npc,
+  src\r6\scripts\new Splat\OnHit.reds:541:    CreateRagdollApplyImpulseEvent(applyPos, impulse, r),
+  src\r6\scripts\new Splat\OnHit.reds:542:    // The impulse must arrive after the ragdoll bodies exist. Scheduling 
+both
+> src\r6\scripts\new Splat\OnHit.reds:543:    // events for the same frame made Arcade OnHit look completely disabled.
+  src\r6\scripts\new Splat\OnHit.reds:544:    MaxF(RFC_ClampT(cfg.arcadeImpulseDelay), rfcForceDelay + 0.040),
+  src\r6\scripts\new Splat\OnHit.reds:545:    false
+  src\r6\scripts\new Splat\OnHit.reds:546:  );
+  src\r6\scripts\new Splat\OnHit.reds:547:
+  src\r6\scripts\new Splat\OnHit.reds:548:  if cfg.arcadeBulletCooldown > 0.0 {
+  src\r6\scripts\new Splat\OnHit.reds:549:    npc.m_RFC_ArcadeKickDone = true;
+  src\r6\scripts\new Splat\OnHit.reds:550:    npc.m_RFC_ArcadeDeathT = 
+EngineTime.ToFloat(GameInstance.GetSimTime(npc.GetGame()));
+  src\r6\scripts\new Splat\OnHit.reds:551:  } else {
+  src\r6\scripts\new Splat\OnHit.reds:552:    npc.m_RFC_ArcadeKickDone = false;
+  src\r6\scripts\new Splat\OnHit.reds:553:    npc.m_RFC_ArcadeDeathT = 0.0;
+  src\r6\scripts\new Splat\OnHit.reds:554:  }
+  src\r6\scripts\new Splat\OnHit.reds:555:}
+  src\r6\scripts\new Splat\OnHit.reds:556:
+  src\r6\scripts\new Splat\OnHit.reds:557:@addMethod(NPCPuppet)
+  src\r6\scripts\new Splat\OnHit.reds:558:protected cb func OnRFC_HitReactionGuardEvent(evt: 
+ref<RFC_HitReactionGuardEvent>) -> Bool {
+  src\r6\scripts\new Splat\OnHit.reds:559:  if !IsDefined(evt) || RFC_IsVehicleContext(this) {
+  src\r6\scripts\new Splat\OnHit.reds:560:    return true;
+  src\r6\scripts\new Splat\OnHit.reds:561:  }
+  src\r6\scripts\new Splat\OnHit.reds:562:
+  src\r6\scripts\new Splat\OnHit.reds:563:  let cfg: RFCConfig = RFC.Cfg();
+  src\r6\scripts\new Splat\OnHit.reds:567:
+  src\r6\scripts\new Splat\OnHit.reds:568:  // Arcade is independent from reaction suppression and timed cutoff.
+  src\r6\scripts\new Splat\OnHit.reds:569:  if evt.allowArcadeImpulse
+> src\r6\scripts\new Splat\OnHit.reds:570:    && cfg.arcadeOnHitEnabled
+  src\r6\scripts\new Splat\OnHit.reds:571:    && RFC_ArcadeChannelEnabled(evt.attackData, cfg) {
+  src\r6\scripts\new Splat\OnHit.reds:572:    this.rfc_lastAttack = evt.attackData;
+> src\r6\scripts\new Splat\OnHit.reds:573:    RFC_ArcadeApplyOnHit(this, evt.hitPos, evt.srcPos, cfg);
+  src\r6\scripts\new Splat\OnHit.reds:574:  }
+  src\r6\scripts\new Splat\OnHit.reds:575:
+  src\r6\scripts\new Splat\OnHit.reds:576:  // Timed cutoff owns only ordinary live reactions. Incapacitation and death
+  src\r6\scripts\new Splat\OnHit.reds:577:  // remain with their dedicated lifecycle pipelines.
+  src\r6\scripts\new Splat\OnHit.reds:578:  if !evt.allowAnimationCut
+  src\r6\scripts\new Splat\OnHit.reds:579:    || cfg.hitReactionsDisabled
+  src\r6\scripts\new Splat\OnHit.reds:580:    || !cfg.hitReactionCutoffEnabled
+  src\r6\scripts\new Splat\OnHit.reds:581:    || this.IsDead()
+  src\r6\scripts\new Splat\OnHit.reds:582:    || RFC_IsIncapacitatedTransition(this) {
+  src\r6\scripts\new Splat\OnHit.reds:583:    return true;
+  src\r6\scripts\new Splat\OnHit.reds:584:  }
+  src\r6\scripts\new Splat\OnHit.reds:585:
+  src\r6\scripts\new Splat\OnHit.reds:586:  let cutEvt: ref<RFC_HitReactionCutEvent> = new RFC_HitReactionCutEvent();
+  src\r6\scripts\new Splat\OnHit.reds:587:  let cutDS: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
+  src\r6\scripts\new Splat\OnHit.reds:588:  if IsDefined(cutDS) {
+  src\r6\scripts\new Splat\OnHit.reds:589:    cutDS.DelayEvent(this, cutEvt, RFC_ClampT(cfg.hitReactionCutoffDelay), 
+false);
+  src\r6\scripts\new Splat\OnHit.reds:590:  } else {
+  src\r6\scripts\new Splat\OnHit.reds:591:    this.QueueEvent(cutEvt);
+  src\r6\scripts\new Splat\OnHit.reds:592:  }
+  src\r6\scripts\new Splat\OnHit.reds:593:  return true;
+  src\r6\scripts\new Splat\OnHit.reds:1009:  ds.DelayEvent(puppet, e, MaxF(0.0, cfg.grenadeKickCallDelay), false);
+  src\r6\scripts\new Splat\OnHit.reds:1010:}
+  src\r6\scripts\new Splat\OnHit.reds:1011:
+> src\r6\scripts\new Splat\OnHit.reds:1012:// One authoritative explosion/AOE classifier for every regular OnHit lane.
+  src\r6\scripts\new Splat\OnHit.reds:1013:// Regular bullet jolts, Arcade bullet push, Injury Shock, Head Falls, Body 
+Falls,
+  src\r6\scripts\new Splat\OnHit.reds:1014:// and situation death impulses must never piggyback on an explosion hit.
+  src\r6\scripts\new Splat\OnHit.reds:1015:private func RFC_IsGrenadeExplosion(ad: ref<AttackData>) -> Bool {
+  src\r6\scripts\new Splat\OnHit.reds:1016:  if !IsDefined(ad) {
+  src\r6\scripts\new Splat\OnHit.reds:1017:    return false;
+  src\r6\scripts\new Splat\OnHit.reds:1018:  }
+  src\r6\scripts\new Splat\OnHit.reds:1019:
+  src\r6\scripts\new Splat\OnHit.reds:1020:  let at: gamedataAttackType = ad.GetAttackType();
+  src\r6\scripts\new Splat\OnHit.reds:1021:  return Equals(at, gamedataAttackType.PressureWave)
+  src\r6\scripts\new Splat\OnHit.reds:1022:    || AttackData.IsExplosion(at)
+  src\r6\scripts\new Splat\OnHit.reds:1023:    || AttackData.IsAreaOfEffect(at)
+  src\r6\scripts\new Splat\OnHit.reds:1024:    || ad.HasFlag(hitFlag.Explosion);
+  src\r6\scripts\new Splat\OnHit.reds:1025:}
+  src\r6\scripts\new Splat\OnHit.reds:1026:
+  src\r6\scripts\new Splat\OnHit.reds:1027:
+  src\r6\scripts\new Splat\OnHit.reds:1028:
+  src\r6\scripts\new Splat\OnHit.reds:1029:private func RFC_SHHJM_ResolveOrDeadFallback(p: ref<NPCPuppet>, evt: 
+ref<gameHitEvent>, hitPos: Vector4, s: ref<SHHJM_Settings>, out part: Int32, out anchorPos: Vector4) -> Bool {
+  src\r6\scripts\new Splat\OnHit.reds:1030:  // Prefer the game's authoritative hit-reaction zone. This directly 
+separates
+  src\r6\scripts\new Splat\OnHit.reds:1031:  // Head, Torso, LeftArm, RightArm, LeftLeg, and RightLeg instead of 
+relying
+  src\r6\scripts\new Splat\OnHit.reds:1032:  // only on proximity after the corpse has rotated or slid.
+  src\r6\scripts\new Splat\OnHit.reds:1062:}
+  src\r6\scripts\new Splat\OnHit.reds:1063:
+  src\r6\scripts\new Splat\OnHit.reds:1064:@wrapMethod(NPCPuppet)
+> src\r6\scripts\new Splat\OnHit.reds:1065:protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
+  src\r6\scripts\new Splat\OnHit.reds:1066:  let res: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1067:  let c: RFCConfig = RFC.Cfg();
+  src\r6\scripts\new Splat\OnHit.reds:1068:  let s: ref<SHHJM_Settings>;
+  src\r6\scripts\new Splat\OnHit.reds:1069:  let hitPos: Vector4;
+  src\r6\scripts\new Splat\OnHit.reds:1070:  let shhjmSrcPos: Vector4;
+  src\r6\scripts\new Splat\OnHit.reds:1071:  let anchorPos: Vector4;
+  src\r6\scripts\new Splat\OnHit.reds:1072:  let part: Int32;
+  src\r6\scripts\new Splat\OnHit.reds:1073:  let shhjmHardBlock: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1074:  let shhjmQueued: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1075:  let shhjmRuntimeEnabled: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1076:  let injuryShockPart: Int32;
+  src\r6\scripts\new Splat\OnHit.reds:1077:  let injuryShockAnchor: Vector4;
+  src\r6\scripts\new Splat\OnHit.reds:1078:  let injuryShockQueued: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1079:  let arcadeRiderBikeToppleArmed: Bool;
+  src\r6\scripts\new Splat\OnHit.reds:1080:
+  src\r6\scripts\new Splat\OnHit.reds:1081:  if !IsDefined(evt) {
+  src\r6\scripts\new Splat\OnHit.reds:1082:    return wrappedMethod(evt);
+  src\r6\scripts\new Splat\OnHit.reds:1083:  }
+  src\r6\scripts\new Splat\OnHit.reds:1084:  // Preserve damage and the original hit callback, but suppress every SPLAT
+  src\r6\scripts\new Splat\OnHit.reds:1085:  // follow-up while time dilation owns the frame. Vanilla physical impulse 
+is
+  src\r6\scripts\new Splat\OnHit.reds:1098:  // add seated arcade/ragdoll impulses while the vehicle seat/workspot 
+still
+  src\r6\scripts\new Splat\OnHit.reds:1099:  // owns the puppet.
+  src\r6\scripts\new Splat\OnHit.reds:1100:  //
+> src\r6\scripts\new Splat\OnHit.reds:1101:  // Car/window/body hits are still handled separately by 
+VehicleObject.OnHit.
+  src\r6\scripts\new Splat\OnHit.reds:1102:  // The v8 TweakDB DriverKill block remains in place so shooting the car 
+itself
+  src\r6\scripts\new Splat\OnHit.reds:1103:  // does not create the synthetic Attacks.DriverKill puppet hit too early.
+  src\r6\scripts\new Splat\OnHit.reds:1104:  if RFC_IsVehicleContext(this) {
+> src\r6\scripts\new Splat\OnHit.reds:1105:    // VehicleObject.OnHit is not guaranteed when the bullet lands directly 
+on
+  src\r6\scripts\new Splat\OnHit.reds:1106:    // the rider. Arm the same Arnold motorcycle topple before damage/death 
+can
+  src\r6\scripts\new Splat\OnHit.reds:1107:    // clear the mount, then resolve it after vanilla processing. A lethal 
+hit
+  src\r6\scripts\new Splat\OnHit.reds:1108:    // is normally consumed inside MotorcycleDeathAnimation_CompileFix; the
+  src\r6\scripts\new Splat\OnHit.reds:1109:    // post-wrap branch is an idempotent fallback.
+  src\r6\scripts\new Splat\OnHit.reds:1110:    arcadeRiderBikeToppleArmed = RFC_VehArmArcadeRiderBikeTopple(this, evt, 
+c);
+  src\r6\scripts\new Splat\OnHit.reds:1111:    res = wrappedMethod(evt);
+  src\r6\scripts\new Splat\OnHit.reds:1112:
+  src\r6\scripts\new Splat\OnHit.reds:1113:    if arcadeRiderBikeToppleArmed && this.rfc_arcadeRiderBikeToppleArmed {
+  src\r6\scripts\new Splat\OnHit.reds:1114:      if this.IsDead() {
+  src\r6\scripts\new Splat\OnHit.reds:1115:        if RFC_VehConsumeArcadeRiderBikeTopple(this, true, c) {
+  src\r6\scripts\new Splat\OnHit.reds:1116:          
+this.QueueEvent(CreateForceRagdollEvent(n"Splat_ArcadeRiderBikeFallback"));
+  src\r6\scripts\new Splat\OnHit.reds:1117:        }
+  src\r6\scripts\new Splat\OnHit.reds:1118:      } else {
+  src\r6\scripts\new Splat\OnHit.reds:1119:        RFC_VehConsumeArcadeRiderBikeTopple(this, false, c);
+  src\r6\scripts\new Splat\OnHit.reds:1120:      }
+  src\r6\scripts\new Splat\OnHit.reds:1121:    }
+  src\r6\scripts\new Splat\OnHit.reds:1122:    return res;
+  src\r6\scripts\new Splat\OnHit.reds:1123:  }
+  src\r6\scripts\new Splat\OnHit.reds:1124:
+  src\r6\scripts\new Splat\OnHit.reds:1125:  // Capture the current attack and arm the explosion isolation window 
+BEFORE
+> src\r6\scripts\new Splat\OnHit.reds:1126:  // vanilla OnHit runs. A lethal hit can enter NPCPuppet.OnDeath from 
+inside
+  src\r6\scripts\new Splat\OnHit.reds:1127:  // wrappedMethod(evt); marking afterward is too late and lets the ordinary
+  src\r6\scripts\new Splat\OnHit.reds:1128:  // Head/Body/Situation/Arcade/Jolt death lanes run on an explosion.
+  src\r6\scripts\new Splat\OnHit.reds:1129:  if IsDefined(evt.attackData) {
+  src\r6\scripts\new Splat\OnHit.reds:1130:    this.rfc_lastAttack = evt.attackData;
+  src\r6\scripts\new Splat\OnHit.reds:1131:    if RFC_IsGrenadeExplosion(evt.attackData) {
+  src\r6\scripts\new Splat\OnHit.reds:1132:      RFC_Explode_MarkAt(this, evt.hitPosition, 2.00);
+  src\r6\scripts\new Splat\OnHit.reds:1133:    } else {
+  src\r6\scripts\new Splat\OnHit.reds:1134:      // A later bullet/melee hit must immediately end the old explosion
+  src\r6\scripts\new Splat\OnHit.reds:1135:      // quarantine. Otherwise the two-second marker misclassifies that new
+  src\r6\scripts\new Splat\OnHit.reds:1136:      // lethal hit and bypasses the normal death/workspot handoff.
+  src\r6\scripts\new Splat\OnHit.reds:1137:      RFC_Explode_Clear(this);
+  src\r6\scripts\new Splat\OnHit.reds:1138:    }
+  src\r6\scripts\new Splat\OnHit.reds:1139:  } else {
+  src\r6\scripts\new Splat\OnHit.reds:1140:    RFC_Explode_Clear(this);
+  src\r6\scripts\new Splat\OnHit.reds:1141:  }
+  src\r6\scripts\new Splat\OnHit.reds:1142:
+  src\r6\scripts\new Splat\OnHit.reds:1143:  // SHHJM pre-wrap capture. This is now hard-gated by the Bullet Jolts
+  src\r6\scripts\new Splat\OnHit.reds:1144:  // runtime switch and the visible Enable Bullet Jolts toggle, so OFF 
+cannot
+  src\r6\scripts\new Splat\OnHit.reds:1145:  // leak delayed ground jolts from pending SHHJM events.
+  src\r6\scripts\new Splat\OnHit.reds:1146:  s = SPLATSettingsRuntime.Jolts();
+  src\r6\scripts\new Splat\OnHit.reds:1260:  }
+  src\r6\scripts\new Splat\OnHit.reds:1261:
+  src\r6\scripts\new Splat\OnHit.reds:1262:  let allowArcadeImpulse: Bool = RFC_ArcadeChannelEnabled(ad, cfg)
+> src\r6\scripts\new Splat\OnHit.reds:1263:    && cfg.arcadeOnHitEnabled
+  src\r6\scripts\new Splat\OnHit.reds:1264:    && (!cfg.arcadePlayerOnly || RFC_IsPlayerAttack(this, ad))
+  src\r6\scripts\new Splat\OnHit.reds:1265:    && RFC_ArcadeAllowedByWeapon(ad, cfg);
+  src\r6\scripts\new Splat\OnHit.reds:1266:  let isPlayerBulletReactionSource: Bool = RFC_IsPlayerAttack(this, ad)
+  src\r6\scripts\new Splat\OnHit.reds:1267:    && RFC_IsBulletReactionCutSource(ad);
+  src\r6\scripts\new Splat\OnHit.reds:1268:  let allowAnimationCut: Bool = isPlayerBulletReactionSource
+  src\r6\scripts\new Splat\OnHit.reds:1269:    && cfg.hitReactionCutoffEnabled
+  src\r6\scripts\new Splat\OnHit.reds:1270:    && !cfg.hitReactionsDisabled;
+  src\r6\scripts\new Splat\OnHit.reds:1271:
+  src\r6\scripts\new Splat\OnHit.reds:1272:  // Injury Shock is separate from normal reaction cutoff. Arcade remains
+  src\r6\scripts\new Splat\OnHit.reds:1273:  // independent and may apply on the same hit that queues the later 
+collapse.
+  src\r6\scripts\new Splat\OnHit.reds:1274:  if cfg.injuryShockEnabled
+  src\r6\scripts\new Splat\OnHit.reds:1275:    && isPlayerBulletReactionSource
+  src\r6\scripts\new Splat\OnHit.reds:1276:    && !this.IsDead()
+  src\r6\scripts\new Splat\OnHit.reds:1277:    && !this.IsIncapacitated()
+  src\r6\scripts\new Splat\OnHit.reds:1278:    && !this.m_RFC_InjuryShockPending
+  src\r6\scripts\new Splat\OnHit.reds:1279:    && cfg.injuryShockChance > 0.0
+  src\r6\scripts\new Splat\OnHit.reds:1280:    && SHHJM_ResolveBodyPart(this, hitPos, injuryShockPart, 
+injuryShockAnchor)
+  src\r6\scripts\new Splat\OnHit.reds:1281:    && injuryShockPart != 0
+  src\r6\scripts\new Splat\OnHit.reds:1282:    && (!cfg.injuryShockLimbsOnly || injuryShockPart >= 2)
+  src\r6\scripts\new Splat\OnHit.reds:1283:    && RandF() < cfg.injuryShockChance {
+  src\r6\scripts\new Splat\DeathRouter.reds:53:}
+  src\r6\scripts\new Splat\DeathRouter.reds:54:
+  src\r6\scripts\new Splat\DeathRouter.reds:55:// 
+─────────────────────────────────────────────────────────────────────────────
+> src\r6\scripts\new Splat\DeathRouter.reds:56:// OnDeath: branch routing + gravity-burst impulses everywhere
+  src\r6\scripts\new Splat\DeathRouter.reds:57:// 
+─────────────────────────────────────────────────────────────────────────────
+  src\r6\scripts\new Splat\DeathRouter.reds:58:@wrapMethod(NPCPuppet)
+> src\r6\scripts\new Splat\DeathRouter.reds:59:protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
+  src\r6\scripts\new Splat\DeathRouter.reds:60:  let c: RFCConfig = RFC.Cfg();
+  src\r6\scripts\new Splat\DeathRouter.reds:61:  let ds: ref<DelaySystem> = 
+GameInstance.GetDelaySystem(this.GetGame());
+  src\r6\scripts\new Splat\DeathRouter.reds:62:  let timeDilationBlocksImpulses: Bool;
+  src\r6\scripts\new Splat\DeathRouter.reds:63:
+  src\r6\scripts\new Splat\DeathRouter.reds:64:  RFC_RandomResetProfile(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:65:  c = RFC_RandomizeConfig(this, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:66:  timeDilationBlocksImpulses = RFC_TimeDilationBlocksImpulses(this, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:67:
+  src\r6\scripts\new Splat\DeathRouter.reds:68:  RFC_ResetDeadRagdollActivationLatch(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:69:
+  src\r6\scripts\new Splat\DeathRouter.reds:70:  if RFC_IsVehicleContext(this) {
+  src\r6\scripts\new Splat\DeathRouter.reds:71:    let vehicleDeathResult: Bool = wrappedMethod(evt);
+  src\r6\scripts\new Splat\DeathRouter.reds:72:    RFC_CleanupFormerVehicleOccupantAfterDeath(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:73:    return vehicleDeathResult;
+  src\r6\scripts\new Splat\DeathRouter.reds:74:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:75:
+  src\r6\scripts\new Splat\DeathRouter.reds:76:  let isStealth: Bool = RFC_IsStealthOrFinisherEx(this, 
+c.blackwallCountsAsStealth);
+  src\r6\scripts\new Splat\DeathRouter.reds:77:  // Vanilla / rigs-only still needs the old death-lane cut. The 
+known-good
+  src\r6\scripts\new Splat\DeathRouter.reds:78:  // pipeline allowed the original death first, then immediately forced 
+the
+  src\r6\scripts\new Splat\DeathRouter.reds:79:  // animation-to-ragdoll handoff so the native settle reaction could 
+not loop.
+  src\r6\scripts\new Splat\DeathRouter.reds:87:  // death callback. The old early return skipped SPLAT's workspot 
+release and
+  src\r6\scripts\new Splat\DeathRouter.reds:88:  // dedicated explosion kick, which could leave workspot victims stuck 
+and
+  src\r6\scripts\new Splat\DeathRouter.reds:89:  // visually unharmed even though the damage pipeline had completed.
+> src\r6\scripts\new Splat\DeathRouter.reds:90:  let isExplosionDeath: Bool = RFC_Explode_IsRecent(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:91:
+  src\r6\scripts\new Splat\DeathRouter.reds:92:
+  src\r6\scripts\new Splat\DeathRouter.reds:93:  // STEALTH / FINISHER / (optional) BLACKWALL
+  src\r6\scripts\new Splat\DeathRouter.reds:94:  if isStealth {
+  src\r6\scripts\new Splat\DeathRouter.reds:95:    // Keep cinematic kills intact (no cut)
+  src\r6\scripts\new Splat\DeathRouter.reds:96:    if c.respectCinematics { return wrappedMethod(evt); }
+  src\r6\scripts\new Splat\DeathRouter.reds:97:
+  src\r6\scripts\new Splat\DeathRouter.reds:98:    let resStealth: Bool = wrappedMethod(evt);
+  src\r6\scripts\new Splat\DeathRouter.reds:99:
+  src\r6\scripts\new Splat\DeathRouter.reds:100:    if timeDilationBlocksImpulses {
+  src\r6\scripts\new Splat\DeathRouter.reds:101:      // ForceRagdoll is the animation-to-physics handoff, not an 
+added impulse.
+  src\r6\scripts\new Splat\DeathRouter.reds:102:      // Slow motion suppresses SPLAT force vectors but must not 
+restore a vanilla
+  src\r6\scripts\new Splat\DeathRouter.reds:103:      // death animation when the user has chosen ragdoll deaths.
+  src\r6\scripts\new Splat\DeathRouter.reds:104:      RFC_ScheduleCut(ds, this, 0.0);
+  src\r6\scripts\new Splat\DeathRouter.reds:105:    } else if c.stealthRagdollsEnabled {
+  src\r6\scripts\new Splat\DeathRouter.reds:106:      RFC_Stealth_SchedForceRagdoll(this, c.stealthRagdollDelay);
+  src\r6\scripts\new Splat\DeathRouter.reds:107:    }
+  src\r6\scripts\new Splat\DeathRouter.reds:108:
+  src\r6\scripts\new Splat\DeathRouter.reds:109:    return resStealth;
+  src\r6\scripts\new Splat\DeathRouter.reds:110:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:126:
+  src\r6\scripts\new Splat\DeathRouter.reds:127:  // Prefer explicit locomotion tags when available, with planar speed 
+as the fallback.
+  src\r6\scripts\new Splat\DeathRouter.reds:128:  // This keeps strafing/backward motion valid and prevents the 
+Running/Walking lane
+> src\r6\scripts\new Splat\DeathRouter.reds:129:  // from silently missing NPCs whose velocity is sampled late during 
+OnDeath.
+  src\r6\scripts\new Splat\DeathRouter.reds:130:  let isRunLive: Bool = planar > 1.55 || RFC_IsRunning(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:131:  let isWalkLive: Bool = !isRunLive && (
+  src\r6\scripts\new Splat\DeathRouter.reds:132:    RFC_IsClearlyWalking(this) ||
+  src\r6\scripts\new Splat\DeathRouter.reds:133:    RFC_IsWalking(this) ||
+  src\r6\scripts\new Splat\DeathRouter.reds:134:    (planar > 0.12 && planar <= 1.55)
+  src\r6\scripts\new Splat\DeathRouter.reds:135:  );
+  src\r6\scripts\new Splat\DeathRouter.reds:136:
+  src\r6\scripts\new Splat\DeathRouter.reds:137:  // Stamp "recent" windows for the router to use later
+  src\r6\scripts\new Splat\DeathRouter.reds:138:  if isRunLive {
+  src\r6\scripts\new Splat\DeathRouter.reds:139:    this.rfc_runLastSeen = nowT;
+  src\r6\scripts\new Splat\DeathRouter.reds:140:  } else if isWalkLive {
+  src\r6\scripts\new Splat\DeathRouter.reds:141:    this.rfc_walkLastSeen = nowT;
+  src\r6\scripts\new Splat\DeathRouter.reds:142:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:143:
+> src\r6\scripts\new Splat\DeathRouter.reds:144:  // Restore the shared death-lane state before vanilla OnDeath can 
+queue
+  src\r6\scripts\new Splat\DeathRouter.reds:145:  // ragdoll/impact callbacks. Head Falls and Body Falls both read 
+these gates.
+  src\r6\scripts\new Splat\DeathRouter.reds:146:  RFC_ResetMasterDeathChance(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:147:  RFC_MasterDeathChancePass(this, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:148:  GS_ClearSituationSnap(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:149:  GS_CaptureSituationSnap(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:150:  RFC_ApplyDeathOverrideGates(this, c);
+> src\r6\scripts\new Splat\DeathRouter.reds:151:  let arcadeDeathOwnsFall: Bool = !isExplosionDeath && 
+RFC_DeathImpulseRouter.ShouldOwnArcadeDeath(this, c);
+> src\r6\scripts\new Splat\DeathRouter.reds:152:  if isExplosionDeath || arcadeDeathOwnsFall || 
+timeDilationBlocksImpulses {
+> src\r6\scripts\new Splat\DeathRouter.reds:153:    // The original OnDeath still runs, but no Head, Body, 
+Situational, Jolt,
+  src\r6\scripts\new Splat\DeathRouter.reds:154:    // Arcade, or settle lane may arm during its nested ragdoll 
+callbacks.
+  src\r6\scripts\new Splat\DeathRouter.reds:155:    RFC_BlockAllDeathImpulseLanes(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:156:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:157:
+  src\r6\scripts\new Splat\DeathRouter.reds:158:  // A fresh death must not inherit completed Head Falls/rebound state 
+from an
+  src\r6\scripts\new Splat\DeathRouter.reds:159:  // earlier incapacitation or ragdoll transition.
+  src\r6\scripts\new Splat\DeathRouter.reds:160:  this.hisDidForwardGround = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:161:  this.hisDidBackGround = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:162:  this.hisDidForwardRebound = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:163:  this.hisDidBackRebound = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:164:  this.hisHeadImpulseFired = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:165:  this.hisBackHeadImpulseFired = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:166:  this.hisReboundArmed = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:167:  this.hisReboundStartSeeded = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:168:  this.hisDeathStartTime = nowT;
+  src\r6\scripts\new Splat\DeathRouter.reds:169:
+  src\r6\scripts\new Splat\DeathRouter.reds:170:  let res: Bool = wrappedMethod(evt);
+  src\r6\scripts\new Splat\DeathRouter.reds:171:
+  src\r6\scripts\new Splat\DeathRouter.reds:172:  // Time dilation owns only the added impulse lanes. Preserve the 
+normal SPLAT
+  src\r6\scripts\new Splat\DeathRouter.reds:173:  // death-animation cutoff so deaths still become ragdolls, then stop 
+before
+  src\r6\scripts\new Splat\DeathRouter.reds:183:  // Explosion deaths must keep the game's real damage/death callback, 
+release
+  src\r6\scripts\new Splat\DeathRouter.reds:184:  // ordinary non-vehicle workspots, and then use only SPLAT's 
+dedicated
+  src\r6\scripts\new Splat\DeathRouter.reds:185:  // explosion controls. Returning here prevents all regular death 
+impulses.
+> src\r6\scripts\new Splat\DeathRouter.reds:186:  if isExplosionDeath {
+  src\r6\scripts\new Splat\DeathRouter.reds:187:    if RFC_IsWorkspotOrPerch(this) {
+  src\r6\scripts\new Splat\DeathRouter.reds:188:      RFC_TryStopWorkspot(this);
+  src\r6\scripts\new Splat\DeathRouter.reds:189:      RFC_ScheduleCut(ds, this, 0.0);
+  src\r6\scripts\new Splat\DeathRouter.reds:190:    }
+  src\r6\scripts\new Splat\DeathRouter.reds:191:
+  src\r6\scripts\new Splat\DeathRouter.reds:192:    if c.grenadeEnabled && IsDefined(ds) && c.grenadeKickRadius > 0.0 {
+  src\r6\scripts\new Splat\DeathRouter.reds:193:      let explosionKick: ref<RFC_TryGrenadeKickEvent> = new 
+RFC_TryGrenadeKickEvent();
+  src\r6\scripts\new Splat\DeathRouter.reds:194:      explosionKick.hitPos = this.rfcExplodePos;
+  src\r6\scripts\new Splat\DeathRouter.reds:195:      ds.DelayEvent(this, explosionKick, 
+RFC_ClampT(c.grenadeKickCallDelay), false);
+  src\r6\scripts\new Splat\DeathRouter.reds:196:    }
+  src\r6\scripts\new Splat\DeathRouter.reds:197:
+  src\r6\scripts\new Splat\DeathRouter.reds:198:    return res;
+  src\r6\scripts\new Splat\DeathRouter.reds:199:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:200:
+  src\r6\scripts\new Splat\DeathRouter.reds:201:  // Restore named-mode Arcade On Death after the workspot-safe 
+vanilla method order.
+  src\r6\scripts\new Splat\DeathRouter.reds:202:  // This reads the final RFC.Cfg() values, so Realism Plus / Dirty 
+Harry / Arnold
+  src\r6\scripts\new Splat\DeathRouter.reds:203:  // mode overrides win over Realism Custom/base settings.
+> src\r6\scripts\new Splat\DeathRouter.reds:204:  let arcadeDeathHandled: Bool = 
+RFC_DeathImpulseRouter.RunArcadeOnDeathOnly(this, evt, ds, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:205:
+  src\r6\scripts\new Splat\DeathRouter.reds:206:  // Death anim selection
+  src\r6\scripts\new Splat\DeathRouter.reds:207:  let useDeathAnim: Bool = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:208:
+  src\r6\scripts\new Splat\DeathRouter.reds:209:  if c.skipDeathAnim {
+  src\r6\scripts\new Splat\DeathRouter.reds:210:    useDeathAnim = false;
+  src\r6\scripts\new Splat\DeathRouter.reds:211:  } else {
+  src\r6\scripts\new Splat\DeathRouter.reds:212:if c.deathAnimChance > 0.0 && RandRangeF(0.0, 100.0) < 
+c.deathAnimChance {
+  src\r6\scripts\new Splat\DeathRouter.reds:213:  useDeathAnim = true;
+  src\r6\scripts\new Splat\DeathRouter.reds:214:}
+  src\r6\scripts\new Splat\DeathRouter.reds:215:
+  src\r6\scripts\new Splat\DeathRouter.reds:216:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:217:
+  src\r6\scripts\new Splat\DeathRouter.reds:218:  if useDeathAnim {
+  src\r6\scripts\new Splat\DeathRouter.reds:219:    if c.animCompatDelay > 0.0 {
+  src\r6\scripts\new Splat\DeathRouter.reds:220:      RFC_ScheduleCut(ds, this, c.animCompatDelay);
+  src\r6\scripts\new Splat\DeathRouter.reds:221:    }
+  src\r6\scripts\new Splat\DeathRouter.reds:222:  } else {
+  src\r6\scripts\new Splat\DeathRouter.reds:223:    // Restored from the known-good r6(15) route. When no death 
+animation is
+> src\r6\scripts\new Splat\DeathRouter.reds:224:    // selected, cut immediately after vanilla OnDeath instead of 
+leaving the
+  src\r6\scripts\new Splat\DeathRouter.reds:225:    // native post-hit/death settle lane alive.
+  src\r6\scripts\new Splat\DeathRouter.reds:226:    RFC_ScheduleCut(ds, this, 0.0);
+  src\r6\scripts\new Splat\DeathRouter.reds:227:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:228:
+  src\r6\scripts\new Splat\DeathRouter.reds:229:  // Arcade On Death owns the lethal impulse when it is enabled. Do 
+not let
+  src\r6\scripts\new Splat\DeathRouter.reds:230:  // Head, Body, Situational or Tumble schedule a second competing 
+impulse.
+  src\r6\scripts\new Splat\DeathRouter.reds:231:  if arcadeDeathHandled {
+  src\r6\scripts\new Splat\DeathRouter.reds:232:    return res;
+  src\r6\scripts\new Splat\DeathRouter.reds:233:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:234:  // Feature gates
+  src\r6\scripts\new Splat\DeathRouter.reds:235:  let gVanilla:          Bool = c.vanillaMode;
+  src\r6\scripts\new Splat\DeathRouter.reds:236:  let gStandActive:      Bool = !gVanilla && c.standEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:237:  let gRunActive:        Bool = !gVanilla && c.runEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:238:  let gCowerActive:      Bool = !gVanilla && c.cowerEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:239:  let gStairsActive:     Bool = !gVanilla && c.stairsEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:240:  let gWSActive:         Bool = !gVanilla && c.wsStandEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:241:  let gSettleActive:     Bool = !gVanilla && c.settleEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:242:  let gGrenadeActive:    Bool = !gVanilla && c.grenadeEnabled;
+  src\r6\scripts\new Splat\DeathRouter.reds:243:
+  src\r6\scripts\new Splat\DeathRouter.reds:244:  let sitOverrideForward: Bool = GS_CurrentOverrideForward(this, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:262:  // and the menu was wired, but neither Head Forward nor its rebound 
+lane was
+  src\r6\scripts\new Splat\DeathRouter.reds:263:  // scheduled on death. Keep it after wrappedMethod/cut selection and 
+before
+  src\r6\scripts\new Splat\DeathRouter.reds:264:  // the situation branches begin returning.
+> src\r6\scripts\new Splat\DeathRouter.reds:265:  RFC_HeadFallsLogicImpulse.RunOnDeathHeadFalls(this, ds, c);
+  src\r6\scripts\new Splat\DeathRouter.reds:266:
+  src\r6\scripts\new Splat\DeathRouter.reds:267:  if gGrenadeActive && IsDefined(ds) && RFC_Explode_IsRecent(this) && 
+c.grenadeKickRadius > 0.0 {
+  src\r6\scripts\new Splat\DeathRouter.reds:268:    let e: ref<RFC_TryGrenadeKickEvent> = new 
+RFC_TryGrenadeKickEvent();
+  src\r6\scripts\new Splat\DeathRouter.reds:269:    e.hitPos = this.rfcExplodePos;
+  src\r6\scripts\new Splat\DeathRouter.reds:270:    ds.DelayEvent(this, e, RFC_ClampT(c.grenadeKickCallDelay), false);
+  src\r6\scripts\new Splat\DeathRouter.reds:271:  }
+  src\r6\scripts\new Splat\DeathRouter.reds:272:
+  src\r6\scripts\new Splat\DeathRouter.reds:273:  // Build world positions and forward basis
+  src\r6\scripts\new Splat\DeathRouter.reds:274:  let dirX: Float;
+  src\r6\scripts\new Splat\DeathRouter.reds:275:  let dirY: Float;
+  src\r6\scripts\new Splat\DeathRouter.reds:276:  RFC_GetFlatForward(this, dirX, dirY);
+  src\r6\scripts\new Splat\DeathRouter.reds:277:
+  src\r6\scripts\new Splat\DeathRouter.reds:278:  let R: RFC_RigOffsets = RFC_RigNeutral.Offsets();
+  src\r6\scripts\new Splat\DeathRouter.reds:279:
+  src\r6\scripts\new Splat\DeathRouter.reds:280:  let headPos: Vector4;
+  src\r6\scripts\new Splat\DeathRouter.reds:281:  let chestPos: Vector4;
+  src\r6\scripts\new Splat\DeathRouter.reds:282:  let pelvisPos: Vector4;
+  src\r6\scripts\new Splat\DeathRouter.reds:283:  let leftKneePos: Vector4;
+  src\r6\scripts\new Splat\DeathRouter.reds:284:  let rightKneePos: Vector4;
+  src\r6\scripts\new Splat\DeathRouter.reds:285:  let leftShinPos: Vector4;
+
+
