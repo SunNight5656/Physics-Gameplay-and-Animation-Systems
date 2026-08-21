@@ -3,6 +3,22 @@ module RealisticPush
 @addField(NPCPuppet) public let rfc_masterDeathChanceDone: Bool;
 @addField(NPCPuppet) public let rfc_masterDeathChancePass: Bool;
 
+// v1708: authoritative lifecycle flag for the NORMAL SPLAT death-animation
+// toggle. This is separate from the per-weapon Vanilla lane.
+@addField(NPCPuppet) public let rfc_splatDeathAnimationActive: Bool;
+
+public func RFC_SPLATDeathAnimationActive(p: wref<NPCPuppet>) -> Bool {
+  return IsDefined(p) && p.rfc_splatDeathAnimationActive;
+}
+
+public func RFC_AnyDeathAnimationOwnsLifecycle(p: wref<NPCPuppet>) -> Bool {
+  return IsDefined(p)
+    && (
+      RFC_VanillaWeaponReactionArmed(p)
+      || p.rfc_splatDeathAnimationActive
+    );
+}
+
 public func RFC_ResetMasterDeathChance(p: wref<NPCPuppet>) -> Void {
   if !IsDefined(p) { return; }
   p.rfc_masterDeathChanceDone = false;
@@ -58,12 +74,61 @@ public func RFC_BlockAllDeathImpulseLanes(p: wref<NPCPuppet>) -> Void {
 @wrapMethod(NPCPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
+
+  // Fresh death = fresh main-animation state.
+  this.rfc_splatDeathAnimationActive = false;
+
+  // VANILLA = RIG ONLY.
+  // No SPLAT death-animation state, forced-ragdoll state, cuts, impulses, or
+  // workspot handling. Cyberpunk owns this callback from entry to exit.
+  if c.vanillaMode {
+    return wrappedMethod(evt);
+  }
+
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
   let timeDilationBlocksImpulses: Bool;
 
   RFC_RandomResetProfile(this);
   c = RFC_RandomizeConfig(this, c);
+
+  // v1710 PER-WEAPON DEATH-ANIMATION TIMING FIX:
+  //
+  // Do not rely only on rfc_vanillaWeaponLane surviving the end of OnHit.
+  // Cyberpunk may publish OnDeath after OnHit has returned, at which point the
+  // transient lane can already have been cleared. Re-resolve the cached attack
+  // here using the same per-weapon classifier/toggles.
+  let vanillaWeaponDeathAnim: Bool =
+    RFC_VanillaDeathAnimationAllowedByWeapon(this, c);
+
+  if vanillaWeaponDeathAnim {
+    // Make this LOCAL death config identical to the known-working global
+    // Death Animation enabled state. This does not change the user's saved
+    // global setting and applies only to the weapon-selected death.
+    c.skipDeathAnim = false;
+    c.deathAnimChance = 1.0;
+  };
+
   timeDilationBlocksImpulses = RFC_TimeDilationBlocksImpulses(this, c);
+
+  // v1708 MAIN DEATH-ANIMATION TOGGLE FIX:
+  // Decide the normal SPLAT death-animation path BEFORE the game's OnDeath
+  // callback. The old code made this decision after wrappedMethod(evt), which
+  // was too late to reactivate the native death animation.
+  // One authoritative death-animation lifecycle.
+  // A selected per-weapon Vanilla death now enters the exact same enabled
+  // state as the working global Death Animation toggle.
+  let useDeathAnim: Bool = vanillaWeaponDeathAnim;
+
+  if !useDeathAnim
+    && !c.skipDeathAnim
+    && c.deathAnimChance > 0.0
+    && RandF() < c.deathAnimChance {
+    useDeathAnim = true;
+  };
+
+  if useDeathAnim {
+    this.rfc_splatDeathAnimationActive = true;
+  };
 
   RFC_ResetDeadRagdollActivationLatch(this);
 
@@ -74,20 +139,14 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   }
 
   let isStealth: Bool = RFC_IsStealthOrFinisherEx(this, c.blackwallCountsAsStealth);
-  // Vanilla / rigs-only still needs the old death-lane cut. The known-good
-  // pipeline allowed the original death first, then immediately forced the
-  // animation-to-ragdoll handoff so the native settle reaction could not loop.
-  if c.vanillaMode {
-    let vanillaResult: Bool = wrappedMethod(evt);
-    RFC_ScheduleCut(ds, this, 0.0);
-    return vanillaResult;
-  }
-
   // Snapshot the exact explosion lane, but do not return before the original
   // death callback. The old early return skipped SPLAT's workspot release and
   // dedicated explosion kick, which could leave workspot victims stuck and
   // visually unharmed even though the damage pipeline had completed.
   let isExplosionDeath: Bool = RFC_Explode_IsRecent(this);
+
+  // Per-weapon lane was captured once at OnDeath entry and has already
+  // been folded into the shared useDeathAnim decision.
 
 
   // STEALTH / FINISHER / (optional) BLACKWALL
@@ -148,8 +207,16 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   GS_ClearSituationSnap(this);
   GS_CaptureSituationSnap(this);
   RFC_ApplyDeathOverrideGates(this, c);
-  let arcadeDeathOwnsFall: Bool = !isExplosionDeath && RFC_DeathImpulseRouter.ShouldOwnArcadeDeath(this, c);
-  if isExplosionDeath || arcadeDeathOwnsFall || timeDilationBlocksImpulses {
+  let arcadeDeathOwnsFall: Bool =
+    !isExplosionDeath
+    && !vanillaWeaponDeathAnim
+    && !useDeathAnim
+    && RFC_DeathImpulseRouter.ShouldOwnArcadeDeath(this, c);
+
+  if isExplosionDeath
+    || arcadeDeathOwnsFall
+    || timeDilationBlocksImpulses
+    || vanillaWeaponDeathAnim {
     // The original OnDeath still runs, but no Head, Body, Situational, Jolt,
     // Arcade, or settle lane may arm during its nested ragdoll callbacks.
     RFC_BlockAllDeathImpulseLanes(this);
@@ -167,6 +234,26 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   this.hisReboundStartSeeded = false;
   this.hisDeathStartTime = nowT;
 
+  // Restore the native death-animation gates BEFORE the base game's
+  // OnDeath callback. This now covers both:
+  //   - the per-weapon Vanilla lane
+  //   - the normal SPLAT Death Animation toggle
+  //
+  // HitReactionComponent / death reactions inspect these values while choosing
+  // Death versus ForcedRagdoll, so doing this after wrappedMethod was ineffective.
+  if vanillaWeaponDeathAnim || useDeathAnim {
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+
+    let deathAnimGateLog: ref<ActivityLogSystem> =
+      GameInstance.GetActivityLogSystem(this.GetGame());
+    if IsDefined(deathAnimGateLog) {
+      deathAnimGateLog.AddLog(
+        "[SPLAT1710] PER-WEAPON/GLOBAL SHARED DEATH ENABLER BEFORE ONDEATH"
+      );
+    };
+  }
+
   let res: Bool = wrappedMethod(evt);
 
   // Time dilation owns only the added impulse lanes. Preserve the normal SPLAT
@@ -176,7 +263,17 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     if RFC_IsWorkspotOrPerch(this) {
       RFC_TryStopWorkspot(this);
     }
-    RFC_ScheduleCut(ds, this, 0.0);
+
+    if useDeathAnim {
+      // Preserve the chosen death animation. A positive compatibility delay
+      // hands off to ragdoll later; 0.0 means let the native animation finish.
+      if c.animCompatDelay > 0.0 {
+        RFC_ScheduleCut(ds, this, c.animCompatDelay);
+      };
+    } else {
+      RFC_ScheduleCut(ds, this, 0.0);
+    };
+
     return res;
   }
 
@@ -198,23 +295,37 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     return res;
   }
 
+  // Selected weapon death now uses the SAME restored death-animation enabler
+  // that the normal Death Animation toggle uses. Do not add SPLAT death
+  // impulses or a SPLAT compatibility cut for this weapon-specific exception.
+  if vanillaWeaponDeathAnim {
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+    RFC_BlockAllDeathImpulseLanes(this);
+
+    let vanillaReactionLog: ref<ActivityLogSystem> =
+      GameInstance.GetActivityLogSystem(this.GetGame());
+    if IsDefined(vanillaReactionLog) {
+      vanillaReactionLog.AddLog(
+        "[SPLAT1710] PER-WEAPON KILL USED WORKING GLOBAL DEATH-ANIMATION STATE"
+      );
+    };
+
+    return res;
+  }
+
   // Restore named-mode Arcade On Death after the workspot-safe vanilla method order.
   // This reads the final RFC.Cfg() values, so Realism Plus / Dirty Harry / Arnold
   // mode overrides win over Realism Custom/base settings.
-  let arcadeDeathHandled: Bool = RFC_DeathImpulseRouter.RunArcadeOnDeathOnly(this, evt, ds, c);
+  let arcadeDeathHandled: Bool = false;
+  if !useDeathAnim {
+    arcadeDeathHandled =
+      RFC_DeathImpulseRouter.RunArcadeOnDeathOnly(this, evt, ds, c);
+  };
 
-  // Death anim selection
-  let useDeathAnim: Bool = false;
-
-  if c.skipDeathAnim {
-    useDeathAnim = false;
-  } else {
-if c.deathAnimChance > 0.0 && RandRangeF(0.0, 100.0) < c.deathAnimChance {
-  useDeathAnim = true;
-}
-
-  }
-
+  // Death-animation selection was already made BEFORE wrappedMethod(evt).
+  // Reuse that exact choice here so the toggle, chance roll and native gates
+  // cannot disagree within the same death.
   if useDeathAnim {
     if c.animCompatDelay > 0.0 {
       RFC_ScheduleCut(ds, this, c.animCompatDelay);

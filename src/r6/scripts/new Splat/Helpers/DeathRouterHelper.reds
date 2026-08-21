@@ -64,14 +64,25 @@ public class RFC_MicroBrake extends Event {
 public class RFC_CutDeathAnimEvent extends Event {}
 @addMethod(NPCPuppet)
 protected cb func OnRFC_CutDeathAnimEvent(evt: ref<RFC_CutDeathAnimEvent>) -> Bool {
-  // Do not block the low-level cut in Vanilla/rigs-only. This event is the
-  // compatibility handoff that prevents the native death-settle lane looping.
+  // HARD VANILLA BYPASS: stale cuts from another mode die here.
+  if RFC.Cfg().vanillaMode { return true; }
+
+  // v1704: stale compatibility cuts cannot override a selected Vanilla death.
+  if RFC_VanillaWeaponReactionArmed(this) { return true; }
+  // Outside Vanilla only: this is SPLAT's compatibility handoff.
+  // Vanilla/rig-only returned above and can never execute this animation cut.
   // Outside slow motion, stealth/finisher handoff remains owned by its dedicated
   // scheduler. During slow motion DeathRouter uses this event to retain ragdoll
   // deaths while suppressing only SPLAT's added impulse vectors.
   if RFC_IsStealthOrFinisher(this) && !RFC_TimeDilationBlocksImpulsesNow(this) { return true; }
   if RFC_IsVehicleContext(this) { return true; }
   if this.IsRagdolling() { return true; }
+
+  // The configured compatibility delay is the intentional handoff point for
+  // the NORMAL SPLAT death-animation toggle.
+  if this.rfc_splatDeathAnimationActive {
+    this.rfc_splatDeathAnimationActive = false;
+  };
 
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
  
@@ -84,6 +95,7 @@ protected cb func OnRFC_CutDeathAnimEvent(evt: ref<RFC_CutDeathAnimEvent>) -> Bo
 }
 
 private func RFC_ScheduleCut(ds: ref<DelaySystem>, p: wref<NPCPuppet>, t: Float) -> Void {
+  if RFC.Cfg().vanillaMode { return; }
   if !IsDefined(ds) || !IsDefined(p) { return; }
   let t0: Float = MaxF(t, 0.0);
   ds.DelayEvent(p, new RFC_CutDeathAnimEvent(), t0, false);

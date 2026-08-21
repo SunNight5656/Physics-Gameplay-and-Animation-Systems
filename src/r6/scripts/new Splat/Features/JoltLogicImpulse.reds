@@ -600,6 +600,9 @@ protected cb func OnSHHJM_ApplyImpulseEvt(evt: ref<SHHJM_ApplyImpulseEvt>) -> Bo
   if RFC_IsVehicleContext(this) {
     return true;
   };
+  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
+    return true;
+  };
   s = SPLATSettingsRuntime.Jolts();
   if !SHHJM_GetPartEnabled(evt.part, s) {
     return true;
@@ -628,6 +631,9 @@ protected cb func OnSHHJM_ApplyImpulseEvt(evt: ref<SHHJM_ApplyImpulseEvt>) -> Bo
 @addMethod(NPCPuppet)
 protected cb func OnSHHJM_ForceRagdollEvt(evt: ref<SHHJM_ForceRagdollEvt>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
+  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
+    return true;
+  };
   if c.vanillaMode || RFC_TimeDilationBlocksImpulses(this, c) {
     return true;
   };

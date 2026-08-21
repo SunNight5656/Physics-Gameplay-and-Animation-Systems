@@ -10,6 +10,12 @@ protected func OnIncapacitated() -> Void {
   wrappedMethod();
 
   let cfg: RFCConfig = RFC.Cfg();
+
+  // v1704: OnDied() also enters this lifecycle. Do not schedule SPLAT's
+  // incapacitation ragdoll handoff over a selected Vanilla death animation.
+  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
+    return;
+  }
   if cfg.vanillaMode
     || RFC_TimeDilationBlocksImpulses(this, cfg)
     || !cfg.arcadeIncapRagdollEnabled
@@ -38,6 +44,12 @@ protected cb func OnRFC_IncapacitatedLifecycleHandoffEvent(
   evt: ref<RFC_IncapacitatedLifecycleHandoffEvent>
 ) -> Bool {
   if !IsDefined(evt) || RFC_Explode_IsRecent(this) || RFC_IsVehicleContext(this) {
+    return true;
+  }
+
+  // A handoff queued by an earlier hit must not wake up during this selected
+  // Vanilla weapon death and force the NPC into ragdoll.
+  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
     return true;
   }
 

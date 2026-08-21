@@ -213,6 +213,26 @@ private func RFC_IsIncapacitatedTransition(p: wref<NPCPuppet>) -> Bool {
 private func OnHitAnimation(hitEvent: ref<gameHitEvent>) -> Void {
   if IsDefined(hitEvent) {
     let cfg: RFCConfig = RFC.Cfg();
+
+    // v1705: selected Vanilla weapon owns the native reaction animation too.
+    // The outer OnHit wrapper arms this before the game's nested hit-animation
+    // call, and the AttackData classifier is a fallback if call ordering differs.
+    let hitAnimLane: Int32 =
+      RFC_VanillaWeaponLaneForAttack(hitEvent.attackData, cfg);
+
+    if !cfg.vanillaMode
+      && (
+        RFC_VanillaWeaponReactionArmed(this)
+        || (
+          hitAnimLane > 0
+          && RFC_VanillaWeaponLaneEnabled(hitAnimLane, cfg)
+        )
+      ) {
+      // Selected lane: reactivate/allow the game's own hit/death animation.
+      wrappedMethod(hitEvent);
+      return;
+    };
+
     if !cfg.vanillaMode
       && cfg.hitReactionsDisabled
       && !this.IsDead()
@@ -1173,21 +1193,29 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let injuryShockPart: Int32;
   let injuryShockAnchor: Vector4;
   let injuryShockQueued: Bool;
-  let arcadeRiderBikeToppleArmed: Bool;
+  let vanillaWeaponReactionCandidate: Bool;
+  let vanillaWeaponLane: Int32;
+  let savedSkipDeathAnimation: Bool;
+  let savedForceRagdollOnDeath: Bool;
 
   if !IsDefined(evt) {
     return wrappedMethod(evt);
   }
+
+  // VANILLA = RIG ONLY.
+  // Do not write ANY SPLAT animation, hit-reaction, death, workspot, impulse,
+  // or ragdoll-control state here. The installed ragdoll rig remains the only
+  // intentional SPLAT exception; script behavior is 100% base-game.
+  if c.vanillaMode {
+    return wrappedMethod(evt);
+  }
+
   // Preserve damage and the original hit callback, but suppress every SPLAT
   // follow-up while time dilation owns the frame. Vanilla physical impulse is
   // independently zeroed in VanillaImpulseKiller.reds.
   if RFC_TimeDilationBlocksImpulses(this, c) {
     return wrappedMethod(evt);
   }
-  if c.vanillaMode {
-    return wrappedMethod(evt);
-  }
-
   // v9 vehicle occupant lane:
   // Do NOT swallow direct hits on a mounted driver/passenger. v8 proved that
   // hard immunity prevents bullets from killing the seated NPC. Instead, let
@@ -1199,25 +1227,14 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // The v8 TweakDB DriverKill block remains in place so shooting the car itself
   // does not create the synthetic Attacks.DriverKill puppet hit too early.
   if RFC_IsVehicleContext(this) {
-    // VehicleObject.OnHit is not guaranteed when the bullet lands directly on
-    // the rider. Arm the same Arnold motorcycle topple before damage/death can
-    // clear the mount, then resolve it after vanilla processing. A lethal hit
-    // is normally consumed inside MotorcycleDeathAnimation_CompileFix; the
-    // post-wrap branch is an idempotent fallback.
-    arcadeRiderBikeToppleArmed = RFC_VehArmArcadeRiderBikeTopple(this, evt, c);
-    res = wrappedMethod(evt);
-
-    if arcadeRiderBikeToppleArmed && this.rfc_arcadeRiderBikeToppleArmed {
-      if this.IsDead() {
-        if RFC_VehConsumeArcadeRiderBikeTopple(this, true, c) {
-          this.QueueEvent(CreateForceRagdollEvent(n"Splat_ArcadeRiderBikeFallback"));
-        }
-      } else {
-        RFC_VehConsumeArcadeRiderBikeTopple(this, false, c);
-      }
-    }
-    return res;
+    // SPLAT_BVC_COMBINED_20260818
+    // Mounted rider hits bypass SPLAT's motorcycle arm/consume/death path.
+    // Exact BVC1604 ScriptedPuppet.OnHit owns rider + motorcycle handling.
+    return wrappedMethod(evt);
   }
+
+  this.rfc_vanillaDeathAnimArmed = false;
+  this.rfc_vanillaWeaponLane = 0;
 
   // Capture the current attack and arm the explosion isolation window BEFORE
   // vanilla OnHit runs. A lethal hit can enter NPCPuppet.OnDeath from inside
@@ -1237,27 +1254,110 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     RFC_Explode_Clear(this);
   }
 
-  // SHHJM pre-wrap capture. This is now hard-gated by the Bullet Jolts
-  // runtime switch and the visible Enable Bullet Jolts toggle, so OFF cannot
-  // leak delayed ground jolts from pending SHHJM events.
+  // Selected per-weapon Vanilla lane.
+  //
+  // Two responsibilities only:
+  //   1) prime the same native death-animation gates used by the restored
+  //      main Death Animation enabler
+  //   2) run the game's normal hit path with no SPLAT impulse/jolt/arcade lane
+  if IsDefined(evt.attackData) {
+    this.rfc_lastAttack = evt.attackData;
+  };
+
+  vanillaWeaponLane =
+    RFC_VanillaWeaponLaneForAttack(evt.attackData, c);
+
+  vanillaWeaponReactionCandidate =
+    vanillaWeaponLane > 0
+    && RFC_VanillaWeaponLaneEnabled(vanillaWeaponLane, c);
+
+  // Per-weapon Vanilla ON primes the native death gates BEFORE Cyberpunk's
+  // OnHit. OFF leaves those gates completely alone.
+  if vanillaWeaponReactionCandidate {
+    this.rfc_vanillaWeaponLane = vanillaWeaponLane;
+    this.rfc_vanillaDeathAnimArmed = true;
+
+    let vanillaWeaponArmLog: ref<ActivityLogSystem> =
+      GameInstance.GetActivityLogSystem(this.GetGame());
+    if IsDefined(vanillaWeaponArmLog) {
+      vanillaWeaponArmLog.AddLog(
+        "[SPLAT1711] PER-WEAPON VANILLA LANE ARMED"
+      );
+    };
+
+    savedSkipDeathAnimation = this.ShouldSkipDeathAnimation();
+    savedForceRagdollOnDeath =
+      this.GetPuppetStateBlackboard().GetBool(
+        GetAllBlackboardDefs().PuppetState.ForceRagdollOnDeath
+      );
+
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+  };
+
+  // Restore the normal SPLAT pre-wrap hit capture removed by the earlier
+  // per-weapon rewrite.
   s = SPLATSettingsRuntime.Jolts();
-  shhjmRuntimeEnabled = !c.vanillaMode && c.bulletJoltsEnabled && RFC_EnemyAllowsBulletJolts(this, c);
-  shhjmHardBlock = !shhjmRuntimeEnabled || RFC_SHHJM_HardBlockHit(this, evt.attackData);
+  shhjmRuntimeEnabled =
+    !c.vanillaMode
+    && c.bulletJoltsEnabled
+    && RFC_EnemyAllowsBulletJolts(this, c);
+
+  shhjmHardBlock =
+    !shhjmRuntimeEnabled
+    || RFC_SHHJM_HardBlockHit(this, evt.attackData);
+
   this.shhjm_lastHitValid = false;
   this.shhjm_lastBodyPart = 99;
 
   hitPos = evt.hitPosition;
-  shhjmSrcPos = RFC_SHHJM_SourcePos(this, evt.attackData, hitPos);
+  shhjmSrcPos =
+    RFC_SHHJM_SourcePos(
+      this,
+      evt.attackData,
+      hitPos
+    );
 
-  if shhjmRuntimeEnabled && !shhjmHardBlock && RFC_SHHJM_ResolveOrDeadFallback(this, evt, hitPos, s, part, anchorPos) && SHHJM_GetPartEnabled(part, s) {
+  if shhjmRuntimeEnabled
+    && !shhjmHardBlock
+    && RFC_SHHJM_ResolveOrDeadFallback(
+      this,
+      evt,
+      hitPos,
+      s,
+      part,
+      anchorPos
+    )
+    && SHHJM_GetPartEnabled(part, s) {
+
     this.shhjm_lastHitValid = true;
     this.shhjm_lastHitPos = hitPos;
     this.shhjm_lastSrcPos = shhjmSrcPos;
     this.shhjm_lastAnchorPos = anchorPos;
     this.shhjm_lastBodyPart = part;
-  }
+  };
 
+  // CRITICAL v1711 FIX:
+  // Native OnHit must execute for BOTH toggle states.
+  // The broken build called wrappedMethod(evt) only when the weapon toggle was
+  // ON, so OFF skipped Cyberpunk's base hit/damage processing entirely.
   res = wrappedMethod(evt);
+
+  if vanillaWeaponReactionCandidate {
+    if this.IsDead() {
+      this.SetSkipDeathAnimation(false);
+      NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+      return res;
+    };
+
+    // Selected Vanilla weapon, nonlethal: restore pre-hit death state and stop.
+    // No SPLAT post-hit impulse/jolt/Arcade lane is added.
+    this.SetSkipDeathAnimation(savedSkipDeathAnimation);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, savedForceRagdollOnDeath);
+    this.rfc_vanillaDeathAnimArmed = false;
+    this.rfc_vanillaWeaponLane = 0;
+    return res;
+  };
 
   // The selected mode's Injury Shock toggle is authoritative. Clear any stale
   // per-NPC state immediately when it is off; queued events also recheck it.

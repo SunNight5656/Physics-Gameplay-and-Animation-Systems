@@ -104,15 +104,33 @@ public class AAT_TripImpulseEvt extends Event {
   public let radius: Float;
 }
 
+public class AAT_TripRagdollEvt extends Event {}
+
 @addMethod(NPCPuppet)
 private cb func OnAAT_TripImpulseEvt(e: ref<AAT_TripImpulseEvt>) -> Bool {
   let cfg: RFCConfig = RFC.Cfg();
-  if cfg.vanillaMode || RFC_TimeDilationBlocksImpulses(this, cfg) {
+  if cfg.vanillaMode
+    || RFC_IsStealthOrFinisher(this)
+    || RFC_TimeDilationBlocksImpulses(this, cfg) {
     return true;
   };
   if IsDefined(e) {
     this.QueueEvent(CreateRagdollApplyImpulseEvent(e.pos, e.imp, e.radius));
   };
+  return true;
+}
+
+@addMethod(NPCPuppet)
+private cb func OnAAT_TripRagdollEvt(e: ref<AAT_TripRagdollEvt>) -> Bool {
+  let cfg: RFCConfig = RFC.Cfg();
+  if cfg.vanillaMode
+    || RFC_AnyDeathAnimationOwnsLifecycle(this)
+    || RFC_IsStealthOrFinisher(this)
+    || RFC_TimeDilationBlocksImpulses(this, cfg) {
+    return true;
+  };
+
+  this.QueueEvent(CreateForceRagdollEvent(n"AAA_Trip_OnBumpHandoff"));
   return true;
 }
 
@@ -128,15 +146,14 @@ private cb func OnAAT_TripResetEvt(evt: ref<AAT_TripResetEvt>) -> Bool {
 private final func AAT_TripScheduleOneImpulse(ds: ref<DelaySystem>, pos: Vector4, impulse: Vector4, radius: Float, delay: Float, mode: Int32) -> Void {
   let bridgeEvt: ref<AAT_TripImpulseEvt>;
 
+  if RFC.Cfg().vanillaMode || RFC_IsStealthOrFinisher(this) { return; }
+
   if !IsDefined(ds) || RFC_TimeDilationBlocksImpulsesNow(this) {
     return;
   };
 
-  if mode == 2 {
-    ds.DelayEvent(this, CreateRagdollApplyImpulseEvent(pos, impulse, radius), delay, false);
-    return;
-  };
-
+  // Always use the guarded bridge so a stealth kill or finisher that starts
+  // after the trip was scheduled can still cancel the delayed impulse.
   bridgeEvt = new AAT_TripImpulseEvt();
   bridgeEvt.pos = pos;
   bridgeEvt.imp = impulse;
@@ -209,13 +226,15 @@ private final func AAT_TripFire(playerTarget: ref<GameObject>, rawDir: Vector4, 
   let pos: Vector4;
   let dir: Vector4;
   let impulse: Vector4;
-  let forceEvt: ref<Event>;
+  let forceEvt: ref<AAT_TripRagdollEvt>;
   let resetEvt: ref<AAT_TripResetEvt>;
   let emotionEvt: ref<AAT_EmotionEvt>;
   let impulseDelay: Float;
   let emotionDelay: Float;
 
-  if RFC.Cfg().vanillaMode || !IsDefined(s) {
+  if RFC.Cfg().vanillaMode
+    || RFC_IsStealthOrFinisher(this)
+    || !IsDefined(s) {
     return;
   };
 
@@ -241,7 +260,7 @@ private final func AAT_TripFire(playerTarget: ref<GameObject>, rawDir: Vector4, 
     1.00
   );
 
-  forceEvt = CreateForceRagdollEvent(n"AAA_Trip_OnBumpHandoff");
+  forceEvt = new AAT_TripRagdollEvt();
   resetEvt = new AAT_TripResetEvt();
   resetEvt.tripGen = this.aatTripGen;
 
@@ -291,6 +310,12 @@ protected cb func OnBumpEvent(evt: ref<BumpEvent>) -> Bool {
   npc = ownerGO as NPCPuppet;
 
   if !IsDefined(npc) {
+    return res;
+  };
+
+  // Stealth kills / finishers own the target completely. Trip Animation must
+  // not lock, ragdoll, impulse, or consume a trip use during that window.
+  if RFC_IsStealthOrFinisher(npc) {
     return res;
   };
 

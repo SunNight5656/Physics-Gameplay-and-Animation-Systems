@@ -3,7 +3,9 @@ module RealisticPush
 public class RFC_DeathImpulseRouter {
 
   public static func ShouldOwnArcadeDeath(puppet: ref<NPCPuppet>, c: RFCConfig) -> Bool {
-    if !IsDefined(puppet)
+    if c.vanillaMode
+      || !IsDefined(puppet)
+      || RFC_SPLATDeathAnimationActive(puppet)
       || RFC_MasterDeathChanceBlocksImpulses(puppet)
       || RFC_TimeDilationBlocksImpulses(puppet, c)
       || !c.arcadeOnDeathEnabled {
@@ -32,6 +34,10 @@ public class RFC_DeathImpulseRouter {
     ds: ref<DelaySystem>,
     c: RFCConfig
   ) -> Bool {
+
+    if c.vanillaMode || RFC_SPLATDeathAnimationActive(puppet) {
+      return false;
+    }
 
     if RFC_MasterDeathChanceBlocksImpulses(puppet) || RFC_TimeDilationBlocksImpulses(puppet, c) {
       return false;
