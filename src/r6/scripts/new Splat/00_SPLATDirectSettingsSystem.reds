@@ -1,5 +1,6 @@
 module RealisticPush
 // SPLAT V132 audited direct Native Settings bridge.
+// V1713: on-hit activation delay/cutoff fields are explicitly bridged.
 // The live PlayerPuppet owns the settings state. CET and gameplay therefore
 // read and write the exact same objects; Mod Settings is not involved.
 public class SPLATSettingsState {
@@ -188,12 +189,18 @@ public class SPLATSettingsState {
     out.deathAnimChancePct = this.m_global_menu.deathAnimChancePct;
     out.animCompatDelay = this.m_global_menu.animCompatDelay;
     out.respectCinematics = this.m_global_menu.respectCinematics;
+    out.restoreStealthKillAnimations = this.m_global_menu.restoreStealthKillAnimations;
+    out.restoreFinisherAnimations = this.m_global_menu.restoreFinisherAnimations;
+    out.restoreBlackwallAnimations = this.m_global_menu.restoreBlackwallAnimations;
     out.stealthRagdollsEnabled = this.m_global_menu.stealthRagdollsEnabled;
     out.stealthRagdollDelay = this.m_global_menu.stealthRagdollDelay;
     out.blackwallCountsAsStealth = this.m_global_menu.blackwallCountsAsStealth;
     out.arcadeIncapRagdollEnabled = this.m_global_menu.arcadeIncapRagdollEnabled;
     out.arcadeIncapRagdollDelay = this.m_global_menu.arcadeIncapRagdollDelay;
     out.hitReactionsDisabled = this.m_global_menu.hitReactionsDisabled;
+    out.hitReactionActivationDelay = this.m_global_menu.hitReactionActivationDelay;
+    out.hitReactionCutoffEnabled = this.m_global_menu.hitReactionCutoffEnabled;
+    out.hitReactionCutoffDelay = this.m_global_menu.hitReactionCutoffDelay;
     out.injuryShockEnabled = this.m_global_menu.injuryShockEnabled;
     out.injuryShockAllowBosses = this.m_global_menu.injuryShockAllowBosses;
     out.injuryShockAllowSubBosses = this.m_global_menu.injuryShockAllowSubBosses;
@@ -1112,6 +1119,7 @@ public class SPLATSettingsState {
     if Equals(name, n"gravityEnabled") { target.gravityEnabled = value; return true; };
     if Equals(name, n"grenadeEnabled") { target.grenadeEnabled = value; return true; };
     if Equals(name, n"hitReactionsDisabled") { target.hitReactionsDisabled = value; return true; };
+    if Equals(name, n"hitReactionCutoffEnabled") { target.hitReactionCutoffEnabled = value; return true; };
     if Equals(name, n"injuryShockEnabled") { target.injuryShockEnabled = value; return true; };
     if Equals(name, n"injuryShockAllowBosses") { target.injuryShockAllowBosses = value; return true; };
     if Equals(name, n"injuryShockAllowSubBosses") { target.injuryShockAllowSubBosses = value; return true; };
@@ -1217,6 +1225,7 @@ public class SPLATSettingsState {
     if Equals(name, n"gravityEnabled") { return target.gravityEnabled; };
     if Equals(name, n"grenadeEnabled") { return target.grenadeEnabled; };
     if Equals(name, n"hitReactionsDisabled") { return target.hitReactionsDisabled; };
+    if Equals(name, n"hitReactionCutoffEnabled") { return target.hitReactionCutoffEnabled; };
     if Equals(name, n"injuryShockEnabled") { return target.injuryShockEnabled; };
     if Equals(name, n"injuryShockAllowBosses") { return target.injuryShockAllowBosses; };
     if Equals(name, n"injuryShockAllowSubBosses") { return target.injuryShockAllowSubBosses; };
@@ -1322,6 +1331,7 @@ public class SPLATSettingsState {
     if Equals(name, n"gravityEnabled") { return true; };
     if Equals(name, n"grenadeEnabled") { return true; };
     if Equals(name, n"hitReactionsDisabled") { return true; };
+    if Equals(name, n"hitReactionCutoffEnabled") { return true; };
     if Equals(name, n"injuryShockEnabled") { return true; };
     if Equals(name, n"injuryShockAllowBosses") { return true; };
     if Equals(name, n"injuryShockAllowSubBosses") { return true; };
@@ -1412,6 +1422,9 @@ public class SPLATSettingsState {
     if Equals(name, n"realism_bulletJoltWaitForGround") { target.realism_bulletJoltWaitForGround = value; return true; };
     if Equals(name, n"realism_bulletJoltsEnabled") { target.realism_bulletJoltsEnabled = value; return true; };
     if Equals(name, n"respectCinematics") { target.respectCinematics = value; return true; };
+    if Equals(name, n"restoreStealthKillAnimations") { target.restoreStealthKillAnimations = value; return true; };
+    if Equals(name, n"restoreFinisherAnimations") { target.restoreFinisherAnimations = value; return true; };
+    if Equals(name, n"restoreBlackwallAnimations") { target.restoreBlackwallAnimations = value; return true; };
     if Equals(name, n"runEnabled") { target.runEnabled = value; return true; };
     if Equals(name, n"run_overrideGlobalChest") { target.run_overrideGlobalChest = value; return true; };
     if Equals(name, n"run_overrideGlobalPelvis") { target.run_overrideGlobalPelvis = value; return true; };
@@ -1514,6 +1527,9 @@ public class SPLATSettingsState {
     if Equals(name, n"realism_bulletJoltWaitForGround") { return target.realism_bulletJoltWaitForGround; };
     if Equals(name, n"realism_bulletJoltsEnabled") { return target.realism_bulletJoltsEnabled; };
     if Equals(name, n"respectCinematics") { return target.respectCinematics; };
+    if Equals(name, n"restoreStealthKillAnimations") { return target.restoreStealthKillAnimations; };
+    if Equals(name, n"restoreFinisherAnimations") { return target.restoreFinisherAnimations; };
+    if Equals(name, n"restoreBlackwallAnimations") { return target.restoreBlackwallAnimations; };
     if Equals(name, n"runEnabled") { return target.runEnabled; };
     if Equals(name, n"run_overrideGlobalChest") { return target.run_overrideGlobalChest; };
     if Equals(name, n"run_overrideGlobalPelvis") { return target.run_overrideGlobalPelvis; };
@@ -1616,6 +1632,9 @@ public class SPLATSettingsState {
     if Equals(name, n"realism_bulletJoltWaitForGround") { return true; };
     if Equals(name, n"realism_bulletJoltsEnabled") { return true; };
     if Equals(name, n"respectCinematics") { return true; };
+    if Equals(name, n"restoreStealthKillAnimations") { return true; };
+    if Equals(name, n"restoreFinisherAnimations") { return true; };
+    if Equals(name, n"restoreBlackwallAnimations") { return true; };
     if Equals(name, n"runEnabled") { return true; };
     if Equals(name, n"run_overrideGlobalChest") { return true; };
     if Equals(name, n"run_overrideGlobalPelvis") { return true; };
@@ -2216,6 +2235,8 @@ public class SPLATSettingsState {
   }
 
   private func Set_RFC_Float_1(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+    if Equals(name, n"hitReactionActivationDelay") { target.hitReactionActivationDelay = value; return true; };
+    if Equals(name, n"hitReactionCutoffDelay") { target.hitReactionCutoffDelay = value; return true; };
     if Equals(name, n"arnold_tumbleStairs_stepDelay") { target.arnold_tumbleStairs_stepDelay = value; return true; };
     if Equals(name, n"arnold_twitchForce") { target.arnold_twitchForce = value; return true; };
     if Equals(name, n"arnold_vehicleBulletDown") { target.arnold_vehicleBulletDown = value; return true; };
@@ -2320,6 +2341,8 @@ public class SPLATSettingsState {
     return false;
   }
   private func Get_RFC_Float_1(target: ref<RFCModSettings>, name: CName) -> Float {
+    if Equals(name, n"hitReactionActivationDelay") { return target.hitReactionActivationDelay; };
+    if Equals(name, n"hitReactionCutoffDelay") { return target.hitReactionCutoffDelay; };
     if Equals(name, n"arnold_tumbleStairs_stepDelay") { return target.arnold_tumbleStairs_stepDelay; };
     if Equals(name, n"arnold_twitchForce") { return target.arnold_twitchForce; };
     if Equals(name, n"arnold_vehicleBulletDown") { return target.arnold_vehicleBulletDown; };
@@ -2424,6 +2447,8 @@ public class SPLATSettingsState {
     return 0.0;
   }
   private func Has_RFC_Float_1(name: CName) -> Bool {
+    if Equals(name, n"hitReactionActivationDelay") { return true; };
+    if Equals(name, n"hitReactionCutoffDelay") { return true; };
     if Equals(name, n"arnold_tumbleStairs_stepDelay") { return true; };
     if Equals(name, n"arnold_twitchForce") { return true; };
     if Equals(name, n"arnold_vehicleBulletDown") { return true; };
@@ -4385,6 +4410,16 @@ public func SPLATSetMode(index: Int32) -> Bool {
 @addMethod(PlayerPuppet)
 public func SPLATGetMode() -> Int32 {
   return this.SPLATGetSettingsState().GetMode();
+}
+
+@addMethod(PlayerPuppet)
+public func SPLATIsVanillaRuntime() -> Bool {
+  return RFC.Cfg().vanillaMode;
+}
+
+@addMethod(PlayerPuppet)
+public func SPLATGetRuntimePresetValue() -> Int32 {
+  return RFC.Cfg().splatPresetMode;
 }
 
 @addMethod(PlayerPuppet)

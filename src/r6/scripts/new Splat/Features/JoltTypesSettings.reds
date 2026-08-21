@@ -6,6 +6,7 @@ module RealisticPush
 @addField(NPCPuppet) private let shhjm_lastSrcPos: Vector4;
 @addField(NPCPuppet) private let shhjm_lastAnchorPos: Vector4;
 @addField(NPCPuppet) private let shhjm_lastBodyPart: Int32;
+@addField(NPCPuppet) private let shhjm_lastBoneIndex: Int32;
 @addField(NPCPuppet) private let shhjm_lastGroundImpactTime: Float;
 @addField(NPCPuppet) private let shhjm_hasGroundImpact: Bool;
 
@@ -42,7 +43,7 @@ public let showTorsoSection: Bool = true;
 
   public let torsoDownStrength: Float = 0.000000;
 
-  public let torsoRadius: Float = 0.093500;
+  public let torsoRadius: Float = 5.000000;
 
   public let torsoApplyOffset: Float = 0.250000;
 
@@ -141,16 +142,22 @@ public class SHHJM_ApplyImpulseEvt extends Event {
   public let srcPos: Vector4;
   public let radius: Float;
   public let part: Int32;
+  public let boneIndex: Int32;
+  public let targetWasAlreadyDead: Bool;
 }
 
 public class SHHJM_WaitForGroundEvt extends Event {
   public let srcPos: Vector4;
   public let anchorPos: Vector4;
   public let part: Int32;
+  public let boneIndex: Int32;
+  public let targetWasAlreadyDead: Bool;
   public let fireDelay: Float;
   public let expireAt: Float;
   public let armedAt: Float;
 }
 
 public class SHHJM_OnDeathApplyEvt extends Event {}
-public class SHHJM_ForceRagdollEvt extends Event {}
+public class SHHJM_ForceRagdollEvt extends Event {
+  public let allowWhileDeathAnimationOwned: Bool;
+}

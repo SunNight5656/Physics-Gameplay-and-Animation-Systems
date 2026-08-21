@@ -1,7 +1,6 @@
 module RealisticPush
 
 // Shared fields/helpers moved to RFC_OnHitShared.reds
-// SPLAT ONHIT CUTOFF TEST V1714 - immediate vanilla start + slider-only timed cutoff
 
 private func RFC_Length3(v: Vector4) -> Float {
   return SqrtF(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
@@ -21,10 +20,6 @@ private func RFC_Length3(v: Vector4) -> Float {
 @addField(NPCPuppet) public let m_RFC_ArcadeDeathT: Float;
 @addField(NPCPuppet) private let m_RFC_InjuryShockPending: Bool;
 @addField(NPCPuppet) private let m_RFC_InjuryShockHoldActive: Bool;
-
-// V1714 ordinary live hit-animation cutoff. Serial prevents an older cutoff
-// event from terminating a newer bullet reaction.
-@addField(NPCPuppet) private let m_RFC_HitAnimSerial: Int32;
 
 @addField(NPCPuppet) public let rfc_mv_lastPos: Vector4;
 @addField(NPCPuppet) public let rfc_mv_dirX: Float;
@@ -99,14 +94,12 @@ public class RFC_HitReactionGuardEvent extends Event {
   public let allowArcadeImpulse: Bool;
 }
 
-
 public class RFC_HitReactionCutEvent extends Event {
   public let hitPos: Vector4;
   public let srcPos: Vector4;
   public let attackData: ref<AttackData>;
   public let allowArcadeImpulse: Bool;
   public let incapacitatedCut: Bool;
-  public let serial: Int32;
 }
 
 public class RFC_InjuryShockEvent extends Event {}
@@ -216,69 +209,19 @@ private func RFC_IsIncapacitatedTransition(p: wref<NPCPuppet>) -> Bool {
     || Equals(p.GetHighLevelStateFromBlackboard(), gamedataNPCHighLevelState.Unconscious);
 }
 
-private func RFC_ScheduleOrdinaryHitReactionCut(p: wref<NPCPuppet>, serial: Int32, cfg: RFCConfig) -> Void {
-  if !IsDefined(p)
-    || cfg.hitReactionCutoffDelay <= 0.001
-    || cfg.hitReactionsDisabled
-    || p.IsDead()
-    || RFC_IsIncapacitatedTransition(p) {
-    return;
-  }
-
-  let cutEvt: ref<RFC_HitReactionCutEvent> = new RFC_HitReactionCutEvent();
-  cutEvt.serial = serial;
-  let cutDS: ref<DelaySystem> = GameInstance.GetDelaySystem(p.GetGame());
-  if IsDefined(cutDS) {
-    // IMPORTANT: this duration begins when the reaction animation begins, not
-    // when the bullet originally landed.
-    cutDS.DelayEvent(p, cutEvt, RFC_ClampF(cfg.hitReactionCutoffDelay, 0.0, 3.0), false);
-  } else {
-    p.QueueEvent(cutEvt);
-  }
-}
-
 @wrapMethod(NPCPuppet)
 private func OnHitAnimation(hitEvent: ref<gameHitEvent>) -> Void {
-  if !IsDefined(hitEvent) {
-    wrappedMethod(hitEvent);
-    return;
+  if IsDefined(hitEvent) {
+    let cfg: RFCConfig = RFC.Cfg();
+    if !cfg.vanillaMode
+      && cfg.hitReactionsDisabled
+      && !this.IsDead()
+      && !RFC_IsIncapacitatedTransition(this)
+      && RFC_IsPlayerAttack(this, hitEvent.attackData)
+      && RFC_IsBulletReactionCutSource(hitEvent.attackData) {
+      return;
+    }
   }
-
-  let cfg: RFCConfig = RFC.Cfg();
-
-  // Selected Vanilla weapon lanes remain fully native and immediate.
-  let hitAnimLane: Int32 = RFC_VanillaWeaponLaneForAttack(hitEvent.attackData, cfg);
-  if !cfg.vanillaMode
-    && (
-      RFC_VanillaWeaponReactionArmed(this)
-      || (hitAnimLane > 0 && RFC_VanillaWeaponLaneEnabled(hitAnimLane, cfg))
-    ) {
-    wrappedMethod(hitEvent);
-    return;
-  }
-
-  let ordinaryPlayerBullet: Bool =
-    !cfg.vanillaMode
-    && !this.IsDead()
-    && !RFC_IsIncapacitatedTransition(this)
-    && RFC_IsPlayerAttack(this, hitEvent.attackData)
-    && RFC_IsBulletReactionCutSource(hitEvent.attackData);
-
-  // Existing complete-disable control remains authoritative.
-  if ordinaryPlayerBullet && cfg.hitReactionsDisabled {
-    return;
-  }
-
-  if ordinaryPlayerBullet {
-    // V1714: never delay the game's hit animation. Let it start at the original
-    // frame, then use the single cutoff slider to end it early when requested.
-    this.m_RFC_HitAnimSerial += 1;
-    let serial: Int32 = this.m_RFC_HitAnimSerial;
-    wrappedMethod(hitEvent);
-    RFC_ScheduleOrdinaryHitReactionCut(this, serial, cfg);
-    return;
-  }
-
   wrappedMethod(hitEvent);
 }
 
@@ -288,12 +231,10 @@ private func RFC_StopOrdinaryHitReaction(p: wref<NPCPuppet>) -> Void {
   }
 
   let hitComponent: ref<HitReactionComponent> = p.GetHitReactionComponent();
-
-  // Match the base AIHitReactionTask.Deactivate path instead of stopping only
-  // the proxy action. Cyberpunk returns the NPC upper-body state to Normal and
-  // then stops the active hit-reaction action.
-  NPCPuppet.ChangeUpperBodyState(p, gamedataNPCUpperBodyState.Normal);
   if IsDefined(hitComponent) && IsDefined(hitComponent.GetHitReactionProxyAction()) {
+    // Stop only the active scripted reaction. Submitting another hit feature,
+    // pushing the hit graph event, or forcing an upper-body state makes the
+    // graph select a recovery pose instead of simply ending this reaction.
     hitComponent.GetHitReactionProxyAction().Stop();
   }
 }
@@ -708,15 +649,29 @@ protected cb func OnRFC_HitReactionGuardEvent(evt: ref<RFC_HitReactionGuardEvent
     RFC_ArcadeApplyOnHit(this, evt.hitPos, evt.srcPos, cfg);
   }
 
-  // V1714: ordinary hit-animation cutoff is owned directly by OnHitAnimation
-  // so the cutoff clock begins at the real animation start.
+  // Timed cutoff owns only ordinary live reactions. Incapacitation and death
+  // remain with their dedicated lifecycle pipelines.
+  if !evt.allowAnimationCut
+    || cfg.hitReactionsDisabled
+    || !cfg.hitReactionCutoffEnabled
+    || this.IsDead()
+    || RFC_IsIncapacitatedTransition(this) {
+    return true;
+  }
+
+  let cutEvt: ref<RFC_HitReactionCutEvent> = new RFC_HitReactionCutEvent();
+  let cutDS: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
+  if IsDefined(cutDS) {
+    cutDS.DelayEvent(this, cutEvt, RFC_ClampT(cfg.hitReactionCutoffDelay), false);
+  } else {
+    this.QueueEvent(cutEvt);
+  }
   return true;
 }
 
 @addMethod(NPCPuppet)
 protected cb func OnRFC_HitReactionCutEvent(evt: ref<RFC_HitReactionCutEvent>) -> Bool {
   if !IsDefined(evt)
-    || (evt.serial > 0 && evt.serial != this.m_RFC_HitAnimSerial)
     || RFC_IsVehicleContext(this)
     || this.IsDead()
     || RFC_IsIncapacitatedTransition(this) {
@@ -724,7 +679,7 @@ protected cb func OnRFC_HitReactionCutEvent(evt: ref<RFC_HitReactionCutEvent>) -
   }
 
   let cfg: RFCConfig = RFC.Cfg();
-  if cfg.vanillaMode || RFC_TimeDilationBlocksImpulses(this, cfg) || cfg.hitReactionsDisabled || cfg.hitReactionCutoffDelay <= 0.001 {
+  if cfg.vanillaMode || RFC_TimeDilationBlocksImpulses(this, cfg) || cfg.hitReactionsDisabled || !cfg.hitReactionCutoffEnabled {
     return true;
   }
 
@@ -1168,36 +1123,16 @@ private func RFC_IsGrenadeExplosion(ad: ref<AttackData>) -> Bool {
 
 
 
-private func RFC_SHHJM_ResolveOrDeadFallback(p: ref<NPCPuppet>, evt: ref<gameHitEvent>, hitPos: Vector4, s: ref<SHHJM_Settings>, out part: Int32, out boneIndex: Int32, out anchorPos: Vector4) -> Bool {
-  let broadAnchor: Vector4;
-
+private func RFC_SHHJM_ResolveOrDeadFallback(p: ref<NPCPuppet>, evt: ref<gameHitEvent>, hitPos: Vector4, s: ref<SHHJM_Settings>, out part: Int32, out anchorPos: Vector4) -> Bool {
   // Prefer the game's authoritative hit-reaction zone. This directly separates
   // Head, Torso, LeftArm, RightArm, LeftLeg, and RightLeg instead of relying
   // only on proximity after the corpse has rotated or slid.
-  if SHHJM_ResolveBodyPartFromHitEvent(p, evt, hitPos, part, broadAnchor) {
-    if SHHJM_ResolveExactBoneIndex(p, hitPos, part, boneIndex, anchorPos) {
-      // Torso uses SPLAT's previously working broad-part model. Exact bone
-      // anchors remain exclusive to head and limbs.
-      if part == 1 {
-        anchorPos = broadAnchor;
-      };
-      return true;
-    };
-    boneIndex = SHHJM_DefaultBoneIndexForPart(part);
-    anchorPos = broadAnchor;
+  if SHHJM_ResolveBodyPartFromHitEvent(p, evt, hitPos, part, anchorPos) {
     return true;
   };
 
   // Spatial fallback for unusual/synthetic hit events with no hit-shape data.
-  if SHHJM_ResolveBodyPart(p, hitPos, part, broadAnchor) {
-    if SHHJM_ResolveExactBoneIndex(p, hitPos, part, boneIndex, anchorPos) {
-      if part == 1 {
-        anchorPos = broadAnchor;
-      };
-      return true;
-    };
-    boneIndex = SHHJM_DefaultBoneIndexForPart(part);
-    anchorPos = broadAnchor;
+  if SHHJM_ResolveBodyPart(p, hitPos, part, anchorPos) {
     return true;
   };
 
@@ -1232,16 +1167,14 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let shhjmSrcPos: Vector4;
   let anchorPos: Vector4;
   let part: Int32;
-  let boneIndex: Int32;
   let shhjmHardBlock: Bool;
   let shhjmQueued: Bool;
   let shhjmRuntimeEnabled: Bool;
-  let shhjmTargetWasAlreadyDead: Bool;
   let injuryShockPart: Int32;
   let injuryShockAnchor: Vector4;
   let injuryShockQueued: Bool;
+  let arcadeRiderBikeToppleArmed: Bool;
   let vanillaWeaponReactionCandidate: Bool;
-  let vanillaWeaponLane: Int32;
   let savedSkipDeathAnimation: Bool;
   let savedForceRagdollOnDeath: Bool;
 
@@ -1274,15 +1207,27 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // The v8 TweakDB DriverKill block remains in place so shooting the car itself
   // does not create the synthetic Attacks.DriverKill puppet hit too early.
   if RFC_IsVehicleContext(this) {
-    // SPLAT_BVC_COMBINED_20260818
-    // Mounted rider hits bypass SPLAT's motorcycle arm/consume/death path.
-    // Exact BVC1604 ScriptedPuppet.OnHit owns rider + motorcycle handling.
-    return wrappedMethod(evt);
+    // VehicleObject.OnHit is not guaranteed when the bullet lands directly on
+    // the rider. Arm the same Arnold motorcycle topple before damage/death can
+    // clear the mount, then resolve it after vanilla processing. A lethal hit
+    // is normally consumed inside MotorcycleDeathAnimation_CompileFix; the
+    // post-wrap branch is an idempotent fallback.
+    arcadeRiderBikeToppleArmed = RFC_VehArmArcadeRiderBikeTopple(this, evt, c);
+    res = wrappedMethod(evt);
+
+    if arcadeRiderBikeToppleArmed && this.rfc_arcadeRiderBikeToppleArmed {
+      if this.IsDead() {
+        if RFC_VehConsumeArcadeRiderBikeTopple(this, true, c) {
+          this.QueueEvent(CreateForceRagdollEvent(n"Splat_ArcadeRiderBikeFallback"));
+        }
+      } else {
+        RFC_VehConsumeArcadeRiderBikeTopple(this, false, c);
+      }
+    }
+    return res;
   }
 
   this.rfc_vanillaDeathAnimArmed = false;
-  this.rfc_vanillaWeaponLane = 0;
-  shhjmTargetWasAlreadyDead = this.IsDead() || this.IsRagdolling();
 
   // Capture the current attack and arm the explosion isolation window BEFORE
   // vanilla OnHit runs. A lethal hit can enter NPCPuppet.OnDeath from inside
@@ -1302,37 +1247,19 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     RFC_Explode_Clear(this);
   }
 
-  // Selected per-weapon Vanilla lane.
+  // Selected Vanilla Impulse weapons must restore the actual native death
+  // reaction BEFORE wrappedMethod(evt) processes a potentially lethal hit.
   //
-  // Two responsibilities only:
-  //   1) prime the same native death-animation gates used by the restored
-  //      main Death Animation enabler
-  //   2) run the game's normal hit path with no SPLAT impulse/jolt/arcade lane
-  if IsDefined(evt.attackData) {
-    this.rfc_lastAttack = evt.attackData;
-  };
-
-  vanillaWeaponLane =
-    RFC_VanillaWeaponLaneForAttack(evt.attackData, c);
-
+  // Returning early from DeathRouter is too late by itself: the base hit
+  // reaction chooses Death vs ForcedRagdoll from ShouldSkipDeathAnimation()
+  // and ForceRagdollOnDeath while wrappedMethod(evt) is executing.
   vanillaWeaponReactionCandidate =
-    !shhjmTargetWasAlreadyDead
-    && vanillaWeaponLane > 0
-    && RFC_VanillaWeaponLaneEnabled(vanillaWeaponLane, c);
+    IsDefined(evt.attackData)
+    && c.vanillaImpulsesEnabled
+    && RFC_VanillaImpulseAllowedByWeapon(evt.attackData, c);
 
-  // Per-weapon Vanilla ON primes the native death gates BEFORE Cyberpunk's
-  // OnHit. OFF leaves those gates completely alone.
   if vanillaWeaponReactionCandidate {
-    this.rfc_vanillaWeaponLane = vanillaWeaponLane;
     this.rfc_vanillaDeathAnimArmed = true;
-
-    let vanillaWeaponArmLog: ref<ActivityLogSystem> =
-      GameInstance.GetActivityLogSystem(this.GetGame());
-    if IsDefined(vanillaWeaponArmLog) {
-      vanillaWeaponArmLog.AddLog(
-        "[SPLAT1711] PER-WEAPON VANILLA LANE ARMED"
-      );
-    };
 
     savedSkipDeathAnimation = this.ShouldSkipDeathAnimation();
     savedForceRagdollOnDeath =
@@ -1342,88 +1269,50 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 
     this.SetSkipDeathAnimation(false);
     NPCPuppet.ChangeForceRagdollOnDeath(this, false);
-  };
+  }
 
-  // Restore the normal SPLAT pre-wrap hit capture removed by the earlier
-  // per-weapon rewrite.
+  // SHHJM pre-wrap capture. This is now hard-gated by the Bullet Jolts
+  // runtime switch and the visible Enable Bullet Jolts toggle, so OFF cannot
+  // leak delayed ground jolts from pending SHHJM events.
   s = SPLATSettingsRuntime.Jolts();
-  shhjmRuntimeEnabled =
-    !c.vanillaMode
-    && c.bulletJoltsEnabled
-    && RFC_EnemyAllowsBulletJolts(this, c);
-
-  shhjmHardBlock =
-    !shhjmRuntimeEnabled
-    || RFC_SHHJM_HardBlockHit(this, evt.attackData);
-
-  if shhjmTargetWasAlreadyDead || this.IsRagdolling() {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] PRE runtime=\(shhjmRuntimeEnabled) hardBlock=\(shhjmHardBlock) dead=\(this.IsDead()) ragdoll=\(this.IsRagdolling()) shapes=\(ArraySize(evt.hitRepresentationResult.hitShapes))"
-    );
-  };
-
+  shhjmRuntimeEnabled = !c.vanillaMode && c.bulletJoltsEnabled && RFC_EnemyAllowsBulletJolts(this, c);
+  shhjmHardBlock = !shhjmRuntimeEnabled || RFC_SHHJM_HardBlockHit(this, evt.attackData);
   this.shhjm_lastHitValid = false;
   this.shhjm_lastBodyPart = 99;
-  this.shhjm_lastBoneIndex = -1;
 
   hitPos = evt.hitPosition;
-  shhjmSrcPos =
-    RFC_SHHJM_SourcePos(
-      this,
-      evt.attackData,
-      hitPos
-    );
+  shhjmSrcPos = RFC_SHHJM_SourcePos(this, evt.attackData, hitPos);
 
-  if shhjmRuntimeEnabled
-    && !shhjmHardBlock
-    && RFC_SHHJM_ResolveOrDeadFallback(
-      this,
-      evt,
-      hitPos,
-      s,
-      part,
-      boneIndex,
-      anchorPos
-    )
-    && SHHJM_GetPartEnabled(part, s) {
-
+  if shhjmRuntimeEnabled && !shhjmHardBlock && RFC_SHHJM_ResolveOrDeadFallback(this, evt, hitPos, s, part, anchorPos) && SHHJM_GetPartEnabled(part, s) {
     this.shhjm_lastHitValid = true;
     this.shhjm_lastHitPos = hitPos;
     this.shhjm_lastSrcPos = shhjmSrcPos;
     this.shhjm_lastAnchorPos = anchorPos;
     this.shhjm_lastBodyPart = part;
-    this.shhjm_lastBoneIndex = boneIndex;
-  };
+  }
 
-  if shhjmTargetWasAlreadyDead || this.IsRagdolling() {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] CAPTURE valid=\(this.shhjm_lastHitValid) part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) torsoEnabled=\(s.torsoEnabled) torsoFwd=\(s.torsoForwardStrength) torsoUp=\(s.torsoUpStrength) torsoDown=\(s.torsoDownStrength) torsoRadius=\(s.torsoRadius)"
-    );
-  };
-
-  // CRITICAL v1711 FIX:
-  // Native OnHit must execute for BOTH toggle states.
-  // The broken build called wrappedMethod(evt) only when the weapon toggle was
-  // ON, so OFF skipped Cyberpunk's base hit/damage processing entirely.
   res = wrappedMethod(evt);
 
+  // A selected Vanilla Impulse weapon owns the complete lethal reaction.
+  //
+  // If this hit killed the NPC, keep the native death-animation gates open
+  // and return immediately. This prevents Bullet Jolts, Arcade On Hit,
+  // reaction cutoff, Injury Shock, and other post-hit SPLAT work from forcing
+  // ragdoll over the death animation we just restored.
+  //
+  // If the hit was nonlethal, restore the exact native state that existed
+  // before this hit so the exception remains weapon-scoped.
   if vanillaWeaponReactionCandidate {
     if this.IsDead() {
       this.SetSkipDeathAnimation(false);
       NPCPuppet.ChangeForceRagdollOnDeath(this, false);
       return res;
-    };
+    }
 
-    // Selected Vanilla weapon, nonlethal: restore pre-hit death state and stop.
-    // No SPLAT post-hit impulse/jolt/Arcade lane is added.
     this.SetSkipDeathAnimation(savedSkipDeathAnimation);
     NPCPuppet.ChangeForceRagdollOnDeath(this, savedForceRagdollOnDeath);
     this.rfc_vanillaDeathAnimArmed = false;
-    this.rfc_vanillaWeaponLane = 0;
-    return res;
-  };
+  }
 
   // The selected mode's Injury Shock toggle is authoritative. Clear any stale
   // per-NPC state immediately when it is off; queued events also recheck it.
@@ -1436,33 +1325,26 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // lethal bullet can turn a live NPC into a dead/ragdoll target after the
   // pre-wrap resolver already ran. This also restores the ground-wait path.
   if shhjmRuntimeEnabled && !shhjmHardBlock && !RFC_IsVehicleContext(this) {
-    if !this.shhjm_lastHitValid && (this.IsDead() || this.IsRagdolling()) {
-      if RFC_SHHJM_ResolveOrDeadFallback(this, evt, hitPos, s, part, boneIndex, anchorPos) && SHHJM_GetPartEnabled(part, s) {
+    if !this.shhjm_lastHitValid && this.IsDead() {
+      if RFC_SHHJM_ResolveOrDeadFallback(this, evt, hitPos, s, part, anchorPos) && SHHJM_GetPartEnabled(part, s) {
         this.shhjm_lastHitValid = true;
         this.shhjm_lastHitPos = hitPos;
         this.shhjm_lastSrcPos = shhjmSrcPos;
         this.shhjm_lastAnchorPos = anchorPos;
         this.shhjm_lastBodyPart = part;
-        this.shhjm_lastBoneIndex = boneIndex;
       }
     }
 
-    if this.shhjm_lastHitValid && (this.IsDead() || this.IsRagdolling()) {
+    if this.shhjm_lastHitValid && this.IsDead() {
       SHHJM_QueueJolt(
         this,
         this.shhjm_lastBodyPart,
-        this.shhjm_lastBoneIndex,
-        shhjmTargetWasAlreadyDead,
         this.shhjm_lastSrcPos,
         this.shhjm_lastAnchorPos,
         MaxF(0.001, SHHJM_GetHitDelay(this.shhjm_lastBodyPart, s) * MaxF(0.0, c.bulletJoltDelayScale)),
         s
       );
       shhjmQueued = true;
-      LogChannel(
-        n"DEBUG",
-        s"[SPLAT_JOLT_TRACE] QUEUE_CALLED part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) queued=\(shhjmQueued)"
-      );
     }
   }
 
@@ -1533,9 +1415,11 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     && cfg.arcadeOnHitEnabled
     && RFC_ArcadeAttackSourceAllowed(this, ad, cfg)
     && RFC_ArcadeAllowedByWeapon(ad, cfg);
-  // Ordinary hit-animation cutoff now lives inside OnHitAnimation itself.
-  // This guard remains only for Arcade/Injury Shock scheduling.
-  let allowAnimationCut: Bool = false;
+  let isPlayerBulletReactionSource: Bool = RFC_IsPlayerAttack(this, ad)
+    && RFC_IsBulletReactionCutSource(ad);
+  let allowAnimationCut: Bool = isPlayerBulletReactionSource
+    && cfg.hitReactionCutoffEnabled
+    && !cfg.hitReactionsDisabled;
 
   // Injury Shock is separate from normal reaction cutoff. Arcade remains
   // independent and may apply on the same hit that queues the later collapse.
@@ -1565,7 +1449,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 
   // Ordinary cutoff and Arcade share one short guard so the vanilla reaction
   // task has time to start. Incapacitation remains on its lifecycle hook.
-  if allowArcadeImpulse || injuryShockQueued {
+  if allowArcadeImpulse || allowAnimationCut || injuryShockQueued {
     let arcadeGuardDS: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
     let arcadeGuardEvt: ref<RFC_HitReactionGuardEvent> = new RFC_HitReactionGuardEvent();
     arcadeGuardEvt.hitPos = hitPos;

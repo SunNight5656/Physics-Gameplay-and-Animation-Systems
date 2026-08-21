@@ -58,6 +58,7 @@ private func RFC_GetWS(p: wref<ScriptedPuppet>) -> ref<WorkspotGameSystem> {
 // Try to force the NPC out of a chair/lean/ledge workspot right now.
 // Returns true if we were in a workspot and we issued the stop.
 public func RFC_TryStopWorkspot(p: wref<ScriptedPuppet>) -> Bool {
+  if RFC.Cfg().vanillaMode { return false; }
   let ws: ref<WorkspotGameSystem> = RFC_GetWS(p);
   if !IsDefined(ws) { return false; }
   if !ws.IsActorInWorkspot(p) { return false; }
@@ -68,6 +69,7 @@ public func RFC_TryStopWorkspot(p: wref<ScriptedPuppet>) -> Bool {
 // PopFix should be allowed even during vehicle/workspot transitions.
 // Use this instead of RFC_AllowRFC() in PopFix hooks.
 public func RFC_AllowPopFix(p: wref<ScriptedPuppet>) -> Bool {
+  if RFC.Cfg().vanillaMode { return false; }
   return IsDefined(p);
 }
 
@@ -291,6 +293,7 @@ private func RFC_HasCarAnimTags(p: wref<ScriptedPuppet>) -> Bool {
   return p.HasRuntimeAnimsetTags(t);
 }
 private func RFC_AllowRFC(p: wref<ScriptedPuppet>) -> Bool {
+  if RFC.Cfg().vanillaMode { return false; }
   let np: wref<NPCPuppet> = p as NPCPuppet;
   if !IsDefined(np) { return false; }
 

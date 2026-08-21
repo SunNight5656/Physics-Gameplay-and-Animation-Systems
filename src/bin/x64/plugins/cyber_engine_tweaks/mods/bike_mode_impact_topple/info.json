@@ -1,0 +1,5 @@
+{
+  "name": "Bike V Control + Impact",
+  "version": "16.0.4",
+  "description": "Symmetric VehicleBumpEvent handling. Processes both the event-owner bike and a target motorcycle stored in evt.hitVehicle so threshold 0 can remove NPC riders from a light contact."
+}

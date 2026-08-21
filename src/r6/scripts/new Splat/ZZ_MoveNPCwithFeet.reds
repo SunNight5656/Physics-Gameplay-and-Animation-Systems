@@ -393,13 +393,13 @@ private func SGK_Start(p: wref<PlayerPuppet>) -> Void {
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
   let res: Bool = wrappedMethod();
-  SGK_Start(this);
+  if !RFC.Cfg().vanillaMode { SGK_Start(this); }
   return res;
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnTakeControl(ri: EntityResolveComponentsInterface) -> Bool {
   let res: Bool = wrappedMethod(ri);
-  SGK_Start(this);
+  if !RFC.Cfg().vanillaMode { SGK_Start(this); }
   return res;
 }

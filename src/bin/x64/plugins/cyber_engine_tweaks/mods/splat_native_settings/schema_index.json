@@ -1,5 +1,5 @@
 {
-  "version": 161,
+  "version": 162,
   "title": "Splat Physics 11.1",
   "modeSettingId": "RFCModSettings.splatPresetMode",
   "modes": [
@@ -29,7 +29,7 @@
     },
     {
       "key": "vanilla",
-      "label": "Vanilla",
+      "label": "Vanilla (Ragdoll Rig Only)",
       "enumIndex": 5,
       "enumValue": 5
     }
@@ -87,7 +87,7 @@
       "type": "RFCSplatPresetMode",
       "default": 1,
       "label": "SPLAT Mode",
-      "description": "Selects the active SPLAT preset. The Native Settings menu immediately rebuilds with only that mode name and that mode's editable sections.",
+      "description": "Selects the active SPLAT preset. Vanilla (Ragdoll Rig Only) disables all SPLAT script behavior and leaves only the installed SPLAT ragdoll rig active.",
       "dependencyName": "",
       "dependency": null,
       "sourceFile": "SPLATSettingsData.reds",
@@ -98,7 +98,7 @@
         "Realism Plus",
         "Clint Eastwood Old West",
         "Arnold / Arcade",
-        "Vanilla"
+        "Vanilla (Ragdoll Rig Only)"
       ]
     }
   ],
@@ -431,21 +431,55 @@
           "uiOnly": true
         },
         {
-          "id": "explosions.respectCinematics",
+          "id": "explosions.restoreStealthKillAnimations",
           "class": "RFCModSettings",
-          "name": "respectCinematics",
+          "name": "restoreStealthKillAnimations",
           "originalCategory": "Global",
           "mode": "global",
           "topic": "global",
           "type": "Bool",
           "default": false,
-          "label": "Keep stealth/finisher/Blackwall cinematics",
-          "description": "Let vanilla executions (stealth, finisher, Blackwall) play; disables Splat wake-taps/impulses during those only.",
+          "label": "Restore Stealth Kill Animations",
+          "description": "ON preserves vanilla stealth-kill animations without also restoring finishers or Blackwall animations.",
           "dependencyName": "showStealthAnimationControls",
           "dependency": "explosions.showStealthAnimationControls",
           "sourceFile": "SPLATSettingsData.reds",
-          "sourceLine": 9172,
+          "sourceLine": 2008,
           "order": 895
+        },
+        {
+          "id": "explosions.restoreFinisherAnimations",
+          "class": "RFCModSettings",
+          "name": "restoreFinisherAnimations",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Bool",
+          "default": false,
+          "label": "Restore Finisher Animations",
+          "description": "ON preserves vanilla weapon-finisher animations without also restoring stealth kills or Blackwall animations.",
+          "dependencyName": "showStealthAnimationControls",
+          "dependency": "explosions.showStealthAnimationControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 2010,
+          "order": 896
+        },
+        {
+          "id": "explosions.restoreBlackwallAnimations",
+          "class": "RFCModSettings",
+          "name": "restoreBlackwallAnimations",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Bool",
+          "default": false,
+          "label": "Restore Blackwall Animations",
+          "description": "ON preserves vanilla Blackwall kill animations without also restoring stealth kills or finishers.",
+          "dependencyName": "showStealthAnimationControls",
+          "dependency": "explosions.showStealthAnimationControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 2012,
+          "order": 897
         },
         {
           "id": "explosions.stealthRagdollsEnabled",
@@ -462,7 +496,7 @@
           "dependency": "explosions.showStealthAnimationControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9181,
-          "order": 896
+          "order": 898
         },
         {
           "id": "explosions.stealthRagdollDelay",
@@ -479,7 +513,7 @@
           "dependency": "explosions.showStealthAnimationControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9193,
-          "order": 897,
+          "order": 899,
           "min": 0.0,
           "max": 5.0,
           "step": 0.05
@@ -499,7 +533,7 @@
           "dependency": "explosions.showStealthAnimationControls",
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9202,
-          "order": 898
+          "order": 900
         },
         {
           "id": "explosions.showIncapacitatedAnimationControls",
@@ -566,7 +600,7 @@
           "type": "Bool",
           "default": false,
           "label": "Show Bullet Hit-Reaction Controls",
-          "description": "Show or hide ordinary live bullet hit-reaction cutoff controls.",
+          "description": "Show or hide ordinary live bullet hit-reaction controls, including complete suppression and the timed cutoff slider.",
           "dependencyName": "showAnimationControls",
           "dependency": "RFCModSettings.showAnimationControls",
           "sourceFile": "SPLATSettingsData.reds",
@@ -590,6 +624,26 @@
           "sourceFile": "SPLATSettingsData.reds",
           "sourceLine": 9250,
           "order": 951
+        },
+        {
+          "id": "explosions.hitReactionCutoffDelay",
+          "class": "RFCModSettings",
+          "name": "hitReactionCutoffDelay",
+          "originalCategory": "Global",
+          "mode": "global",
+          "topic": "global",
+          "type": "Float",
+          "default": 0.0,
+          "label": "Hit Animation Cutoff (s)",
+          "description": "0.00 = off. The normal bullet hit animation starts immediately; values above 0 end that animation after this many seconds.",
+          "dependencyName": "showHitReactionAnimationControls",
+          "dependency": "explosions.showHitReactionAnimationControls",
+          "sourceFile": "SPLATSettingsData.reds",
+          "sourceLine": 2030,
+          "order": 952,
+          "min": 0.0,
+          "max": 3.0,
+          "step": 0.05
         },
         {
           "id": "explosions.showInjuryShockControls",

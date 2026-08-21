@@ -587,6 +587,7 @@ private func GS_GetPointAtHeight(p: wref<NPCPuppet>, height: Float, forwardOffse
 }
 
 private func GS_ApplyImpulseAtPoint(p: wref<NPCPuppet>, pos: Vector4, impulse: Vector4, radiusM: Float) -> Void {
+  if RFC.Cfg().vanillaMode { return; }
   if !IsDefined(p) { return; }
   if RFC_TimeDilationBlocksImpulsesNow(p) { return; }
   if RFC_IsVehicleContext(p) { return; }

@@ -2003,6 +2003,14 @@ public let showStealthAnimationControls: Bool = false;
 
   public let respectCinematics: Bool = false;
 
+  // Separate restoration controls. The legacy respectCinematics field remains
+  // for saved-value compatibility but no longer owns every cinematic lane.
+  public let restoreStealthKillAnimations: Bool = false;
+
+  public let restoreFinisherAnimations: Bool = false;
+
+  public let restoreBlackwallAnimations: Bool = false;
+
   public let stealthRagdollsEnabled: Bool = true;
 
   public let stealthRagdollDelay: Float = 4.150000;
@@ -2019,8 +2027,13 @@ public let showHitReactionAnimationControls: Bool = false;
 
   public let hitReactionsDisabled: Bool = false;
 
+  // V1712 experiment: delay only the ordinary live bullet reaction animation.
+  // Damage and the outer OnHit pipeline still happen immediately.
+  public let hitReactionActivationDelay: Float = 0.000000;
+
   public let hitReactionCutoffEnabled: Bool = false;
 
+  // Duration measured from the moment the delayed/immediate animation starts.
   public let hitReactionCutoffDelay: Float = 0.000000;
 
 public let showInjuryShockControls: Bool = false;

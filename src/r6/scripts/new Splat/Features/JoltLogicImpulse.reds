@@ -63,13 +63,62 @@ private func SHHJM_GetGroundWaitMax(part: Int32, s: ref<SHHJM_Settings>) -> Floa
   return RFC.Cfg().bulletJoltGroundWaitMax;
 }
 
-private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, srcPos: Vector4, anchorPos: Vector4, fireDelay: Float, s: ref<SHHJM_Settings>) -> Void {
-  let applyEvt: ref<SHHJM_ApplyImpulseEvt>;
+// Preserve the torso model that previously worked in SPLAT: resolve the broad
+// torso part, bias the event toward the live central spine, wake the corpse via
+// SPLAT's own ragdoll event, then deliver one delayed ApplyImpulse event. The
+// newer bone-index/wide-contact experiment bypassed this callback chain and its
+// torso-only forced ground wait could expire without ever dispatching.
+private func SHHJM_QueueWorkingTorsoModel(puppet: ref<NPCPuppet>, targetWasAlreadyDead: Bool, srcPos: Vector4, anchorPos: Vector4, fireDelay: Float, s: ref<SHHJM_Settings>) -> Void {
+  let applyAnchor: Vector4;
+  let impulse: Vector4;
+  let radius: Float;
+
+  applyAnchor = SHHJM_BiasAnchorInwardBySettings(puppet, 1, anchorPos, s);
+  impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, 1, s);
+  radius = SHHJM_GetRadius(1, s);
+
+  LogChannel(
+    n"DEBUG",
+    s"[SPLAT_JOLT_TRACE] TORSO_GROUND_NATIVE_DISPATCH anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) delay=\(fireDelay)"
+  );
+
+  if puppet.IsDead() && !puppet.IsRagdolling() {
+    if ScriptedPuppet.CanRagdoll(puppet) {
+      puppet.QueueEvent(CreateForceRagdollEvent(n"SHHJM_CustomJolt"));
+    };
+    SHHJM_Sched(
+      puppet,
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+      MaxF(0.012, fireDelay)
+    );
+  } else if fireDelay <= 0.001 {
+    puppet.QueueEvent(
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius)
+    );
+  } else {
+    SHHJM_Sched(
+      puppet,
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+      fireDelay
+    );
+  };
+}
+
+private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, boneIndex: Int32, targetWasAlreadyDead: Bool, srcPos: Vector4, anchorPos: Vector4, fireDelay: Float, s: ref<SHHJM_Settings>) -> Void {
   let waitEvt: ref<SHHJM_WaitForGroundEvt>;
   let applyAnchor: Vector4;
+  let impulse: Vector4;
+  let radius: Float;
   let nowT: Float;
+  let effectiveDelay: Float;
 
   let c: RFCConfig = RFC.Cfg();
+  if part == 1 {
+    LogChannel(
+      n"DEBUG",
+      s"[SPLAT_JOLT_TRACE] TORSO_QUEUE_ENTRY definedPuppet=\(IsDefined(puppet)) definedSettings=\(IsDefined(s)) vanilla=\(c.vanillaMode) joltsEnabled=\(c.bulletJoltsEnabled) bone=\(boneIndex)"
+    );
+  };
   if !IsDefined(puppet) || !IsDefined(s) {
     return;
   };
@@ -77,14 +126,26 @@ private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, srcPos: Vector
     return;
   };
 
-  applyAnchor = SHHJM_BiasAnchorInwardBySettings(puppet, part, anchorPos, s);
+  if part == 1 {
+    applyAnchor = SHHJM_BiasAnchorInwardBySettings(puppet, part, anchorPos, s);
+  } else {
+    applyAnchor = SHHJM_BoneLocalApplyPoint(srcPos, anchorPos, part, s);
+  };
 
-  if puppet.IsDead() && c.bulletJoltWaitForGround && !c.bulletJoltAllowAirborne && !SHHJM_IsOnGround(puppet) {
+  // Ground waiting is controlled only by the existing menu setting. Do not
+  // force it for torso: a settled horizontal ragdoll can remain false in the
+  // navigation ground test, which previously swallowed every chest/back jolt.
+  if puppet.IsDead()
+    && c.bulletJoltWaitForGround
+    && !c.bulletJoltAllowAirborne
+    && !SHHJM_IsOnGround(puppet) {
     nowT = SHHJM_Now(puppet);
     waitEvt = new SHHJM_WaitForGroundEvt();
     waitEvt.srcPos = srcPos;
     waitEvt.anchorPos = anchorPos;
     waitEvt.part = part;
+    waitEvt.boneIndex = boneIndex;
+    waitEvt.targetWasAlreadyDead = targetWasAlreadyDead;
     waitEvt.fireDelay = MaxF(0.001, fireDelay);
     waitEvt.armedAt = nowT;
     waitEvt.expireAt = nowT + MaxF(0.10, SHHJM_GetGroundWaitMax(part, s));
@@ -92,23 +153,83 @@ private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, srcPos: Vector
     return;
   };
 
-  applyEvt = new SHHJM_ApplyImpulseEvt();
-  applyEvt.pos = applyAnchor;
-  applyEvt.imp = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, part, s);
-  applyEvt.srcPos = srcPos;
-  applyEvt.radius = SHHJM_GetRadius(part, s);
-  applyEvt.part = part;
+  effectiveDelay = fireDelay;
 
-  // Custom SPLAT jolt lane:
-  // v73/v74 correctly kill the vanilla physical impulse lane. That also means
-  // the custom body-part jolt should not assume the native pipeline already has
-  // the corpse in a stable ragdoll state. Wake/refresh ragdoll first, then apply
-  // the SPLAT impulse on the next small tick.
-  if puppet.IsDead() {
-    SHHJM_Sched(puppet, new SHHJM_ForceRagdollEvt(), 0.001);
-    SHHJM_Sched(puppet, applyEvt, MaxF(0.012, fireDelay));
+  // Torso must use the same native impulse-event lane that is already working
+  // for head, arms, and legs. The previous torso-only intermediate event was
+  // successfully queued by OnHit but could disappear before the engine's
+  // RagdollApplyImpulse event reached the active corpse. Keep the broad torso
+  // anchor and configured torso radius, but dispatch the native event directly.
+  if part == 1 {
+    impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, part, s);
+    radius = SHHJM_GetRadius(part, s);
+    LogChannel(
+      n"DEBUG",
+      s"[SPLAT_JOLT_TRACE] TORSO_NATIVE_DISPATCH anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) delay=\(effectiveDelay)"
+    );
+
+    if puppet.IsDead() && !puppet.IsRagdolling() {
+      if ScriptedPuppet.CanRagdoll(puppet) {
+        puppet.QueueEvent(CreateForceRagdollEvent(n"SHHJM_CustomJolt"));
+      };
+      SHHJM_Sched(
+        puppet,
+        CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+        MaxF(0.012, effectiveDelay)
+      );
+    } else if effectiveDelay <= 0.001 {
+      puppet.QueueEvent(
+        CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius)
+      );
+    } else {
+      SHHJM_Sched(
+        puppet,
+        CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+        effectiveDelay
+      );
+    };
+    return;
+  };
+
+  // Send the real engine impulse event directly. The intermediate
+  // SHHJM_ApplyImpulseEvt callback added a second set of runtime gates after
+  // OnHit had already approved the jolt, allowing a valid hit to disappear
+  // before CreateRagdollApplyImpulseEvent ever reached the puppet.
+  impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, part, s);
+  radius = SHHJM_GetBoneRadius(part, s);
+  if part == 1 {
+    LogChannel(
+      n"DEBUG",
+      s"[SPLAT_JOLT_TRACE] TORSO_EVENT anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) fireDelay=\(fireDelay)"
+    );
+  };
+  // Preserve active death animations on newly lethal hits. Existing
+  // dead/ragdoll targets are the Bullet Jolt lane and may be refreshed.
+  if RFC_AnyDeathAnimationOwnsLifecycle(puppet)
+    && !puppet.IsRagdolling()
+    && !targetWasAlreadyDead {
+    return;
+  };
+
+  if puppet.IsDead() && !puppet.IsRagdolling() {
+    if ScriptedPuppet.CanRagdoll(puppet) {
+      puppet.QueueEvent(CreateForceRagdollEvent(n"SHHJM_CustomJolt"));
+    };
+    SHHJM_Sched(
+      puppet,
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+      MaxF(0.012, effectiveDelay)
+    );
+  } else if effectiveDelay <= 0.001 {
+    puppet.QueueEvent(
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius)
+    );
   } else {
-    SHHJM_Sched(puppet, applyEvt, MaxF(0.001, fireDelay));
+    SHHJM_Sched(
+      puppet,
+      CreateRagdollApplyImpulseEvent(applyAnchor, impulse, radius),
+      effectiveDelay
+    );
   };
 }
 
@@ -119,8 +240,10 @@ protected cb func OnSHHJM_WaitForGroundEvt(evt: ref<SHHJM_WaitForGroundEvt>) -> 
   let c: RFCConfig = RFC.Cfg();
   let s: ref<SHHJM_Settings>;
   let retryEvt: ref<SHHJM_WaitForGroundEvt>;
-  let applyEvt: ref<SHHJM_ApplyImpulseEvt>;
   let groundedAnchor: Vector4;
+  let impulse: Vector4;
+  let radius: Float;
+  let groundFireDelay: Float;
 
   if c.vanillaMode || RFC_TimeDilationBlocksImpulses(this, c) || !c.bulletJoltsEnabled {
     return true;
@@ -135,21 +258,47 @@ protected cb func OnSHHJM_WaitForGroundEvt(evt: ref<SHHJM_WaitForGroundEvt>) -> 
   };
 
   if SHHJM_IsOnGround(this) || SHHJM_HasGroundImpactSince(this, evt.armedAt) {
-    groundedAnchor = SHHJM_BiasAnchorInwardBySettings(this, evt.part, evt.anchorPos, s);
+    if evt.part == 1 {
+      SHHJM_QueueWorkingTorsoModel(
+        this,
+        evt.targetWasAlreadyDead,
+        evt.srcPos,
+        evt.anchorPos,
+        evt.fireDelay,
+        s
+      );
+      return true;
+    };
 
-    applyEvt = new SHHJM_ApplyImpulseEvt();
-    applyEvt.pos = groundedAnchor;
-    applyEvt.imp = SHHJM_BuildImpulse(this, evt.srcPos, groundedAnchor, evt.part, s);
-    applyEvt.srcPos = evt.srcPos;
-    applyEvt.radius = SHHJM_GetRadius(evt.part, s);
-    applyEvt.part = evt.part;
+    if !SHHJM_GetLiveJoltAnchor(this, evt.part, evt.boneIndex, evt.anchorPos, groundedAnchor) {
+      SHHJM_GetExactPartAnchor(this, evt.part, evt.anchorPos, groundedAnchor);
+    };
+    groundedAnchor = SHHJM_BoneLocalApplyPoint(evt.srcPos, groundedAnchor, evt.part, s);
 
-    // Ground-wait SPLAT jolt lane:
-    // fire only after the vanilla lane killer has done its cleanup, and make
-    // sure this custom jolt owns the ragdoll refresh instead of depending on
-    // the native delayed ground impulse.
-    SHHJM_Sched(this, new SHHJM_ForceRagdollEvt(), 0.001);
-    SHHJM_Sched(this, applyEvt, MaxF(0.012, evt.fireDelay));
+    impulse = SHHJM_BuildImpulse(this, evt.srcPos, groundedAnchor, evt.part, s);
+    radius = SHHJM_GetBoneRadius(evt.part, s);
+    groundFireDelay = evt.fireDelay;
+
+    if this.IsDead() && !this.IsRagdolling() {
+      if ScriptedPuppet.CanRagdoll(this) {
+        this.QueueEvent(CreateForceRagdollEvent(n"SHHJM_CustomJolt"));
+      };
+      SHHJM_Sched(
+        this,
+        CreateRagdollApplyImpulseEvent(groundedAnchor, impulse, radius),
+        MaxF(0.012, groundFireDelay)
+      );
+    } else if groundFireDelay <= 0.001 {
+      this.QueueEvent(
+        CreateRagdollApplyImpulseEvent(groundedAnchor, impulse, radius)
+      );
+    } else {
+      SHHJM_Sched(
+        this,
+        CreateRagdollApplyImpulseEvent(groundedAnchor, impulse, radius),
+        groundFireDelay
+      );
+    };
     return true;
   };
 
@@ -161,6 +310,8 @@ protected cb func OnSHHJM_WaitForGroundEvt(evt: ref<SHHJM_WaitForGroundEvt>) -> 
   retryEvt.srcPos = evt.srcPos;
   retryEvt.anchorPos = evt.anchorPos;
   retryEvt.part = evt.part;
+  retryEvt.boneIndex = evt.boneIndex;
+  retryEvt.targetWasAlreadyDead = evt.targetWasAlreadyDead;
   retryEvt.fireDelay = evt.fireDelay;
   retryEvt.expireAt = evt.expireAt;
   retryEvt.armedAt = evt.armedAt;
@@ -234,51 +385,312 @@ private func SHHJM_GetExactPartAnchor(puppet: ref<NPCPuppet>, part: Int32, fallb
   return false;
 }
 
+// Exact ragdoll ChildAnimIndex mapping from the base human rigs. The engine's
+// REDscript ragdoll impulse event has no body-index field, so the index is used
+// to preserve the exact live bone anchor through SPLAT's delayed jolt pipeline.
+private func SHHJM_GetBoneSlotName(boneIndex: Int32) -> CName {
+  switch boneIndex {
+    case 4: return n"Spine";
+    case 5: return n"LeftUpLeg";
+    case 6: return n"RightUpLeg";
+    case 7: return n"Spine1";
+    case 8: return n"LeftLeg";
+    case 9: return n"RightLeg";
+    case 10: return n"Spine2";
+    case 11: return n"LeftFoot";
+    case 12: return n"RightFoot";
+    case 13: return n"Spine3";
+    case 17: return n"LeftArm";
+    case 18: return n"RightArm";
+    case 19: return n"Neck1";
+    case 20: return n"LeftForeArm";
+    case 21: return n"RightForeArm";
+    case 22: return n"Head";
+    case 23: return n"LeftHand";
+    case 24: return n"RightHand";
+    case 41: return n"LeftToeBase";
+    case 42: return n"RightToeBase";
+    case 55: return n"LeftHandMiddle2";
+    case 60: return n"RightHandMiddle2";
+  };
+  return n"";
+}
+
+private func SHHJM_GetPartForBoneIndex(boneIndex: Int32) -> Int32 {
+  switch boneIndex {
+    case 19:
+    case 22:
+      return 0;
+    case 4:
+    case 7:
+    case 10:
+    case 13:
+      return 1;
+    case 17:
+    case 20:
+    case 23:
+    case 55:
+      return 2;
+    case 18:
+    case 21:
+    case 24:
+    case 60:
+      return 3;
+    case 5:
+    case 8:
+    case 11:
+    case 41:
+      return 4;
+    case 6:
+    case 9:
+    case 12:
+    case 42:
+      return 5;
+  };
+  return 99;
+}
+
+private func SHHJM_DefaultBoneIndexForPart(part: Int32) -> Int32 {
+  switch part {
+    case 0: return 22;
+    case 1: return 10;
+    case 2: return 17;
+    case 3: return 18;
+    case 4: return 8;
+    case 5: return 9;
+  };
+  return -1;
+}
+
+private func SHHJM_GetExactBoneAnchor(puppet: ref<NPCPuppet>, boneIndex: Int32, fallbackPos: Vector4, out anchorPos: Vector4) -> Bool {
+  let slotName: CName = SHHJM_GetBoneSlotName(boneIndex);
+
+  if !Equals(slotName, n"") && SHHJM_GetSlotWorldPos(puppet, slotName, anchorPos) {
+    return true;
+  };
+
+  // Some human rigs expose the neck proxy as Neck instead of Neck1.
+  if boneIndex == 19 && SHHJM_GetSlotWorldPos(puppet, n"Neck", anchorPos) {
+    return true;
+  };
+
+  anchorPos = fallbackPos;
+  return false;
+}
+
+private func SHHJM_UpdateTorsoColliderCandidate(slotTransform: WorldTransform, hitPos: Vector4, localOffset: Vector4, out bestPos: Vector4, out bestDistSq: Float) -> Void {
+  let candidatePos: Vector4 = WorldPosition.ToVector4(
+    WorldTransform.TransformPoint(slotTransform, localOffset)
+  );
+  let distSq: Float = SHHJM_DistSq(hitPos, candidatePos);
+
+  if distSq < bestDistSq {
+    bestDistSq = distSq;
+    bestPos = candidatePos;
+  };
+}
+
+// Spine ragdoll capsules are offset differently in the male and female base
+// rigs. Slot position alone addresses the animation bone, not necessarily the
+// physics body. Evaluate both rigs' known local capsule centers and select the
+// one nearest the real bullet contact. This keeps front-chest and back hits on
+// the same torso body without broadening the impulse into the limbs or head.
+private func SHHJM_GetTorsoColliderAnchor(puppet: ref<NPCPuppet>, boneIndex: Int32, hitPos: Vector4, out anchorPos: Vector4) -> Bool {
+  let slotName: CName = SHHJM_GetBoneSlotName(boneIndex);
+  let slotTransform: WorldTransform;
+  let bestDistSq: Float;
+
+  if Equals(slotName, n"") || !SHHJM_GetSlotWorldTransform(puppet, slotName, slotTransform) {
+    anchorPos = hitPos;
+    return false;
+  };
+
+  // Zero offset covers the female Spine/Spine2/Spine3 bodies and remains a
+  // safe candidate for custom rigs whose collider is centered on the bone.
+  anchorPos = WorldPosition.ToVector4(WorldTransform.GetWorldPosition(slotTransform));
+  bestDistSq = SHHJM_DistSq(hitPos, anchorPos);
+
+  switch boneIndex {
+    case 4:
+      SHHJM_UpdateTorsoColliderCandidate(slotTransform, hitPos, new Vector4(0.140, 0.000, 0.000, 0.0), anchorPos, bestDistSq);
+      break;
+    case 7:
+      // Male Spine1 is +0.09 m; female Spine1 is -0.03 m.
+      SHHJM_UpdateTorsoColliderCandidate(slotTransform, hitPos, new Vector4(0.090, 0.000, 0.000, 0.0), anchorPos, bestDistSq);
+      SHHJM_UpdateTorsoColliderCandidate(slotTransform, hitPos, new Vector4(-0.030, 0.000, 0.000, 0.0), anchorPos, bestDistSq);
+      break;
+    case 10:
+      SHHJM_UpdateTorsoColliderCandidate(slotTransform, hitPos, new Vector4(0.160, 0.020, 0.000, 0.0), anchorPos, bestDistSq);
+      break;
+    case 13:
+      SHHJM_UpdateTorsoColliderCandidate(slotTransform, hitPos, new Vector4(0.030, 0.020, 0.000, 0.0), anchorPos, bestDistSq);
+      break;
+  };
+
+  return true;
+}
+
+private func SHHJM_GetLiveJoltAnchor(puppet: ref<NPCPuppet>, part: Int32, boneIndex: Int32, referencePos: Vector4, out anchorPos: Vector4) -> Bool {
+  if part == 1 {
+    return SHHJM_GetTorsoColliderAnchor(puppet, boneIndex, referencePos, anchorPos);
+  };
+  return SHHJM_GetExactBoneAnchor(puppet, boneIndex, referencePos, anchorPos);
+}
+
+private func SHHJM_UpdateBestBoneCandidate(puppet: ref<NPCPuppet>, hitPos: Vector4, partFilter: Int32, candidateIndex: Int32, out bestDistSq: Float, out bestBoneIndex: Int32, out bestPos: Vector4, out found: Bool) -> Void {
+  let candidatePos: Vector4;
+  let distSq: Float;
+
+  if SHHJM_GetPartForBoneIndex(candidateIndex) != partFilter {
+    return;
+  };
+  if partFilter == 1 {
+    if !SHHJM_GetTorsoColliderAnchor(puppet, candidateIndex, hitPos, candidatePos) {
+      return;
+    };
+  } else {
+    if !SHHJM_GetExactBoneAnchor(puppet, candidateIndex, hitPos, candidatePos) {
+      return;
+    };
+  };
+
+  distSq = SHHJM_DistSq(hitPos, candidatePos);
+  if !found || distSq < bestDistSq {
+    bestDistSq = distSq;
+    bestBoneIndex = candidateIndex;
+    bestPos = candidatePos;
+    found = true;
+  };
+}
+
+private func SHHJM_ResolveExactBoneIndex(puppet: ref<NPCPuppet>, hitPos: Vector4, partFilter: Int32, out boneIndex: Int32, out anchorPos: Vector4) -> Bool {
+  let found: Bool = false;
+  let bestDistSq: Float = 0.0;
+  let bestBoneIndex: Int32 = -1;
+  let bestPos: Vector4;
+
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 4, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 5, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 6, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 7, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 8, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 9, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 10, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 11, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 12, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 13, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 17, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 18, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 19, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 20, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 21, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 22, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 23, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 24, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 41, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 42, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 55, bestDistSq, bestBoneIndex, bestPos, found);
+  SHHJM_UpdateBestBoneCandidate(puppet, hitPos, partFilter, 60, bestDistSq, bestBoneIndex, bestPos, found);
+
+  if found {
+    boneIndex = bestBoneIndex;
+    anchorPos = bestPos;
+    return true;
+  };
+
+  boneIndex = SHHJM_DefaultBoneIndexForPart(partFilter);
+  if partFilter == 1 {
+    return SHHJM_GetTorsoColliderAnchor(puppet, boneIndex, hitPos, anchorPos);
+  };
+  if !SHHJM_GetExactBoneAnchor(puppet, boneIndex, hitPos, anchorPos) {
+    return false;
+  };
+  return true;
+}
+
 // Use the game's actual hit-reaction zone instead of guessing only from
 // distance to nearby slots. This keeps head/body/left-right arm/left-right leg
 // selection stable even after the corpse twists or slides.
 private func SHHJM_ResolveBodyPartFromHitEvent(puppet: ref<NPCPuppet>, evt: ref<gameHitEvent>, hitPos: Vector4, out part: Int32, out anchorPos: Vector4) -> Bool {
   let shape: HitShapeData;
   let userData: ref<HitShapeUserDataBase>;
+  let recognized: Bool;
+  let i: Int32 = 0;
 
   if !IsDefined(puppet) || !IsDefined(evt) || ArraySize(evt.hitRepresentationResult.hitShapes) <= 0 {
     return false;
   };
 
-  shape = evt.hitRepresentationResult.hitShapes[0];
-  userData = shape.userData as HitShapeUserDataBase;
-  if !IsDefined(userData) {
-    return false;
-  };
+  // Armor and clothing can occupy hitShapes[0] without carrying a reaction
+  // zone. Keep the engine's shape order, but continue until a real anatomical
+  // zone is found instead of dropping otherwise valid chest hits.
+  while i < ArraySize(evt.hitRepresentationResult.hitShapes) {
+    recognized = false;
+    shape = evt.hitRepresentationResult.hitShapes[i];
+    userData = shape.userData as HitShapeUserDataBase;
 
-  if HitShapeUserDataBase.IsHitReactionZoneHead(userData) {
-    part = 0;
-  } else {
-    if HitShapeUserDataBase.IsHitReactionZoneTorso(userData) {
-      part = 1;
-    } else {
-      if HitShapeUserDataBase.IsHitReactionZoneLeftArm(userData) {
-        part = 2;
+    if IsDefined(userData) {
+      if HitShapeUserDataBase.IsHitReactionZoneHead(userData) {
+        part = 0;
+        recognized = true;
       } else {
-        if HitShapeUserDataBase.IsHitReactionZoneRightArm(userData) {
-          part = 3;
+        if HitShapeUserDataBase.IsHitReactionZoneTorso(userData) {
+          part = 1;
+          recognized = true;
         } else {
-          if HitShapeUserDataBase.IsHitReactionZoneLeftLeg(userData) {
-            part = 4;
+          if HitShapeUserDataBase.IsHitReactionZoneLeftArm(userData) {
+            part = 2;
+            recognized = true;
           } else {
-            if HitShapeUserDataBase.IsHitReactionZoneRightLeg(userData) {
-              part = 5;
+            if HitShapeUserDataBase.IsHitReactionZoneRightArm(userData) {
+              part = 3;
+              recognized = true;
             } else {
-              return false;
+              if HitShapeUserDataBase.IsHitReactionZoneLeftLeg(userData) {
+                part = 4;
+                recognized = true;
+              } else {
+                if HitShapeUserDataBase.IsHitReactionZoneRightLeg(userData) {
+                  part = 5;
+                  recognized = true;
+                };
+              };
             };
           };
         };
       };
     };
+
+    // Settled corpse hits do not always retain an EHitReactionZone torso tag,
+    // but Cyberpunk still classifies the same central collider as the BODY
+    // dismemberment part. Use that fallback after explicit limb/head checks.
+    if IsDefined(userData)
+      && !recognized
+      && Equals(
+        HitShapeUserDataBase.GetDismembermentBodyPart(userData),
+        gameDismBodyPart.BODY
+      ) {
+      part = 1;
+      recognized = true;
+    };
+
+    if recognized {
+      if part == 1 {
+        anchorPos = hitPos;
+      } else {
+        SHHJM_GetExactPartAnchor(puppet, part, hitPos, anchorPos);
+      };
+      LogChannel(
+        n"DEBUG",
+        s"[SPLAT_JOLT_TRACE] SHAPE_RESOLVE shapeIndex=\(i) part=\(part) hit=\(hitPos) anchor=\(anchorPos)"
+      );
+      return true;
+    };
+
+    i += 1;
   };
 
-  SHHJM_GetExactPartAnchor(puppet, part, hitPos, anchorPos);
-  return true;
+  return false;
 }
 
 // The entity's world-up vector does not reliably follow individual ragdoll
@@ -468,9 +880,14 @@ private func SHHJM_ResolveBodyPart(puppet: ref<NPCPuppet>, hitPos: Vector4, out 
   if found {
     part = bestPart;
     SHHJM_GetExactPartAnchor(puppet, bestPart, bestPos, anchorPos);
+    LogChannel(
+      n"DEBUG",
+      s"[SPLAT_JOLT_TRACE] SPATIAL_RESOLVE part=\(part) hit=\(hitPos) anchor=\(anchorPos)"
+    );
     return true;
   };
 
+  LogChannel(n"DEBUG", s"[SPLAT_JOLT_TRACE] RESOLVE_FAILED hit=\(hitPos)");
   return false;
 }
 
@@ -534,7 +951,12 @@ private func SHHJM_GetRadius(part: Int32, s: ref<SHHJM_Settings>) -> Float {
     case 0:
       return ClampF(ClampF(s.headRadius, 0.005, 0.030) * scale, 0.005, 0.150);
     case 1:
-      return MaxF(0.005, s.torsoRadius * scale);
+      // Torso has its own explicit radius slider. Do not collapse it through
+      // the mode-wide local-bone radius scale: that scale can be zero while
+      // the torso slider is nonzero, which reduced a requested 10.0 m event
+      // to the ineffective 0.005 m floor. This restores the earlier working
+      // torso behavior where the torso radius is applied directly.
+      return ClampF(s.torsoRadius, 0.005, 10.000);
     case 2:
       return ClampF(ClampF(s.leftArmRadius, 0.005, 0.030) * scale, 0.005, 0.150);
     case 3:
@@ -545,6 +967,35 @@ private func SHHJM_GetRadius(part: Int32, s: ref<SHHJM_Settings>) -> Float {
       return ClampF(ClampF(s.rightLegRadius, 0.005, 0.030) * scale, 0.005, 0.150);
   };
   return 0.0100;
+}
+
+private func SHHJM_GetBoneRadius(part: Int32, s: ref<SHHJM_Settings>) -> Float {
+  // The engine event is position/radius based, not a direct rigid-body-index
+  // call. The previous 0.005-0.025 m radius could miss the ragdoll collider
+  // completely even though the correct live bone anchor was selected. Keep
+  // the exact bone anchor, but guarantee a collider-contacting local radius.
+  if part == 1 {
+    // Chest/back is a chain of four central ragdoll bodies rather than one
+    // small distal body. Give it its own wider sphere and honor the full torso
+    // slider range; the old shared 0.20 m ceiling made larger menu values inert.
+    return ClampF(SHHJM_GetRadius(part, s), 0.100, 10.000);
+  };
+  return ClampF(SHHJM_GetRadius(part, s), 0.120, 0.200);
+}
+
+private func SHHJM_BoneLocalApplyPoint(srcPos: Vector4, boneAnchor: Vector4, part: Int32, s: ref<SHHJM_Settings>) -> Vector4 {
+  let towardSource: Vector4 = SHHJM_NormalizeSafe(srcPos - boneAnchor);
+  let exactness: Float = ClampF(SHHJM_GetApplyOffset(part, s), 0.0, 1.0);
+  let shift: Float = (1.0 - exactness) * 0.010;
+
+  // Apply Offset still has a visible effect, but can move the event no farther
+  // than one centimeter from the selected bone.
+  return new Vector4(
+    boneAnchor.X + (towardSource.X * shift),
+    boneAnchor.Y + (towardSource.Y * shift),
+    boneAnchor.Z + (towardSource.Z * shift),
+    1.0
+  );
 }
 
 private func SHHJM_GetHitDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
@@ -569,12 +1020,46 @@ private func SHHJM_GetDeathDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
   return 0.0;
 }
 
+private func SHHJM_GetLiveStrengthScale() -> Float {
+  let c: RFCConfig = RFC.Cfg();
+  let menu: ref<RFCModSettings>;
+  let mode: Int32;
+  let scale: Float = MaxF(0.0, c.bulletJoltStrengthScale);
+
+  if scale > 0.0 {
+    return scale;
+  };
+
+  // Recover the selected mode's saved value directly when the flattened
+  // RFCConfig arrives with an uninitialized zero. This keeps the existing mode
+  // scale sliders functional without changing the settings/menu backend.
+  menu = SPLATSettingsRuntime.Menu();
+  if IsDefined(menu) {
+    mode = EnumInt(menu.splatPresetMode);
+    if mode == EnumInt(RFCSplatPresetMode.RealismPlus) {
+      scale = MaxF(0.0, menu.realismPlusMode_bulletJoltStrengthScale);
+    } else if mode == EnumInt(RFCSplatPresetMode.DirtyHarry) {
+      scale = MaxF(0.0, menu.dirty_bulletJoltStrengthScale);
+    } else if mode == EnumInt(RFCSplatPresetMode.Arnold) {
+      scale = MaxF(0.0, menu.arnold_bulletJoltStrengthScale);
+    } else {
+      scale = MaxF(0.0, menu.realism_bulletJoltStrengthScale);
+    };
+  };
+
+  // Bullet Jolts have an explicit Enable switch. A missing scale must not
+  // silently erase every per-body strength after that switch is enabled.
+  return scale > 0.0 ? scale : 1.0;
+}
+
 
 private func SHHJM_BuildImpulse(puppet: ref<NPCPuppet>, srcPos: Vector4, anchorPos: Vector4, part: Int32, s: ref<SHHJM_Settings>) -> Vector4 {
   let dir: Vector4 = SHHJM_NormalizeSafe(anchorPos - srcPos);
-  let strengthScale: Float = MaxF(0.0, RFC.Cfg().bulletJoltStrengthScale);
-  let fwd: Float = SHHJM_GetForwardStrength(part, s) * strengthScale;
-  let vertical: Float = SHHJM_GetVerticalStrength(part, s) * strengthScale;
+  let rawForward: Float = SHHJM_GetForwardStrength(part, s);
+  let rawVertical: Float = SHHJM_GetVerticalStrength(part, s);
+  let strengthScale: Float = SHHJM_GetLiveStrengthScale();
+  let fwd: Float = rawForward * strengthScale;
+  let vertical: Float = rawVertical * strengthScale;
 
   // Up/down are body-relative for grounded Bullet Jolts. A prone corpse has
   // the opposite torso orientation from a supine corpse, so swap the vertical
@@ -600,7 +1085,12 @@ protected cb func OnSHHJM_ApplyImpulseEvt(evt: ref<SHHJM_ApplyImpulseEvt>) -> Bo
   if RFC_IsVehicleContext(this) {
     return true;
   };
-  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
+  // A jolt captured against an already dead/ragdoll target must not be erased
+  // by stale death-animation ownership. Newly lethal hits keep the protection
+  // so an active death animation is not interrupted unexpectedly.
+  if RFC_AnyDeathAnimationOwnsLifecycle(this)
+    && !this.IsRagdolling()
+    && !evt.targetWasAlreadyDead {
     return true;
   };
   s = SPLATSettingsRuntime.Jolts();
@@ -608,14 +1098,20 @@ protected cb func OnSHHJM_ApplyImpulseEvt(evt: ref<SHHJM_ApplyImpulseEvt>) -> Bo
     return true;
   };
 
-  // Delayed jolts must follow the live ragdoll body, not the body position
-  // captured when the bullet first landed. Re-resolve the selected part and
-  // rebuild up/down after the corpse has reached its current face-up/down pose.
-  SHHJM_GetExactPartAnchor(this, evt.part, evt.pos, liveAnchor);
-  liveAnchor = SHHJM_BiasAnchorInwardBySettings(this, evt.part, liveAnchor, s);
+  // Restore the known-working broad torso anchor. Distal parts retain their
+  // exact ChildAnimIndex targeting.
+  if evt.part == 1 {
+    SHHJM_GetExactPartAnchor(this, evt.part, evt.pos, liveAnchor);
+    liveAnchor = SHHJM_BiasAnchorInwardBySettings(this, evt.part, liveAnchor, s);
+  } else {
+    if !SHHJM_GetLiveJoltAnchor(this, evt.part, evt.boneIndex, evt.pos, liveAnchor) {
+      SHHJM_GetExactPartAnchor(this, evt.part, evt.pos, liveAnchor);
+    };
+    liveAnchor = SHHJM_BoneLocalApplyPoint(evt.srcPos, liveAnchor, evt.part, s);
+  };
   evt.pos = liveAnchor;
   evt.imp = SHHJM_BuildImpulse(this, evt.srcPos, liveAnchor, evt.part, s);
-  evt.radius = SHHJM_GetRadius(evt.part, s);
+  evt.radius = evt.part == 1 ? SHHJM_GetRadius(evt.part, s) : SHHJM_GetBoneRadius(evt.part, s);
 
   // Safety refresh. This is SPLAT's custom lane, not the vanilla impulse lane.
   // If death cut/cleanup timing left the corpse between states, wake ragdoll
@@ -631,7 +1127,8 @@ protected cb func OnSHHJM_ApplyImpulseEvt(evt: ref<SHHJM_ApplyImpulseEvt>) -> Bo
 @addMethod(NPCPuppet)
 protected cb func OnSHHJM_ForceRagdollEvt(evt: ref<SHHJM_ForceRagdollEvt>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
-  if RFC_AnyDeathAnimationOwnsLifecycle(this) {
+  if RFC_AnyDeathAnimationOwnsLifecycle(this)
+    && (!IsDefined(evt) || !evt.allowWhileDeathAnimationOwned) {
     return true;
   };
   if c.vanillaMode || RFC_TimeDilationBlocksImpulses(this, c) {

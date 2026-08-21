@@ -32,6 +32,7 @@ public func RFC_DefaultSlopeImpulse() -> RFC_SlopeImpulseCfg {
 }
 
 public func RFC_ApplyStairsImpulses(p: wref<NPCPuppet>, cfg: RFC_SlopeImpulseCfg) -> Void {
+  if RFC.Cfg().vanillaMode { return; }
   if !IsDefined(p) || RFC_TimeDilationBlocksImpulsesNow(p) { return; }
   if !ScriptedPuppet.CanRagdoll(p) { return; }
 
@@ -66,6 +67,7 @@ public func RFC_ApplyStairPlank(
   dirY: Float,
   c: RFCConfig
 ) -> Void {
+  if c.vanillaMode { return; }
   if !c.stair_plankEnabled || !IsDefined(p) || RFC_TimeDilationBlocksImpulses(p, c) { return; }
 
   let headImp:   Vector4 = Vector4(dirX * c.stair_plankFwd, dirY * c.stair_plankFwd, c.stair_plankHeadDown,   1.0);

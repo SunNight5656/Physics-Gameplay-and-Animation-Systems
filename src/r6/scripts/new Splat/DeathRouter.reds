@@ -138,7 +138,19 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     return vehicleDeathResult;
   }
 
-  let isStealth: Bool = RFC_IsStealthOrFinisherEx(this, c.blackwallCountsAsStealth);
+  let isBlackwall: Bool = RFC_IsBlackwallKill(this);
+  let isFinisher: Bool = RFC_IsFinisherKill(this);
+  let isStealthOrFinisher: Bool = RFC_IsStealthOrFinisher(this);
+  let isStealthKill: Bool = isStealthOrFinisher && !isFinisher && !isBlackwall;
+  let restoreSpecialAnimation: Bool =
+    (isBlackwall && c.restoreBlackwallAnimations)
+    || (isFinisher && c.restoreFinisherAnimations)
+    || (isStealthKill && c.restoreStealthKillAnimations);
+  let isStealth: Bool =
+    isStealthOrFinisher
+    || isFinisher
+    || (isBlackwall && c.blackwallCountsAsStealth)
+    || restoreSpecialAnimation;
   // Snapshot the exact explosion lane, but do not return before the original
   // death callback. The old early return skipped SPLAT's workspot release and
   // dedicated explosion kick, which could leave workspot victims stuck and
@@ -151,8 +163,8 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 
   // STEALTH / FINISHER / (optional) BLACKWALL
   if isStealth {
-    // Keep cinematic kills intact (no cut)
-    if c.respectCinematics { return wrappedMethod(evt); }
+    // Each special animation lane can now be restored independently.
+    if restoreSpecialAnimation { return wrappedMethod(evt); }
 
     let resStealth: Bool = wrappedMethod(evt);
 

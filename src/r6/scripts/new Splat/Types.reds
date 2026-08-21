@@ -144,6 +144,9 @@ public struct RFCConfig {
   public let masterDeathChance: Float;
   public let disableAllImpulsesDuringTimeDilation: Bool;
   public let respectCinematics: Bool;
+  public let restoreStealthKillAnimations: Bool;
+  public let restoreFinisherAnimations: Bool;
+  public let restoreBlackwallAnimations: Bool;
   public let stealthRagdollsEnabled: Bool;   // master toggle
   public let stealthRagdollDelay: Float;     // seconds after stealth/finisher
   public let blackwallCountsAsStealth: Bool; // treat Blackwall-tag effects as stealth
@@ -211,8 +214,9 @@ public struct RFCConfig {
   public let arcadeIncapRagdollEnabled: Bool; // timed ragdoll handoff during incapacitation
   public let arcadeIncapRagdollDelay: Float;  // delay before the incapacitated ragdoll handoff
   public let hitReactionsDisabled: Bool;       // prevent ordinary live bullet reactions from starting
+  public let hitReactionActivationDelay: Float; // wait after impact before starting the ordinary live reaction
   public let hitReactionCutoffEnabled: Bool;  // stop ordinary live bullet reaction animation
-  public let hitReactionCutoffDelay: Float;   // delay before returning to normal upper-body control
+  public let hitReactionCutoffDelay: Float;   // duration from reaction start before cutoff
   public let injuryShockEnabled: Bool;
   public let injuryShockAllowBosses: Bool;
   public let injuryShockAllowSubBosses: Bool;
@@ -763,6 +767,9 @@ public class RFC {
     c.masterDeathChance = ClampF(menu.masterDeathChancePct * 0.01, 0.0, 1.0);
     c.disableAllImpulsesDuringTimeDilation = menu.disableAllImpulsesDuringTimeDilation;
     c.respectCinematics = menu.respectCinematics;
+    c.restoreStealthKillAnimations = menu.restoreStealthKillAnimations;
+    c.restoreFinisherAnimations = menu.restoreFinisherAnimations;
+    c.restoreBlackwallAnimations = menu.restoreBlackwallAnimations;
     c.skipDeathAnim = menu.skipDeathAnim;
     c.killMotorcycleDeathAnim = menu.killMotorcycleDeathAnim;
     c.animCompatDelay = menu.animCompatDelay;
@@ -1279,8 +1286,9 @@ public class RFC {
       c.arcadeIncapRagdollEnabled = menu.arcadeIncapRagdollEnabled;
       c.arcadeIncapRagdollDelay = RFC_ClampF(menu.arcadeIncapRagdollDelay, 0.0, 2.0);
       c.hitReactionsDisabled = menu.hitReactionsDisabled;
+      c.hitReactionActivationDelay = RFC_ClampF(menu.hitReactionActivationDelay, 0.0, 3.0);
       c.hitReactionCutoffEnabled = menu.hitReactionCutoffEnabled;
-      c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 2.0);
+      c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 3.0);
       c.injuryShockEnabled = menu.injuryShockEnabled;
       c.injuryShockAllowBosses = menu.injuryShockAllowBosses;
       c.injuryShockAllowSubBosses = menu.injuryShockAllowSubBosses;
@@ -1551,8 +1559,9 @@ c.arcadeImpulseDelay = menu.arcadeImpulseDelay;
 c.arcadeIncapRagdollEnabled = menu.arcadeIncapRagdollEnabled;
 c.arcadeIncapRagdollDelay = RFC_ClampF(menu.arcadeIncapRagdollDelay, 0.0, 2.0);
 c.hitReactionsDisabled = menu.hitReactionsDisabled;
+c.hitReactionActivationDelay = RFC_ClampF(menu.hitReactionActivationDelay, 0.0, 3.0);
 c.hitReactionCutoffEnabled = menu.hitReactionCutoffEnabled;
-c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 2.0);
+c.hitReactionCutoffDelay = RFC_ClampF(menu.hitReactionCutoffDelay, 0.0, 3.0);
 c.injuryShockEnabled = menu.injuryShockEnabled;
 c.injuryShockAllowBosses = menu.injuryShockAllowBosses;
 c.injuryShockAllowSubBosses = menu.injuryShockAllowSubBosses;
@@ -2646,9 +2655,8 @@ if !c.arcadeMeleeEnabled {
   c.arcadeMeleeDown = 0.0;
 }
 
-// The delayed live hit-reaction cutoff is not reliable. Keep the working
-// complete-disable option, but do not run the broken timed path.
-c.hitReactionCutoffEnabled = false;
+// V1712: ordinary live hit-reaction timing is owned by OnHitAnimation.
+// Do not force the user's activation-delay/cutoff settings off here.
 
 // VANILLA = RAGDOLL RIG ONLY.
 // This runs after every named-mode branch so Vanilla always wins over saved
@@ -2688,6 +2696,8 @@ if c.vanillaMode {
   c.arcadeOnDeathEnabled = false;
   c.arcadeIncapRagdollEnabled = false;
   c.hitReactionsDisabled = false;
+  c.hitReactionActivationDelay = 0.0;
+  c.hitReactionCutoffEnabled = false;
   c.injuryShockEnabled = false;
   c.injuryShockChance = 0.0;
 

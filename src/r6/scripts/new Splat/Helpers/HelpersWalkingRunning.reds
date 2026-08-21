@@ -13,6 +13,8 @@ public func RFC_CancelPlanarMomentum(
   dirY: Float
 ) -> Void {
 
+  if RFC.Cfg().vanillaMode { return; }
+
   if !IsDefined(ds) || !IsDefined(p) || RFC_TimeDilationBlocksImpulsesNow(p) { return; }
 
   let v: Vector4 = p.GetVelocity();
