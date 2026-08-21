@@ -23,8 +23,8 @@ local initialized = false
 local STATE_VERSION = 161
 local BRIDGE_VERSION = 141
 local SESSION_TOKEN = 141
-local BVC_BRIDGE_VERSION = 1605
-local BVC_BUILD_MARKER = "BVC1605_FULL_MENU_RESTORED"
+local BVC_BRIDGE_VERSION = 1606
+local BVC_BUILD_MARKER = "BVC1606_DEBUG_MODE_VANILLA_WEAPON_FIX"
 local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
@@ -284,8 +284,9 @@ local function defaultSettingsStore()
     valueCount = 0,
     values = {},
     bikeSystem = {
-      debugPopups = true,
-      manualControllerEnabled = true,
+      debugMode = false,
+      debugPopups = false,
+      manualControllerEnabled = false,
       modes = BVC_MODE_DEFAULTS
     }
   }
@@ -1174,7 +1175,7 @@ local function vanillaImpulseParts(mode)
     if isVanillaImpulseShowSetting(setting) then
       master = copySettingEarly(setting)
       master.label = "Show Vanilla Impulse + Death Animation Controls"
-      master.description = "Shows weapon-by-weapon exceptions that restore both the game's original push-back reaction and its death animation."
+      master.description = "Shows weapon-by-weapon controls. Each enabled weapon independently restores that weapon's original vanilla hit impulse/reaction and its vanilla death animation on lethal hits."
       master.dependency = nil
       master.dependencyName = ""
     elseif isVanillaImpulseValueSetting(setting) then
@@ -1185,8 +1186,9 @@ local function vanillaImpulseParts(mode)
       local lowerName = string.lower(tostring(copy.name or ""))
 
       if endsWithPlain(lowerName, "vanillaimpulsesenabled") then
-        copy.label = "Enable Selected Vanilla Reactions"
-        copy.description = "Master switch for the weapon choices below. An enabled weapon restores both its original hit push-back reaction and its death animation on lethal hits."
+        -- v1703: do not render a second gameplay master. Each weapon switch
+        -- directly restores its own vanilla impulse + death animation.
+        copy = nil
       elseif endsWithPlain(lowerName, "vanillaallowhandgun") then
         copy.label = "Handgun — Vanilla Push + Death Animation"
         copy.description = "Handguns only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
@@ -1216,7 +1218,9 @@ local function vanillaImpulseParts(mode)
         copy.description = "Bladed weapons only: restores the original hit reaction and the original death animation on kills. Other weapon groups are unchanged."
       end
 
-      table.insert(values, copy)
+      if copy ~= nil then
+        table.insert(values, copy)
+      end
     end
   end
 
@@ -1255,7 +1259,7 @@ local function addVanillaImpulseControl(mode, index)
     context,
     again,
     "Show Vanilla Impulse + Death Animation Controls",
-    "Shows or hides weapon-by-weapon exceptions that restore both vanilla push-back reactions and vanilla death animations."
+    "Shows or hides the per-weapon controls. Each weapon toggle independently restores vanilla hit impulse/reaction and vanilla death animation for that weapon only."
   )
   rebuildVanillaImpulseControl(mode)
 end
@@ -1342,6 +1346,26 @@ local function setBikeModeFloat(modeKey, name, value)
   end
 end
 
+local function setBikeDebugMode(value)
+  settingsStore.bikeSystem = settingsStore.bikeSystem or {}
+  local enabled = value == true
+
+  settingsStore.bikeSystem.debugMode = enabled
+  settingsStore.bikeSystem.debugPopups = enabled
+  settingsStore.bikeSystem.manualControllerEnabled = enabled
+  saveSettingsDebounced()
+
+  local player = resolveBikeBridge()
+  if player then
+    pcall(function()
+      player:BVCSetGlobalBool(cn("debugPopups"), enabled)
+    end)
+    pcall(function()
+      player:BVCSetGlobalBool(cn("manualControllerEnabled"), enabled)
+    end)
+  end
+end
+
 local function applyBikeMode(modeKey, playerHint)
   local player = resolveBikeBridge(playerHint)
   local modeIndex = BVC_MODE_INDEX[modeKey]
@@ -1381,14 +1405,24 @@ local function applyBikeAll(playerHint, activeMode)
   if not player then return false end
 
   settingsStore.bikeSystem = settingsStore.bikeSystem or {}
-  if settingsStore.bikeSystem.debugPopups == nil then settingsStore.bikeSystem.debugPopups = true end
-  if settingsStore.bikeSystem.manualControllerEnabled == nil then settingsStore.bikeSystem.manualControllerEnabled = true end
+
+  -- v1606 migration: old builds persisted the hidden debug/manual controls as
+  -- true. Do not inherit that. The new explicit Motorcycle Debug Mode is the
+  -- only authority and defaults OFF.
+  if settingsStore.bikeSystem.debugMode == nil then
+    settingsStore.bikeSystem.debugMode = false
+    settingsDirty = true
+  end
+
+  local debugMode = settingsStore.bikeSystem.debugMode == true
+  settingsStore.bikeSystem.debugPopups = debugMode
+  settingsStore.bikeSystem.manualControllerEnabled = debugMode
 
   local okDebug, debugApplied = pcall(function()
-    return player:BVCSetGlobalBool(cn("debugPopups"), settingsStore.bikeSystem.debugPopups == true)
+    return player:BVCSetGlobalBool(cn("debugPopups"), debugMode)
   end)
   local okManual, manualApplied = pcall(function()
-    return player:BVCSetGlobalBool(cn("manualControllerEnabled"), settingsStore.bikeSystem.manualControllerEnabled == true)
+    return player:BVCSetGlobalBool(cn("manualControllerEnabled"), debugMode)
   end)
   if not okDebug or debugApplied ~= true or not okManual or manualApplied ~= true then return false end
 
@@ -1449,6 +1483,26 @@ local function rebuildBikeModeControls(mode)
   i = addBikeSwitch(path, key, state, defaults, "enabled",
     "Enable " .. mode.label .. " Bike System",
     "Master switch for bullet, impact, rider, V lean, and pickup recovery behavior.", i)
+
+  settingsStore.bikeSystem = settingsStore.bikeSystem or {}
+  if settingsStore.bikeSystem.debugMode == nil then
+    settingsStore.bikeSystem.debugMode = false
+  end
+
+  local debugRef = nativeSettings.addSwitch(
+    path,
+    "Motorcycle Debug Mode",
+    "OFF = normal controller behavior. ON enables motorcycle test controls only: D-pad Left/Right selects the manual fall side, Square manually topples the selected/mounted motorcycle, and X performs a rider-only knockoff test without toppling the bike. Debug popups are also enabled only while this switch is ON.",
+    settingsStore.bikeSystem.debugMode == true,
+    false,
+    function(value)
+      setBikeDebugMode(value)
+    end,
+    i
+  )
+  remember(path, debugRef)
+  i = i + 1
+
   i = addBikeSwitch(path, key, state, defaults, "bulletEnabled",
     "Bullets Topple Motorcycles",
     "OFF hard-disables the custom bullet-topple path and clears any partial bullet count.", i)
