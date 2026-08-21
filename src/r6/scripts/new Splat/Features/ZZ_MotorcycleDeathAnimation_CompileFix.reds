@@ -81,41 +81,29 @@ private func RFC_MotorcycleDeathAnim_ForceCut(
     return;
   };
 
-  // v8.8: this existing SPLAT path is the ONLY motorcycle rider-death ragdoll owner.
-  // It never topples the bike. It only:
-  //   1) caches the bike for the ragdoll callback,
-  //   2) stops the dead-driver AI,
-  //   3) unmounts,
-  //   4) requests one rider ragdoll.
-  // ZZZ_BikeToppleInternal.OnRagdollEnabledEvent observes the confirmed ragdoll
-  // and starts the user-controlled bike-delay timer afterward.
-  if IsDefined(bike) {
-    p.smbtf_lastMountedBike = bike;
-    p.smbtf_lastMountedBikeTime = EngineTime.ToFloat(
-      GameInstance.GetSimTime(p.GetGame())
-    );
+  // A direct rider bullet arms a side-specific bike topple before wrapped
+  // damage can erase the mount. Consume that exact handoff here: DriverDead,
+  // NoDriver, one immediate unmount, and one signed bike topple.
+  let coordinatedTopple: Bool = RFC_VehConsumeArcadeRiderBikeTopple(p, true, cfg);
 
+  // If VehicleObject.OnHit already toppled the bike, there is no rider-side
+  // latch to consume. Still send the missing AI shutdown events and unmount
+  // exactly once so an empty motorcycle cannot continue its traffic task.
+  if IsDefined(bike) && !coordinatedTopple {
     RFC_VehStopDeadBikeDriverAI(bike);
-
     let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(p.GetGame());
     if IsDefined(ws) {
       ws.UnmountFromVehicle(bike, p, true);
     }
   }
 
-  // Exactly one rider ragdoll request for motorcycle death.
+  // One directionless wake is the whole death-animation handoff. Repeating it
+  // at 0.03/0.08/0.16 restarted the rider pose and produced the visible pop.
   p.QueueEvent(CreateForceRagdollEvent(n"Splat_MotorcycleDeathAnimCut"));
 }
 
 @wrapMethod(NPCPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-  // A direct mounted-rider bullet is being handled by the known-good standalone
-  // OnHit sequence. Do not add the older SPLAT motorcycle-death ragdoll on top.
-  // Every non-rider-bullet death continues through the existing toggle below.
-  if this.smbtf_standaloneRiderHitActive {
-    return wrappedMethod(evt);
-  }
-
   let cfg: RFCConfig = RFC.Cfg();
   let shouldCutMotorcycleAnim: Bool;
   let mountedBike: wref<BikeObject>;
