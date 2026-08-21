@@ -1241,6 +1241,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let injuryShockAnchor: Vector4;
   let injuryShockQueued: Bool;
   let vanillaWeaponReactionCandidate: Bool;
+  let specialAnimationRestoreCandidate: Bool;
   let vanillaWeaponLane: Int32;
   let savedSkipDeathAnimation: Bool;
   let savedForceRagdollOnDeath: Bool;
@@ -1290,6 +1291,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // Head/Body/Situation/Arcade/Jolt death lanes run on an explosion.
   if IsDefined(evt.attackData) {
     this.rfc_lastAttack = evt.attackData;
+    RFC_CaptureSpecialAnimationContext(this, evt.attackData);
     if RFC_IsGrenadeExplosion(evt.attackData) {
       RFC_Explode_MarkAt(this, evt.hitPosition, 2.00);
     } else {
@@ -1320,18 +1322,26 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     && vanillaWeaponLane > 0
     && RFC_VanillaWeaponLaneEnabled(vanillaWeaponLane, c);
 
-  // Per-weapon Vanilla ON primes the native death gates BEFORE Cyberpunk's
-  // OnHit. OFF leaves those gates completely alone.
-  if vanillaWeaponReactionCandidate {
-    this.rfc_vanillaWeaponLane = vanillaWeaponLane;
-    this.rfc_vanillaDeathAnimArmed = true;
+  specialAnimationRestoreCandidate =
+    !shhjmTargetWasAlreadyDead
+    && RFC_SpecialAnimationRestoreRequested(this, c);
 
-    let vanillaWeaponArmLog: ref<ActivityLogSystem> =
-      GameInstance.GetActivityLogSystem(this.GetGame());
-    if IsDefined(vanillaWeaponArmLog) {
-      vanillaWeaponArmLog.AddLog(
-        "[SPLAT1711] PER-WEAPON VANILLA LANE ARMED"
-      );
+  // Per-weapon Vanilla and independently restored stealth/finisher/Blackwall
+  // animations must prime the native gates BEFORE Cyberpunk's OnHit. OnDeath
+  // can run from inside wrappedMethod(evt), after the reaction has already
+  // inspected these values.
+  if vanillaWeaponReactionCandidate || specialAnimationRestoreCandidate {
+    if vanillaWeaponReactionCandidate {
+      this.rfc_vanillaWeaponLane = vanillaWeaponLane;
+      this.rfc_vanillaDeathAnimArmed = true;
+
+      let vanillaWeaponArmLog: ref<ActivityLogSystem> =
+        GameInstance.GetActivityLogSystem(this.GetGame());
+      if IsDefined(vanillaWeaponArmLog) {
+        vanillaWeaponArmLog.AddLog(
+          "[SPLAT1711] PER-WEAPON VANILLA LANE ARMED"
+        );
+      };
     };
 
     savedSkipDeathAnimation = this.ShouldSkipDeathAnimation();
@@ -1409,7 +1419,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // ON, so OFF skipped Cyberpunk's base hit/damage processing entirely.
   res = wrappedMethod(evt);
 
-  if vanillaWeaponReactionCandidate {
+  if vanillaWeaponReactionCandidate || specialAnimationRestoreCandidate {
     if this.IsDead() {
       this.SetSkipDeathAnimation(false);
       NPCPuppet.ChangeForceRagdollOnDeath(this, false);
@@ -1422,6 +1432,13 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     NPCPuppet.ChangeForceRagdollOnDeath(this, savedForceRagdollOnDeath);
     this.rfc_vanillaDeathAnimArmed = false;
     this.rfc_vanillaWeaponLane = 0;
+    RFC_ClearSpecialAnimationContext(this);
+    return res;
+  };
+
+  // A native animation selected during the nested OnDeath callback owns this
+  // hit. Do not let SPLAT's post-hit jolt/arcade schedulers overwrite it.
+  if RFC_SPLATDeathAnimationActive(this) {
     return res;
   };
 
