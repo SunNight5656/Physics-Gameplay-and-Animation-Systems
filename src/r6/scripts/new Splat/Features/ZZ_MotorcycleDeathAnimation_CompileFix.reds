@@ -84,12 +84,11 @@ private func RFC_MotorcycleDeathAnim_ForceCut(
   // A direct rider bullet arms a side-specific bike topple before wrapped
   // damage can erase the mount. Consume that exact handoff here: DriverDead,
   // NoDriver, one immediate unmount, and one signed bike topple.
-  let coordinatedTopple: Bool = RFC_VehConsumeArcadeRiderBikeTopple(p, true, cfg);
 
   // If VehicleObject.OnHit already toppled the bike, there is no rider-side
   // latch to consume. Still send the missing AI shutdown events and unmount
   // exactly once so an empty motorcycle cannot continue its traffic task.
-  if IsDefined(bike) && !coordinatedTopple {
+  if IsDefined(bike) {
     RFC_VehStopDeadBikeDriverAI(bike);
     let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(p.GetGame());
     if IsDefined(ws) {
