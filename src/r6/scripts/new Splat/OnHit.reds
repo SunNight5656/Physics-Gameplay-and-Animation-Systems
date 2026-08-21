@@ -1206,9 +1206,10 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // The v8 TweakDB DriverKill block remains in place so shooting the car itself
   // does not create the synthetic Attacks.DriverKill puppet hit too early.
   if RFC_IsVehicleContext(this) {
-    // v8.8: mounted NPC damage/death stays on the normal SPLAT/vanilla rider path.
-    // ZZZ_BikeToppleInternal has its own lightweight OnHit cache wrapper, but no
-    // second rider ragdoll or bike-topple handoff is armed here.
+    // MOTORCYCLE/VEHICLE OCCUPANT ISOLATION TEST:
+    // Do not arm, consume, topple, unmount, or ragdoll a mounted rider here.
+    // Let the original hit pipeline run. The standalone motorcycle controller
+    // is the only motorcycle/rider-topple owner during this test.
     return wrappedMethod(evt);
   }
 
