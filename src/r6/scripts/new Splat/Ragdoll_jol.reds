@@ -184,6 +184,9 @@ protected cb func OnRagdollEnabledEvent(evt: ref<RagdollNotifyEnabledEvent>) -> 
   let vz: Float;
   let res: Bool = wrappedMethod(evt);
 
+  // HARD VANILLA BYPASS before any SPLAT ragdoll state mutation.
+  if c.vanillaMode { return res; }
+
   // A death can receive several ForceRagdoll wake events. The engine has
   // already enabled ragdoll on the first callback; processing every later
   // notification again re-arms Head/Body/impact events and looks like a
@@ -209,7 +212,7 @@ protected cb func OnRagdollEnabledEvent(evt: ref<RagdollNotifyEnabledEvent>) -> 
   // its dead-puppet settle checks. Do not inject generic chest/pelvis counter-
   // impulses from OnRagdollEnabledEvent: every later ForceRagdoll activation
   // can re-enter this callback and repeatedly disturb individual body parts.
-  if c.vanillaMode || RFC_TimeDilationBlocksImpulses(this, c) {
+  if RFC_TimeDilationBlocksImpulses(this, c) {
     return res;
   }
 
@@ -313,10 +316,14 @@ protected cb func OnRagdollImpactEvent(evt: ref<RagdollImpactEvent>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
   let runMainImpact: Bool;
   let res: Bool = wrappedMethod(evt);
+
+  // HARD VANILLA BYPASS before randomization or mode overrides.
+  if c.vanillaMode { return res; }
+
   c = RFC_RandomizeConfig(this, c);
   HIS_ApplyModeOverrides(hs, c);
 
-  if c.vanillaMode || RFC_TimeDilationBlocksImpulses(this, c) {
+  if RFC_TimeDilationBlocksImpulses(this, c) {
     return res;
   }
 

@@ -1482,7 +1482,7 @@ if c.vanillaMode {
   c.tumbleStairs_stepDelay = 0.0;
   c.tumbleDir_stepDelay = 0.0;
 
-  return c;
+  // Continue. Final Vanilla master bypass below must run after all mode assignments.
 }
 
 // GROUP ENABLES
@@ -2650,13 +2650,21 @@ if !c.arcadeMeleeEnabled {
 // complete-disable option, but do not run the broken timed path.
 c.hitReactionCutoffEnabled = false;
 
-// Final master bypass. This runs after every named-mode branch so Vanilla Mode
-// always wins over Arnold, Dirty Harry, Realism Plus, and saved base toggles.
-// Rig archives are external assets and are intentionally unaffected.
+// VANILLA = RAGDOLL RIG ONLY.
+// This runs after every named-mode branch so Vanilla always wins over saved
+// SPLAT settings. Every script-side feature is disabled. Installed ragdoll rig
+// assets are intentionally untouched and are the sole SPLAT exception.
 if c.vanillaMode {
+  // Feature values remain OFF as a redundant safety net. OnHit/OnDeath and all
+  // major wrappers still hard-pass directly to the base game before using them.
   c.skipDeathAnim = false;
+  c.deathAnimChance = 1.0;
+  c.animCompatDelay = 0.0;
   c.killMotorcycleDeathAnim = false;
+  c.masterDeathChanceEnabled = false;
+  c.masterDeathChance = 1.0;
   c.stealthRagdollsEnabled = false;
+  c.vanillaImpulsesEnabled = false;
 
   c.standEnabled = false;
   c.runEnabled = false;
@@ -2694,6 +2702,22 @@ if c.vanillaMode {
   c.playerMotorcycleLeanToppleEnabled = false;
   c.vehicleExplosionEnabled = false;
   c.vehicleMeleeEnabled = false;
+
+  c.vehicleOccupantShieldEnabled = false;
+  c.vehicleMountedHitImmunity = false;
+  c.vehicleOccupantShieldTime = 0.0;
+  c.vehicleExitShieldEnabled = false;
+  c.vehicleExitShieldTime = 0.0;
+
+  c.popFixEnabled = false;
+  c.popFix_useGate = false;
+  c.popFix_overrideWorkspot = false;
+  c.popFix_overrideVehicle = false;
+  c.popFix_overrideStagger = false;
+  c.popFix_staggerSnap = false;
+  c.popFix_workspotPreemptExit = false;
+  c.popFix_vehicleKillExitAnim = false;
+  c.popFix_bikeKillExitAnim = false;
 
   c.killImpulsesVehiclesOnly = false;
   c.killImpulsesEverywhere = false;

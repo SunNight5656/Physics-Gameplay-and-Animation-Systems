@@ -27,6 +27,7 @@ public func RFC_IsStealthOrFinisherEx(p: wref<NPCPuppet>, blackwallCountsAsSteal
 }
 
 public func RFC_Stealth_SchedForceRagdoll(p: wref<NPCPuppet>, delay: Float) -> Void {
+  if RFC.Cfg().vanillaMode { return; }
   if !IsDefined(p) || RFC_TimeDilationBlocksImpulsesNow(p) { return; }
 
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(p.GetGame());

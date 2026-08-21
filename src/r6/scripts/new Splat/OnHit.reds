@@ -1173,21 +1173,28 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let injuryShockPart: Int32;
   let injuryShockAnchor: Vector4;
   let injuryShockQueued: Bool;
-  let arcadeRiderBikeToppleArmed: Bool;
+  let vanillaWeaponReactionCandidate: Bool;
+  let savedSkipDeathAnimation: Bool;
+  let savedForceRagdollOnDeath: Bool;
 
   if !IsDefined(evt) {
     return wrappedMethod(evt);
   }
+
+  // VANILLA = RIG ONLY.
+  // Do not write ANY SPLAT animation, hit-reaction, death, workspot, impulse,
+  // or ragdoll-control state here. The installed ragdoll rig remains the only
+  // intentional SPLAT exception; script behavior is 100% base-game.
+  if c.vanillaMode {
+    return wrappedMethod(evt);
+  }
+
   // Preserve damage and the original hit callback, but suppress every SPLAT
   // follow-up while time dilation owns the frame. Vanilla physical impulse is
   // independently zeroed in VanillaImpulseKiller.reds.
   if RFC_TimeDilationBlocksImpulses(this, c) {
     return wrappedMethod(evt);
   }
-  if c.vanillaMode {
-    return wrappedMethod(evt);
-  }
-
   // v9 vehicle occupant lane:
   // Do NOT swallow direct hits on a mounted driver/passenger. v8 proved that
   // hard immunity prevents bullets from killing the seated NPC. Instead, let
@@ -1199,25 +1206,13 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // The v8 TweakDB DriverKill block remains in place so shooting the car itself
   // does not create the synthetic Attacks.DriverKill puppet hit too early.
   if RFC_IsVehicleContext(this) {
-    // VehicleObject.OnHit is not guaranteed when the bullet lands directly on
-    // the rider. Arm the same Arnold motorcycle topple before damage/death can
-    // clear the mount, then resolve it after vanilla processing. A lethal hit
-    // is normally consumed inside MotorcycleDeathAnimation_CompileFix; the
-    // post-wrap branch is an idempotent fallback.
-    arcadeRiderBikeToppleArmed = RFC_VehArmArcadeRiderBikeTopple(this, evt, c);
-    res = wrappedMethod(evt);
-
-    if arcadeRiderBikeToppleArmed && this.rfc_arcadeRiderBikeToppleArmed {
-      if this.IsDead() {
-        if RFC_VehConsumeArcadeRiderBikeTopple(this, true, c) {
-          this.QueueEvent(CreateForceRagdollEvent(n"Splat_ArcadeRiderBikeFallback"));
-        }
-      } else {
-        RFC_VehConsumeArcadeRiderBikeTopple(this, false, c);
-      }
-    }
-    return res;
+    // v8.8: mounted NPC damage/death stays on the normal SPLAT/vanilla rider path.
+    // ZZZ_BikeToppleInternal has its own lightweight OnHit cache wrapper, but no
+    // second rider ragdoll or bike-topple handoff is armed here.
+    return wrappedMethod(evt);
   }
+
+  this.rfc_vanillaDeathAnimArmed = false;
 
   // Capture the current attack and arm the explosion isolation window BEFORE
   // vanilla OnHit runs. A lethal hit can enter NPCPuppet.OnDeath from inside
@@ -1235,6 +1230,30 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     }
   } else {
     RFC_Explode_Clear(this);
+  }
+
+  // Selected Vanilla Impulse weapons must restore the actual native death
+  // reaction BEFORE wrappedMethod(evt) processes a potentially lethal hit.
+  //
+  // Returning early from DeathRouter is too late by itself: the base hit
+  // reaction chooses Death vs ForcedRagdoll from ShouldSkipDeathAnimation()
+  // and ForceRagdollOnDeath while wrappedMethod(evt) is executing.
+  vanillaWeaponReactionCandidate =
+    IsDefined(evt.attackData)
+    && c.vanillaImpulsesEnabled
+    && RFC_VanillaImpulseAllowedByWeapon(evt.attackData, c);
+
+  if vanillaWeaponReactionCandidate {
+    this.rfc_vanillaDeathAnimArmed = true;
+
+    savedSkipDeathAnimation = this.ShouldSkipDeathAnimation();
+    savedForceRagdollOnDeath =
+      this.GetPuppetStateBlackboard().GetBool(
+        GetAllBlackboardDefs().PuppetState.ForceRagdollOnDeath
+      );
+
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
   }
 
   // SHHJM pre-wrap capture. This is now hard-gated by the Bullet Jolts
@@ -1258,6 +1277,27 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   }
 
   res = wrappedMethod(evt);
+
+  // A selected Vanilla Impulse weapon owns the complete lethal reaction.
+  //
+  // If this hit killed the NPC, keep the native death-animation gates open
+  // and return immediately. This prevents Bullet Jolts, Arcade On Hit,
+  // reaction cutoff, Injury Shock, and other post-hit SPLAT work from forcing
+  // ragdoll over the death animation we just restored.
+  //
+  // If the hit was nonlethal, restore the exact native state that existed
+  // before this hit so the exception remains weapon-scoped.
+  if vanillaWeaponReactionCandidate {
+    if this.IsDead() {
+      this.SetSkipDeathAnimation(false);
+      NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+      return res;
+    }
+
+    this.SetSkipDeathAnimation(savedSkipDeathAnimation);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, savedForceRagdollOnDeath);
+    this.rfc_vanillaDeathAnimArmed = false;
+  }
 
   // The selected mode's Injury Shock toggle is authoritative. Clear any stale
   // per-NPC state immediately when it is off; queued events also recheck it.

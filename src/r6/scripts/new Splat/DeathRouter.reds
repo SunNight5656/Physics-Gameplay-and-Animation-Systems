@@ -58,6 +58,13 @@ public func RFC_BlockAllDeathImpulseLanes(p: wref<NPCPuppet>) -> Void {
 @wrapMethod(NPCPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
+
+  // VANILLA = RIG ONLY.
+  // No SPLAT death-animation state, forced-ragdoll state, cuts, impulses, or
+  // workspot handling. Cyberpunk owns this callback from entry to exit.
+  if c.vanillaMode {
+    return wrappedMethod(evt);
+  }
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
   let timeDilationBlocksImpulses: Bool;
 
@@ -74,20 +81,24 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   }
 
   let isStealth: Bool = RFC_IsStealthOrFinisherEx(this, c.blackwallCountsAsStealth);
-  // Vanilla / rigs-only still needs the old death-lane cut. The known-good
-  // pipeline allowed the original death first, then immediately forced the
-  // animation-to-ragdoll handoff so the native settle reaction could not loop.
-  if c.vanillaMode {
-    let vanillaResult: Bool = wrappedMethod(evt);
-    RFC_ScheduleCut(ds, this, 0.0);
-    return vanillaResult;
-  }
-
   // Snapshot the exact explosion lane, but do not return before the original
   // death callback. The old early return skipped SPLAT's workspot release and
   // dedicated explosion kick, which could leave workspot victims stuck and
   // visually unharmed even though the damage pipeline had completed.
   let isExplosionDeath: Bool = RFC_Explode_IsRecent(this);
+
+  // Per-weapon Vanilla Impulse exception.
+  //
+  // A selected weapon now restores BOTH halves of the native reaction:
+  //   1. original hit push-back / physical impulse
+  //   2. original death animation on a lethal hit
+  //
+  // This uses the same rfc_lastAttack + weapon allow-list as
+  // VanillaImpulseKiller.reds, so only the weapon groups explicitly enabled
+  // in Vanilla Impulse Control receive the death-animation exception.
+  let vanillaWeaponDeathAnim: Bool =
+    !isExplosionDeath
+    && this.rfc_vanillaDeathAnimArmed;
 
 
   // STEALTH / FINISHER / (optional) BLACKWALL
@@ -148,8 +159,15 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   GS_ClearSituationSnap(this);
   GS_CaptureSituationSnap(this);
   RFC_ApplyDeathOverrideGates(this, c);
-  let arcadeDeathOwnsFall: Bool = !isExplosionDeath && RFC_DeathImpulseRouter.ShouldOwnArcadeDeath(this, c);
-  if isExplosionDeath || arcadeDeathOwnsFall || timeDilationBlocksImpulses {
+  let arcadeDeathOwnsFall: Bool =
+    !isExplosionDeath
+    && !vanillaWeaponDeathAnim
+    && RFC_DeathImpulseRouter.ShouldOwnArcadeDeath(this, c);
+
+  if isExplosionDeath
+    || arcadeDeathOwnsFall
+    || timeDilationBlocksImpulses
+    || vanillaWeaponDeathAnim {
     // The original OnDeath still runs, but no Head, Body, Situational, Jolt,
     // Arcade, or settle lane may arm during its nested ragdoll callbacks.
     RFC_BlockAllDeathImpulseLanes(this);
@@ -166,6 +184,15 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   this.hisReboundArmed = false;
   this.hisReboundStartSeeded = false;
   this.hisDeathStartTime = nowT;
+
+  // For a selected Vanilla Impulse weapon, restore the two native death
+  // gates before the base NPCPuppet.OnDeath callback requests its reaction.
+  // HitReactionComponent and AIDeathReactionsTask both inspect these values
+  // when choosing Death versus ForcedRagdoll.
+  if vanillaWeaponDeathAnim {
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+  }
 
   let res: Bool = wrappedMethod(evt);
 
@@ -198,6 +225,30 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     return res;
   }
 
+  // Selected Vanilla Impulse weapons restore their native lethal animation.
+  // Do not run Arcade On Death, Head Falls, Body Falls, Situational death
+  // impulses, or the immediate skip-death-animation cut for this kill.
+  //
+  // If Animation Compatibility Delay is configured, preserve that existing
+  // delayed handoff. At 0.0, vanilla owns the complete death animation.
+  if vanillaWeaponDeathAnim {
+    this.SetSkipDeathAnimation(false);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, false);
+
+    let vanillaReactionLog: ref<ActivityLogSystem> =
+      GameInstance.GetActivityLogSystem(this.GetGame());
+    if IsDefined(vanillaReactionLog) {
+      vanillaReactionLog.AddLog(
+        "[SPLAT1702] VANILLA WEAPON DEATH ANIMATION OWNED"
+      );
+    }
+
+    // Selected weapon means vanilla death animation is authoritative.
+    // Do not schedule SPLAT's compatibility cut here; that cut itself forces
+    // ragdoll and defeats the purpose of this per-weapon exception.
+    return res;
+  }
+
   // Restore named-mode Arcade On Death after the workspot-safe vanilla method order.
   // This reads the final RFC.Cfg() values, so Realism Plus / Dirty Harry / Arnold
   // mode overrides win over Realism Custom/base settings.
@@ -209,7 +260,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   if c.skipDeathAnim {
     useDeathAnim = false;
   } else {
-if c.deathAnimChance > 0.0 && RandRangeF(0.0, 100.0) < c.deathAnimChance {
+if c.deathAnimChance > 0.0 && RandF() < c.deathAnimChance {
   useDeathAnim = true;
 }
 

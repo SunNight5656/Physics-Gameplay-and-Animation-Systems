@@ -624,6 +624,7 @@ private static func HIS_HeadOnlyRadius(radius: Float) -> Float {
 
 private static func HIS_SendRaw(p: wref<NPCPuppet>, s: ref<HIS_Settings>, radius: Float, impulse: Vector4) -> Bool {
   let headPos: Vector4;
+  if RFC.Cfg().vanillaMode { return false; };
   if !IsDefined(p) { return false; };
   if RFC_TimeDilationBlocksImpulsesNow(p) { return false; };
   if RFC_IsVehicleContext(p) { return false; };
@@ -635,6 +636,7 @@ private static func HIS_SendRaw(p: wref<NPCPuppet>, s: ref<HIS_Settings>, radius
 
 @addMethod(NPCPuppet)
 protected cb func OnHIS_SituationalHeadEvt(evt: ref<HIS_SituationalHeadEvt>) -> Bool {
+  if RFC.Cfg().vanillaMode { return true; }
   let s: ref<HIS_Settings>;
   let impulse: Vector4;
 

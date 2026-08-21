@@ -159,3 +159,28 @@ public func RFC_VanillaImpulseAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfi
 
   return false;
 }
+
+// Vanilla Impulse + Death Animation per-weapon bridge.
+//
+// The same weapon allow-list that restores the game's original physical
+// push-back reaction also owns the lethal animation exception. This keeps the
+// feature deterministic: enabling Handgun changes Handgun hits/kills only,
+// enabling SMG changes SMG hits/kills only, etc.
+public func RFC_VanillaDeathAnimationAllowedByWeapon(
+  puppet: wref<NPCPuppet>,
+  cfg: RFCConfig
+) -> Bool {
+  if !IsDefined(puppet) || !cfg.vanillaImpulsesEnabled {
+    return false;
+  }
+
+  let ad: ref<AttackData> = puppet.rfc_lastAttack;
+  if !IsDefined(ad) {
+    return false;
+  }
+
+  return RFC_VanillaImpulseAllowedByWeapon(ad, cfg);
+}
+
+@addField(NPCPuppet)
+public let rfc_vanillaDeathAnimArmed: Bool;

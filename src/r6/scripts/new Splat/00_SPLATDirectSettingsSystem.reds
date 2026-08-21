@@ -4388,6 +4388,16 @@ public func SPLATGetMode() -> Int32 {
 }
 
 @addMethod(PlayerPuppet)
+public func SPLATIsVanillaRuntime() -> Bool {
+  return RFC.Cfg().vanillaMode;
+}
+
+@addMethod(PlayerPuppet)
+public func SPLATGetRuntimePresetValue() -> Int32 {
+  return RFC.Cfg().splatPresetMode;
+}
+
+@addMethod(PlayerPuppet)
 public func SPLATRunBridgeSelfTest() -> Int32 {
   return this.SPLATGetSettingsState().RunBridgeSelfTest();
 }

@@ -1,5 +1,5 @@
 {
-  "version": 161,
+  "version": 162,
   "title": "Splat Physics 11.1",
   "modeSettingId": "RFCModSettings.splatPresetMode",
   "modes": [
@@ -29,7 +29,7 @@
     },
     {
       "key": "vanilla",
-      "label": "Vanilla",
+      "label": "Vanilla (Ragdoll Rig Only)",
       "enumIndex": 5,
       "enumValue": 5
     }
@@ -87,7 +87,7 @@
       "type": "RFCSplatPresetMode",
       "default": 1,
       "label": "SPLAT Mode",
-      "description": "Selects the active SPLAT preset. The Native Settings menu immediately rebuilds with only that mode name and that mode's editable sections.",
+      "description": "Selects the active SPLAT preset. Vanilla (Ragdoll Rig Only) disables all SPLAT script behavior and leaves only the installed SPLAT ragdoll rig active.",
       "dependencyName": "",
       "dependency": null,
       "sourceFile": "SPLATSettingsData.reds",
@@ -98,7 +98,7 @@
         "Realism Plus",
         "Clint Eastwood Old West",
         "Arnold / Arcade",
-        "Vanilla"
+        "Vanilla (Ragdoll Rig Only)"
       ]
     }
   ],

@@ -291,6 +291,13 @@ local function resolveBridge(playerHint)
     bridgeConnected = true
     restoreCursor = 1
     logi("Direct REDscript player bridge connected")
+    pcall(function()
+      logi(
+        "LIVE MODE stored=" .. tostring(player:SPLATGetMode())
+        .. " runtimePreset=" .. tostring(player:SPLATGetRuntimePresetValue())
+        .. " vanilla=" .. tostring(player:SPLATIsVanillaRuntime())
+      )
+    end)
   end
   return player
 end
@@ -314,7 +321,22 @@ local function callBridgeSet(setting, value, bridge)
     if setting.type == "Bool" then return b:SPLATSetBool(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), value == true) end
     if setting.type == "Float" then return b:SPLATSetFloat(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), tonumber(value) or 0.0) end
     if setting.type == "Int32" then return b:SPLATSetInt(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), math.floor(tonumber(value) or 0)) end
-    if setting.type == "RFCSplatPresetMode" then return b:SPLATSetMode(math.floor(tonumber(value) or 1)) end
+    if setting.type == "RFCSplatPresetMode" then
+      local requested = math.floor(tonumber(value) or 1)
+      local ok = b:SPLATSetMode(requested)
+      if ok == true then
+        local storedMode = b:SPLATGetMode()
+        local runtimePreset = b:SPLATGetRuntimePresetValue()
+        local runtimeVanilla = b:SPLATIsVanillaRuntime()
+        logi(
+          "MODE APPLY requested=" .. tostring(requested)
+          .. " stored=" .. tostring(storedMode)
+          .. " runtimePreset=" .. tostring(runtimePreset)
+          .. " vanilla=" .. tostring(runtimeVanilla)
+        )
+      end
+      return ok
+    end
     return false
   end)
   if not ok or applied ~= true then
@@ -535,6 +557,20 @@ end
 local function isMotorcycleSetting(setting)
   local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
   return marker:find("motorcycle", 1, true) ~= nil
+end
+
+-- SPLAT_BIKE_MENU_LAYOUT_V8_8
+-- V/player motorcycle controls remain with the mode's ordinary V/Arcade controls.
+-- NPC motorcycle controls get their own SPLAT subcategory.
+local function isPlayerMotorcycleSetting(setting)
+  local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
+  return marker:find("playermotorcycle", 1, true) ~= nil
+    or marker:find("player motorcycle", 1, true) ~= nil
+    or marker:find("v motorcycle", 1, true) ~= nil
+end
+
+local function isNPCMotorcycleSetting(setting)
+  return isMotorcycleSetting(setting) and not isPlayerMotorcycleSetting(setting)
 end
 local function isVehicleExplosionSetting(setting)
   local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
@@ -806,7 +842,7 @@ local function rebuildTopic(mode, topic)
         local include = false
         if topic.key == "arcade" then
           include = setting.id ~= (vehicleMaster and vehicleMaster.id or "")
-            and not isMotorcycleSetting(setting)
+            and not isNPCMotorcycleSetting(setting)
             and not isVehicleExplosionSetting(setting)
         else
           include = isVehicleExplosionSetting(setting)
@@ -1042,17 +1078,49 @@ local function vanillaImpulseParts(mode)
   for _, setting in ipairs(data.settings or {}) do
     if isVanillaImpulseShowSetting(setting) then
       master = copySettingEarly(setting)
-      master.label = "Show Vanilla Impulse Controls"
-      master.description = "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+      master.label = "Show Vanilla Impulse + Death Animation Controls"
+      master.description = "Shows weapon-by-weapon exceptions that restore both the game's original push-back reaction and its death animation."
       master.dependency = nil
       master.dependencyName = ""
     elseif isVanillaImpulseValueSetting(setting) then
       local copy = copySettingEarly(setting)
       copy.dependency = nil
       copy.dependencyName = ""
-      if endsWithPlain(string.lower(tostring(copy.name or "")), "vanillaimpulsesenabled") then
-        copy.label = "Enable Selected Vanilla Impulses"
+
+      local lowerName = string.lower(tostring(copy.name or ""))
+
+      if endsWithPlain(lowerName, "vanillaimpulsesenabled") then
+        copy.label = "Enable Selected Vanilla Reactions"
+        copy.description = "Master switch for the weapon choices below. An enabled weapon restores both its original hit push-back reaction and its death animation on lethal hits."
+      elseif endsWithPlain(lowerName, "vanillaallowhandgun") then
+        copy.label = "Handgun — Vanilla Push + Death Animation"
+        copy.description = "Handguns only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowmagnum") then
+        copy.label = "Magnum — Vanilla Push + Death Animation"
+        copy.description = "Magnums only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowshotgun") then
+        copy.label = "Shotgun — Vanilla Push + Death Animation"
+        copy.description = "Shotguns only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowsniper") then
+        copy.label = "Sniper — Vanilla Push + Death Animation"
+        copy.description = "Sniper rifles only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowsmg") then
+        copy.label = "SMG — Vanilla Push + Death Animation"
+        copy.description = "SMGs only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowar") then
+        copy.label = "Assault Rifle — Vanilla Push + Death Animation"
+        copy.description = "Assault rifles only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowlmg") then
+        copy.label = "LMG — Vanilla Push + Death Animation"
+        copy.description = "LMGs only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowblunt") then
+        copy.label = "Blunt — Vanilla Push + Death Animation"
+        copy.description = "Blunt weapons only: restores the original hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowblade") then
+        copy.label = "Blade — Vanilla Push + Death Animation"
+        copy.description = "Bladed weapons only: restores the original hit reaction and the original death animation on kills. Other weapon groups are unchanged."
       end
+
       table.insert(values, copy)
     end
   end
@@ -1080,7 +1148,7 @@ local function rebuildVanillaImpulseControl(mode)
 end
 
 local function addVanillaImpulseControl(mode, index)
-  nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse Control", index)
+  nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse + Death Animation", index)
   dynamicRefs[VANILLA_PATH] = {}
 
   local master = vanillaImpulseParts(mode)
@@ -1091,8 +1159,8 @@ local function addVanillaImpulseControl(mode, index)
     master,
     context,
     again,
-    "Show Vanilla Impulse Controls",
-    "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+    "Show Vanilla Impulse + Death Animation Controls",
+    "Shows or hides weapon-by-weapon exceptions that restore both vanilla push-back reactions and vanilla death animations."
   )
   rebuildVanillaImpulseControl(mode)
 end
@@ -1219,14 +1287,14 @@ local function globalRandomSettings(mode)
   return out
 end
 
-local function globalMotorcycleSettings(mode)
+local function npcMotorcycleSettings(mode)
   if not mode or mode.key == "vanilla" then return {} end
   local data = loadSection(mode.key, "vehicles")
   local out = {}
   local seen = {}
+
   for _, setting in ipairs((data and data.settings) or {}) do
-    local marker = string.lower(tostring(setting.id or "") .. " " .. tostring(setting.name or "") .. " " .. tostring(setting.label or ""))
-    if setting.uiOnly ~= true and string.find(marker, "motorcycle", 1, true) then
+    if setting.uiOnly ~= true and isNPCMotorcycleSetting(setting) then
       local copy = copySetting(setting)
       copy.dependency = nil
       copy.dependencyName = ""
@@ -1234,13 +1302,15 @@ local function globalMotorcycleSettings(mode)
       seen[copy.id] = true
     end
   end
-  -- The original shared motorcycle controls belong in Global, not in a second
-  -- standalone category. Use them as the fallback for modes whose vehicle
-  -- schema does not duplicate those controls.
+
+  -- Keep the prior shared fallback behavior for NPC controls only.
+  -- V/player motorcycle controls are intentionally NOT copied here.
   for _, section in ipairs(schema.sharedSections or {}) do
     if section.key == "motorcycles" then
       for _, setting in ipairs(section.settings or {}) do
-        if setting.uiOnly ~= true and not seen[setting.id] then
+        if setting.uiOnly ~= true
+          and isNPCMotorcycleSetting(setting)
+          and not seen[setting.id] then
           local copy = copySetting(setting)
           copy.dependency = nil
           copy.dependencyName = ""
@@ -1250,7 +1320,125 @@ local function globalMotorcycleSettings(mode)
       end
     end
   end
+
   return out
+end
+
+-- SPLAT_BIKE_TOPPLE_INTEGRATED_CONTROLS_V8_8
+local function bikeToppleInternalState()
+  settingsStore.bikeToppleInternal = settingsStore.bikeToppleInternal or {}
+  local s = settingsStore.bikeToppleInternal
+
+  if s.hitsRequired == nil then s.hitsRequired = 5 end
+  if s.riderRagdollToppleEnabled == nil then s.riderRagdollToppleEnabled = true end
+  if s.riderLeadTime == nil then s.riderLeadTime = 0.08 end
+
+  s.hitsRequired = math.floor(tonumber(s.hitsRequired) or 5)
+  if s.hitsRequired < 1 then s.hitsRequired = 1 end
+  if s.hitsRequired > 50 then s.hitsRequired = 50 end
+
+  s.riderLeadTime = tonumber(s.riderLeadTime) or 0.08
+  if s.riderLeadTime < 0.0 then s.riderLeadTime = 0.0 end
+  if s.riderLeadTime > 0.50 then s.riderLeadTime = 0.50 end
+
+  return s
+end
+
+local function applyBikeToppleInternal(playerHint)
+  local player = playerHint or resolveBridge()
+  if not player or not IsDefined(player) then return false end
+
+  local s = bikeToppleInternalState()
+  local vok, version = pcall(function() return player:SMBTFGetBridgeVersion() end)
+  if not vok or tonumber(version) ~= 88 then
+    loge("NPC Motorcycle backend bridge mismatch; expected 88")
+    return false
+  end
+
+  local ok1, a = pcall(function() return player:SMBTFSetHitsRequired(s.hitsRequired) end)
+  local ok2, b = pcall(function() return player:SMBTFSetRiderRagdollToppleEnabled(s.riderRagdollToppleEnabled == true) end)
+  local ok3, c = pcall(function() return player:SMBTFSetRiderLeadTime(s.riderLeadTime) end)
+
+  if not (ok1 and a == true and ok2 and b == true and ok3 and c == true) then
+    loge("NPC Motorcycle integrated controls failed to apply")
+    return false
+  end
+
+  return true
+end
+
+local function addBikeToppleInternalControls(path, startIndex)
+  local s = bikeToppleInternalState()
+  local idx = startIndex or 1
+
+  local hitsRef = nativeSettings.addRangeInt(
+    path,
+    "Bullets Required Before Topple",
+    "Accepted motorcycle shots required before SPLAT starts the NPC motorcycle ragdoll/topple sequence.",
+    1, 50, 1, s.hitsRequired, 5,
+    function(value)
+      s.hitsRequired = math.floor(tonumber(value) or 5)
+      if s.hitsRequired < 1 then s.hitsRequired = 1 end
+      if s.hitsRequired > 50 then s.hitsRequired = 50 end
+      settingsDirty = true
+      applyBikeToppleInternal()
+    end,
+    idx
+  )
+  remember(path, hitsRef)
+  idx = idx + 1
+
+  local delayRef = nativeSettings.addRangeFloat(
+    path,
+    "Bike Delay After NPC Ragdolls",
+    "Seconds to wait AFTER the NPC has actually entered ragdoll before the motorcycle begins to topple.",
+    0.00, 0.50, 0.01, "%.2f", s.riderLeadTime, 0.08,
+    function(value)
+      s.riderLeadTime = tonumber(value) or 0.08
+      if s.riderLeadTime < 0.0 then s.riderLeadTime = 0.0 end
+      if s.riderLeadTime > 0.50 then s.riderLeadTime = 0.50 end
+      settingsDirty = true
+      applyBikeToppleInternal()
+    end,
+    idx
+  )
+  remember(path, delayRef)
+  idx = idx + 1
+
+  local ragRef = nativeSettings.addSwitch(
+    path,
+    "Topple When Rider Ragdolls",
+    "When enabled, an NPC motorcycle follows the rider into a topple after the rider's confirmed ragdoll event and the delay above.",
+    s.riderRagdollToppleEnabled == true,
+    true,
+    function(value)
+      s.riderRagdollToppleEnabled = value == true
+      settingsDirty = true
+      applyBikeToppleInternal()
+    end,
+    idx
+  )
+  remember(path, ragRef)
+  return idx + 1
+end
+
+local function rebuildNPCMotorcycleControls()
+  clearDynamic(MOTORCYCLE_PATH)
+  local mode = selectedMode()
+  if not mode or mode.key == "vanilla" then return end
+
+  local context = "mode/" .. tostring(mode.key) .. "/npcMotorcycle"
+  local function again() rebuildNPCMotorcycleControls() end
+
+  local idx = addSettings(
+    MOTORCYCLE_PATH,
+    npcMotorcycleSettings(mode),
+    1,
+    context,
+    again,
+    true
+  )
+  addBikeToppleInternalControls(MOTORCYCLE_PATH, idx)
 end
 
 local function addImpulseSectionToggle(label, description, key, idx, again)
@@ -1288,17 +1476,6 @@ rebuildGlobalImpulseControls = function(section)
     idx = addSettings(IMPULSE_PATH, globalMoveSettings(), idx, "global/moveNpcFeet", again, true)
   end
 
-  local motorcycle = globalMotorcycleSettings(mode)
-  if #motorcycle > 0 then
-    idx = addImpulseSectionToggle("Show Motorcycle Impulse Controls - " .. mode.label,
-      "Shows motorcycle topple and rider lean impulse controls for the selected mode.",
-      "motorcycle", idx, again)
-    if uiConfig.impulseSections.motorcycle then
-      idx = addSettings(IMPULSE_PATH, motorcycle, idx,
-        "mode/" .. tostring(mode.key) .. "/motorcycle", again, true)
-    end
-  end
-
   -- Native Settings 1.4+ applies add/remove operations to an open tab directly.
   -- A full refresh here repopulates persistent controls, including the mode selector.
 end
@@ -1318,6 +1495,7 @@ local function buildMenu()
   end
   local function rebuildSelectedMenu()
     if globalImpulseSection then rebuildGlobalImpulseControls(globalImpulseSection) end
+    rebuildNPCMotorcycleControls()
     local active = selectedMode()
     for _, candidate in ipairs(schema.modes) do
       removeModeCategories(candidate)
@@ -1332,18 +1510,23 @@ local function buildMenu()
 
   local subIndex = 2
   for _, section in ipairs(schema.sharedSections or {}) do
-    -- Motorcycle controls are already selected and rendered inside Global
-    -- Impulse Controls. Do not create a second Motorcycle category.
-    if section.key ~= "motorcycles" then
-      local path = sharedPath(section)
-      local label = section.label
-      if section.key == "globalImpulse" then label = "Mode Impulse Control" end
-      if section.key == "animation" then label = "Animation Control" end
-      nativeSettings.addSubcategory(path, label, subIndex)
-      dynamicRefs[path] = {}
+    local path = sharedPath(section)
+    local label = section.label
+
+    if section.key == "globalImpulse" then label = "Mode Impulse Control" end
+    if section.key == "motorcycles" then label = "NPC Motorcycle" end
+    if section.key == "animation" then label = "Animation Control" end
+
+    nativeSettings.addSubcategory(path, label, subIndex)
+    dynamicRefs[path] = {}
+
+    if section.key == "motorcycles" then
+      rebuildNPCMotorcycleControls()
+    else
       rebuildShared(section)
-      subIndex = subIndex + 1
     end
+
+    subIndex = subIndex + 1
   end
 
   showModeCategories(selectedMode(), tonumber(selectedMode().enumIndex) or 1)
@@ -1355,7 +1538,10 @@ local function buildMenu()
     buildRestoreQueue()
     saveSettingsNow(true)
     local b = resolveBridge()
-    if b then pcall(function() b:SPLATResetAll() end) end
+    if b then
+      pcall(function() b:SPLATResetAll() end)
+      applyBikeToppleInternal(b)
+    end
     uiConfig = defaultUI()
     uiDirty = true
     saveUI(true)
@@ -1455,7 +1641,7 @@ local function initialize()
       settingsDirty = true
       saveSettingsNow(true)
     end
-    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 141 expected; V155 audited menu rebuild active")
+    logi("Menu registered. Integrated NPC Motorcycle v8.8 active; SPLAT bridge 141 + bike bridge 88 expected")
   end
 end
 
@@ -1474,6 +1660,7 @@ local function handlePlayerReady(player, source)
   -- session are guaranteed to replay onto a recreated PlayerPuppet.
   buildRestoreQueue()
   if not processRestoreQueue() then return false end
+  applyBikeToppleInternal(live)
   if settingsDirty then saveSettingsNow(false) end
   logi("Standalone PlayerPuppet lifecycle connected via " .. tostring(source or "event"))
   return true
@@ -1502,6 +1689,7 @@ local function registerPlayerLifecycleObserver()
 end
 
 registerForEvent("onInit", function()
+  logi("BUILD MARKER: SPLAT_TRIP_STEALTH_FINISHER_GUARD_1706")
   logi("TEST BUILD MARKER: SPLAT_ISSUE9_INJURY_SHOCK_INTEGRATED_S")
   registerPlayerLifecycleObserver()
   initialize()

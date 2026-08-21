@@ -1212,7 +1212,10 @@ protected cb func OnAAT_WorkspotBackOffFallbackEvt(
 @addMethod(NPCPuppet)
 protected cb func OnAAT_EmotionEvt(e: ref<AAT_EmotionEvt>) -> Bool {
   let rc: ref<ReactionManagerComponent>;
-  if RFC.Cfg().vanillaMode || !IsDefined(e) || !IsDefined(e.target) {
+  if RFC.Cfg().vanillaMode
+    || RFC_IsStealthOrFinisher(this)
+    || !IsDefined(e)
+    || !IsDefined(e.target) {
     return true;
   };
   rc = this.GetStimReactionComponent();

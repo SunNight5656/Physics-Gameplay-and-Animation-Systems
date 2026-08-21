@@ -7,9 +7,6 @@ module RealisticPush
 @addField(VehicleObject) public let rfc_vehicleImpulseLastT: Float;
 @addField(BikeObject) public let rfc_arcadeLeanToppleLatched: Bool;
 @addField(PlayerPuppet) private let rfc_arcadeBikeLeanCheckScheduled: Bool;
-@addField(NPCPuppet) public let rfc_arcadeRiderBikeToppleArmed: Bool;
-@addField(NPCPuppet) public let rfc_arcadeRiderBikeToppleSide: Float;
-@addField(NPCPuppet) public let rfc_arcadeRiderBikeToppleBike: wref<BikeObject>;
 
 // Repeated runtime kill event. Some native vehicle paths re-enable air/tilt
 // stabilization after OnHit, so one immediate EnableAirControl(false) is not enough.
@@ -124,68 +121,6 @@ private func RFC_VehBikeShotToppleSide(
   return 1.0;
 }
 
-private func RFC_VehTryArcadeBulletBikeTopple(
-  vehicle: ref<VehicleObject>,
-  hitPos: Vector4,
-  srcPos: Vector4,
-  cfg: RFCConfig
-) -> Void {
-  if !cfg.vehicleMotorcycleToppleOnBullet { return; }
-
-  let bike: ref<BikeObject> = vehicle as BikeObject;
-  if !IsDefined(bike) { return; }
-
-  RFC_VehToppleBikeSigned(
-    bike,
-    RFC_VehBikeShotToppleSide(bike, hitPos, srcPos),
-    cfg.vehicleMotorcycleToppleStrength,
-    cfg
-  );
-}
-
-// A bullet aimed at the rider does not reliably produce VehicleObject.OnHit.
-// Capture the mounted bike and the requested fall side before NPC damage runs,
-// then let the death wrapper consume the same handoff if the hit is lethal.
-public func RFC_VehArmArcadeRiderBikeTopple(
-  rider: wref<NPCPuppet>,
-  evt: ref<gameHitEvent>,
-  cfg: RFCConfig
-) -> Bool {
-  if !IsDefined(rider) || !IsDefined(evt) || !IsDefined(evt.attackData) { return false; }
-  if !cfg.vehicleImpulseEnabled || !cfg.vehicleBulletEnabled || !cfg.vehicleMotorcycleToppleOnBullet { return false; }
-
-  let bike: wref<BikeObject> = RFC_GetMountedVehicle(rider) as BikeObject;
-  if !IsDefined(bike) { return false; }
-  if RFC_TimeDilationBlocksImpulses(bike, cfg) { return false; }
-
-  let ad: ref<AttackData> = evt.attackData;
-  let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
-  switch source {
-    case RFCVehicleHitSource.Bullet:
-      break;
-    default:
-      return false;
-  }
-
-  if cfg.vehicleBulletPlayerOnly && !RFC_VehPassesPlayerOnly(bike, ad, source) {
-    return false;
-  }
-
-  let srcPos: Vector4 = ad.GetAttackPosition();
-  let instigator: ref<GameObject> = ad.GetInstigator();
-  if IsDefined(instigator) {
-    srcPos = instigator.GetWorldPosition();
-  }
-  if RFC_VehIsBadPos(srcPos) {
-    srcPos = evt.hitPosition;
-  }
-
-  rider.rfc_arcadeRiderBikeToppleBike = bike;
-  rider.rfc_arcadeRiderBikeToppleSide = RFC_VehBikeShotToppleSide(bike, evt.hitPosition, srcPos);
-  rider.rfc_arcadeRiderBikeToppleArmed = true;
-  return true;
-}
-
 // Mirror the native motorcycle death pipeline's DriverDead/NoDriver signals.
 // SPLAT skips the delayed vanilla knock-off animation, so it must send these
 // explicitly or the traffic AI can continue driving an empty motorcycle.
@@ -199,39 +134,6 @@ public func RFC_VehStopDeadBikeDriverAI(bike: wref<BikeObject>) -> Void {
   let noDriver: ref<AIEvent> = new AIEvent();
   noDriver.name = n"NoDriver";
   bike.QueueEvent(noDriver);
-}
-
-// Consume at most once. On lethal hits the motorcycle death wrapper calls this
-// inside its single ragdoll handoff. On surviving rider hits, NPCPuppet.OnHit
-// consumes it after vanilla damage and only topples the bike.
-public func RFC_VehConsumeArcadeRiderBikeTopple(
-  rider: wref<NPCPuppet>,
-  lethal: Bool,
-  cfg: RFCConfig
-) -> Bool {
-  if !IsDefined(rider) || !rider.rfc_arcadeRiderBikeToppleArmed { return false; }
-
-  let bike: wref<BikeObject> = rider.rfc_arcadeRiderBikeToppleBike;
-  let side: Float = rider.rfc_arcadeRiderBikeToppleSide;
-  rider.rfc_arcadeRiderBikeToppleArmed = false;
-  rider.rfc_arcadeRiderBikeToppleBike = null;
-
-  if !IsDefined(bike) { return false; }
-
-  if lethal {
-    RFC_VehStopDeadBikeDriverAI(bike);
-    let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(rider.GetGame());
-    if IsDefined(ws) {
-      ws.UnmountFromVehicle(bike, rider, true);
-    }
-  }
-
-  return RFC_VehToppleBikeSigned(
-    bike,
-    side,
-    cfg.vehicleMotorcycleToppleStrength,
-    cfg
-  );
 }
 
 // Do not feed the native collision-exit decision here. That path derives an
@@ -277,6 +179,10 @@ protected cb func OnRFC_ArcadeBikeLeanCheckEvent(evt: ref<RFC_ArcadeBikeLeanChec
   this.rfc_arcadeBikeLeanCheckScheduled = false;
 
   let cfg: RFCConfig = RFC.Cfg();
+
+  // HARD VANILLA BYPASS: stop this background loop entirely.
+  if cfg.vanillaMode { return true; }
+
   let nextDelay: Float = 0.50;
 
   if cfg.vehicleImpulseEnabled
@@ -325,14 +231,14 @@ protected cb func OnRFC_ArcadeBikeLeanCheckEvent(evt: ref<RFC_ArcadeBikeLeanChec
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
   let result: Bool = wrappedMethod();
-  RFC_ArcadeBikeScheduleLeanCheck(this, 0.25);
+  if !RFC.Cfg().vanillaMode { RFC_ArcadeBikeScheduleLeanCheck(this, 0.25); }
   return result;
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnTakeControl(resolveInterface: EntityResolveComponentsInterface) -> Bool {
   let result: Bool = wrappedMethod(resolveInterface);
-  RFC_ArcadeBikeScheduleLeanCheck(this, 0.25);
+  if !RFC.Cfg().vanillaMode { RFC_ArcadeBikeScheduleLeanCheck(this, 0.25); }
   return result;
 }
 
@@ -1005,6 +911,17 @@ private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool
 private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
   if !IsDefined(vehicle) || !IsDefined(evt) || !IsDefined(evt.attackData) { return; }
 
+  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_8_ROUTE
+  let smbtfBike: ref<BikeObject> = vehicle as BikeObject;
+  if IsDefined(smbtfBike) {
+    let smbtfSource: RFCVehicleHitSource = RFC_VehClassifySource(evt.attackData);
+    switch smbtfSource {
+      case RFCVehicleHitSource.Bullet:
+        RFC_BikeBulletThresholdHandle(smbtfBike, evt, cfg);
+        return;
+    }
+  }
+
   // Runtime kill for built-in air/tilt self-righting. This does not affect normal NPC bullet damage.
   RFC_VehScheduleSelfRightingKill(vehicle);
 
@@ -1039,22 +956,6 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       break;
   }
 
-  // Restore the proven standalone button actuator as the first bullet action.
-  // Weapon filters, push multipliers and the general vehicle cooldown control
-  // translation; they must not prevent an enabled motorcycle from toppling.
-  switch source {
-    case RFCVehicleHitSource.Bullet:
-      if cfg.vehicleBulletEnabled && cfg.vehicleMotorcycleToppleOnBullet {
-        let earlySourcePos: Vector4 = ad.GetAttackPosition();
-        let earlyInstigator: ref<GameObject> = ad.GetInstigator();
-        if IsDefined(earlyInstigator) {
-          earlySourcePos = earlyInstigator.GetWorldPosition();
-        }
-        RFC_VehTryArcadeBulletBikeTopple(
-          vehicle, evt.hitPosition, earlySourcePos, cfg);
-      }
-      break;
-  }
   if !RFC_VehCanFire(vehicle, cfg) { return; }
 
   let srcPos: Vector4 = ad.GetAttackPosition();
@@ -1183,9 +1084,20 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     return wrappedMethod(evt);
   }
 
+  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_7_WRAPPER_GATE
+  let smbtfBikeBulletHit: Bool = false;
+  let smbtfWrapperBike: ref<BikeObject> = this as BikeObject;
+  if IsDefined(smbtfWrapperBike) && IsDefined(evt) && IsDefined(evt.attackData) {
+    switch RFC_VehClassifySource(evt.attackData) {
+      case RFCVehicleHitSource.Bullet:
+        smbtfBikeBulletHit = true;
+        break;
+    }
+  }
+
   // Kill built-in air/tilt correction before and after vanilla vehicle hit handling.
   // Some native bike/car paths re-enable these during collision handling.
-  RFC_VehScheduleSelfRightingKill(this);
+  if !smbtfBikeBulletHit { RFC_VehScheduleSelfRightingKill(this); }
 
   // Mark current occupants before and after vanilla vehicle hit processing. This
   // catches delayed NPC impulse events that may fire after the vehicle hit frame.
@@ -1195,7 +1107,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 
   let res: Bool = wrappedMethod(evt);
 
-  RFC_VehScheduleSelfRightingKill(this);
+  if !smbtfBikeBulletHit { RFC_VehScheduleSelfRightingKill(this); }
 
   if cfg.killImpulsesVehiclesOnly {
     RFC_VehMarkAllOccupants(this, 4.0);

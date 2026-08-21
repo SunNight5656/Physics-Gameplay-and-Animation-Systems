@@ -195,7 +195,10 @@ protected cb func OnAAT_OnLookResetCdEvt(e: ref<AAT_OnLookResetCdEvt>) -> Bool {
 protected cb func OnAAT_OnLookRagdollEvt(e: ref<AAT_OnLookRagdollEvt>) -> Bool {
   let cfg: RFCConfig = RFC.Cfg();
   if cfg.vanillaMode { return true; }
-  if IsDefined(e) && IsDefined(e.target) && !RFC_TimeDilationBlocksImpulses(e.target, cfg) {
+  if IsDefined(e)
+    && IsDefined(e.target)
+    && !RFC_IsStealthOrFinisher(e.target)
+    && !RFC_TimeDilationBlocksImpulses(e.target, cfg) {
     e.target.QueueEvent(CreateForceRagdollEvent(n"AAA_Trip_OnLook"));
   };
   return true;
@@ -205,7 +208,10 @@ protected cb func OnAAT_OnLookRagdollEvt(e: ref<AAT_OnLookRagdollEvt>) -> Bool {
 protected cb func OnAAT_OnLookImpulseEvt(e: ref<AAT_OnLookImpulseEvt>) -> Bool {
   let cfg: RFCConfig = RFC.Cfg();
   if cfg.vanillaMode { return true; }
-  if IsDefined(e) && IsDefined(e.target) && !RFC_TimeDilationBlocksImpulses(e.target, cfg) {
+  if IsDefined(e)
+    && IsDefined(e.target)
+    && !RFC_IsStealthOrFinisher(e.target)
+    && !RFC_TimeDilationBlocksImpulses(e.target, cfg) {
     e.target.QueueEvent(CreateRagdollApplyImpulseEvent(e.pos, e.imp, e.radius));
   };
   return true;
@@ -278,6 +284,13 @@ protected cb func OnAAT_OnLookTickEvt(e: ref<AAT_OnLookTickEvt>) -> Bool {
 
   npc = AAT_GetLookAtNPC(this);
   if !IsDefined(npc) || !ScriptedPuppet.CanRagdoll(npc) {
+    AAT_OnLookSched(this, new AAT_OnLookTickEvt(), AAT_OnLookDelay(s.intervalSec));
+    return true;
+  };
+
+  // Never start Trip On Look against an NPC currently owned by a stealth kill
+  // or finisher. Keep the player monitor alive for later targets.
+  if RFC_IsStealthOrFinisher(npc) {
     AAT_OnLookSched(this, new AAT_OnLookTickEvt(), AAT_OnLookDelay(s.intervalSec));
     return true;
   };
@@ -382,14 +395,14 @@ private func AAT_OnLookStart(p: wref<PlayerPuppet>) -> Void {
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
   let res: Bool = wrappedMethod();
-  AAT_OnLookStart(this);
+  if !RFC.Cfg().vanillaMode { AAT_OnLookStart(this); }
   return res;
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnTakeControl(ri: EntityResolveComponentsInterface) -> Bool {
   let res: Bool = wrappedMethod(ri);
-  AAT_OnLookStart(this);
+  if !RFC.Cfg().vanillaMode { AAT_OnLookStart(this); }
   return res;
 }
 
