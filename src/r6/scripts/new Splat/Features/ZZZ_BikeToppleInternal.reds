@@ -1,7 +1,7 @@
 module RealisticPush
 
-// SPLAT Bike Topple Internal v9.0
-// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V9_0_20260817
+// SPLAT Bike Topple Internal v8.8 - standalone rider handoff
+// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V8_8_STANDALONE_HANDOFF_20260818
 //
 // This file deliberately does NOT wrap VehicleObject.OnHit.
 // VehicleImpulses.reds calls RFC_BikeBulletThresholdHandle directly so there is
@@ -19,7 +19,8 @@ module RealisticPush
 @addField(NPCPuppet) public let smbtf_lastMountedBike: wref<BikeObject>;
 @addField(NPCPuppet) public let smbtf_lastMountedBikeTime: Float;
 @addField(NPCPuppet) public let smbtf_coordinatedRagdollUntil: Float;
-@addField(NPCPuppet) public let smbtf_riderDeathBikePreparedUntil: Float;
+@addField(NPCPuppet) public let smbtf_standaloneRiderHitActive: Bool;
+@addField(NPCPuppet) public let smbtf_standaloneRiderHitHandledUntil: Float;
 
 @addField(PlayerPuppet) private let smbtf_hitsRequired: Int32;
 @addField(PlayerPuppet) private let smbtf_thresholdGeneration: Int32;
@@ -102,7 +103,7 @@ public final func SMBTFGetRiderLeadTime() -> Float {
 
 @addMethod(PlayerPuppet)
 public final func SMBTFGetBridgeVersion() -> Int32 {
-  return 90;
+  return 88;
 }
 
 private func SMBTF_InternalPlayer(obj: wref<GameObject>) -> ref<PlayerPuppet> {
@@ -285,6 +286,218 @@ private func SMBTF_InternalScheduleBikeDrop(
   }
 }
 
+// Direct-rider path copied from the known-good standalone design.
+// It resolves the motorcycle from the same two sources used by the standalone:
+// VehicleComponent first, MountingFacility second.
+private func SMBTF_InternalResolveMountedBike(
+  rider: wref<GameObject>
+) -> wref<BikeObject> {
+  let vehicle: wref<VehicleObject>;
+  let mountingFacility: ref<IMountingFacility>;
+  let mountInfo: MountingInfo;
+
+  if !IsDefined(rider) {
+    return null;
+  }
+
+  if VehicleComponent.GetVehicle(
+    rider.GetGame(),
+    rider,
+    vehicle
+  ) && IsDefined(vehicle) {
+    return vehicle as BikeObject;
+  }
+
+  mountingFacility =
+    GameInstance.GetMountingFacility(rider.GetGame());
+
+  if !IsDefined(mountingFacility) {
+    return null;
+  }
+
+  mountInfo =
+    mountingFacility.GetMountingInfoSingleWithObjects(
+      rider
+    );
+
+  if !EntityID.IsDefined(mountInfo.parentId) {
+    return null;
+  }
+
+  return GameInstance.FindEntityByID(
+    rider.GetGame(),
+    mountInfo.parentId
+  ) as BikeObject;
+}
+
+private func SMBTF_InternalIsStandaloneBulletHit(
+  evt: ref<gameHitEvent>
+) -> Bool {
+  if !IsDefined(evt) || !IsDefined(evt.attackData) {
+    return false;
+  }
+
+  if evt.attackData.HasFlag(hitFlag.VehicleImpact) {
+    return false;
+  }
+
+  return AttackData.IsRangedOrDirect(
+    evt.attackData.GetAttackType()
+  );
+}
+
+private func SMBTF_InternalSendNoDriver(
+  bike: wref<BikeObject>
+) -> Void {
+  if !IsDefined(bike) {
+    return;
+  }
+
+  let event: ref<AIEvent> = new AIEvent();
+  event.name = n"NoDriver";
+  bike.QueueEvent(event);
+}
+
+// Exact working standalone-style order for a direct NPC rider bullet:
+//
+//   KnockOverBikeEvent
+//   -> optional side impulse using existing SPLAT topple strength
+//   -> unmount NPC rider
+//   -> force NPC ragdoll
+//   -> NoDriver
+//
+// This path intentionally does NOT use the bike-shot threshold. The existing
+// "Topple When Rider Ragdolls" toggle owns this direct-rider behavior, while
+// the bike-shot toggle/threshold path remains independent and unchanged.
+private func SMBTF_InternalStandaloneRiderBulletTopple(
+  rider: wref<NPCPuppet>,
+  bike: wref<BikeObject>,
+  evt: ref<gameHitEvent>,
+  cfg: RFCConfig
+) -> Bool {
+  let instigator: ref<GameObject>;
+  let sourcePosition: Vector4;
+  let side: Float;
+  let strength: Float;
+  let knockEvent: ref<KnockOverBikeEvent>;
+  let impulseEvent: ref<PhysicalImpulseEvent>;
+  let position: Vector4;
+  let direction: Vector4;
+  let currentRider: wref<GameObject>;
+  let workspotSystem: ref<WorkspotGameSystem>;
+
+  if !IsDefined(rider)
+    || !IsDefined(bike)
+    || !SMBTF_InternalIsStandaloneBulletHit(evt)
+    || cfg.vanillaMode
+    || !SMBTF_InternalRiderToppleEnabled(rider) {
+    return false;
+  }
+
+  // Preserve the existing SPLAT player-only vehicle bullet source gate.
+  if cfg.vehicleBulletPlayerOnly
+    && !RFC_IsPlayerAttack(bike, evt.attackData) {
+    return false;
+  }
+
+  instigator = evt.attackData.GetInstigator();
+  sourcePosition = evt.attackData.GetAttackPosition();
+
+  if IsDefined(instigator) {
+    sourcePosition = instigator.GetWorldPosition();
+  }
+
+  if SMBTF_InternalBadPos(sourcePosition) {
+    sourcePosition = evt.hitPosition;
+  }
+
+  side = SMBTF_InternalShotSide(
+    bike,
+    evt.hitPosition,
+    sourcePosition
+  );
+
+  strength = cfg.vehicleMotorcycleToppleStrength;
+
+  // Match the working standalone: native bike knockover first.
+  knockEvent = new KnockOverBikeEvent();
+  knockEvent.forceKnockdown = true;
+  knockEvent.applyDirectionalForce = false;
+  bike.QueueEvent(knockEvent);
+
+  // Match the working standalone side impulse, while preserving SPLAT's
+  // existing motorcycle topple-strength setting.
+  if strength > 0.0 {
+    impulseEvent = new PhysicalImpulseEvent();
+    impulseEvent.radius = 1.0;
+
+    position = bike.GetWorldPosition();
+    impulseEvent.worldPosition.X = position.X;
+    impulseEvent.worldPosition.Y = position.Y;
+    impulseEvent.worldPosition.Z = position.Z + 0.50;
+
+    direction =
+      WorldTransform.GetRight(
+        bike.GetWorldTransform()
+      );
+
+    if side < 0.0 {
+      direction *= -1.0;
+    }
+
+    direction *= bike.GetTotalMass() * strength;
+    impulseEvent.worldImpulse =
+      Vector4.Vector4To3(direction);
+
+    bike.PhysicsWakeUp();
+    bike.QueueEvent(impulseEvent);
+  }
+
+  // Match BVCForceCurrentRiderOff from the working standalone.
+  currentRider = VehicleComponent.GetDriverMounted(
+    bike.GetGame(),
+    bike.GetEntityID()
+  );
+
+  // Keep the exact standalone path when the mount is still present. If vanilla
+  // cleared only the driver lookup during wrappedMethod, fall back to the NPC
+  // that generated this rider-hit wrapper so the handoff cannot be lost.
+  if !IsDefined(currentRider) {
+    currentRider = rider;
+  }
+
+  if IsDefined(currentRider) && !currentRider.IsPlayer() {
+    workspotSystem =
+      GameInstance.GetWorkspotSystem(bike.GetGame());
+
+    if IsDefined(workspotSystem) {
+      workspotSystem.UnmountFromVehicle(
+        bike,
+        currentRider,
+        true
+      );
+    }
+
+    currentRider.QueueEvent(
+      CreateForceRagdollEvent(
+        n"SPLAT_StandaloneStyle_NPCRiderKnockoff"
+      )
+    );
+  }
+
+  SMBTF_InternalSendNoDriver(bike);
+
+  // SPLAT's equivalent of the standalone's self-righting suppression.
+  SMBTF_InternalScheduleKeepDown(bike);
+
+  rider.smbtf_lastMountedBike = bike;
+  rider.smbtf_lastMountedBikeTime = SMBTF_InternalNow(rider);
+  rider.smbtf_standaloneRiderHitHandledUntil =
+    SMBTF_InternalNow(rider) + 1.00;
+
+  return true;
+}
+
 private func SMBTF_InternalCacheBike(rider: wref<NPCPuppet>) -> wref<BikeObject> {
   if !IsDefined(rider) { return null; }
 
@@ -310,44 +523,6 @@ private func SMBTF_InternalCurrentOrRecentBike(
     if age >= 0.0 && age <= 1.00 { return bike; }
   }
   return null;
-}
-
-// Confirmed mounted-rider death handoff.
-// Called BEFORE vanilla death processing by ZZ_MotorcycleDeathAnimation_CompileFix.
-//
-// Important ownership:
-// - this function prepares ONLY the motorcycle
-// - it does NOT force the NPC ragdoll
-// - the motorcycle death file remains the one rider-death ragdoll owner
-public func SMBTF_PrepareMountedRiderDeathBike(
-  rider: wref<NPCPuppet>,
-  bike: wref<BikeObject>
-) -> Bool {
-  if !IsDefined(rider) || !IsDefined(bike) { return false; }
-  if !SMBTF_InternalRiderToppleEnabled(rider) { return false; }
-
-  let now: Float = SMBTF_InternalNow(rider);
-
-  rider.smbtf_lastMountedBike = bike;
-  rider.smbtf_lastMountedBikeTime = now;
-  rider.smbtf_riderDeathBikePreparedUntil = now + 1.00;
-
-  // Make the vehicle stop fighting the death handoff synchronously.
-  // DriverDead / NoDriver are also sent by the caller.
-  bike.EnableAirControl(false);
-  bike.EnableTiltControl(false);
-  bike.PhysicsWakeUp();
-
-  // Start the native motorcycle knockover NOW, before wrapped OnDeath runs.
-  // nativeDirectional=true uses the game's own bike knockover force.
-  SMBTF_InternalToppleBike(
-    bike,
-    1.0,
-    0.0,
-    true
-  );
-
-  return true;
 }
 
 private func SMBTF_InternalUnmountAndRagdollRiders(
@@ -466,14 +641,70 @@ public func RFC_BikeBulletThresholdHandle(
   }
 }
 
-// This wrapper only caches the mounted bike. It does not alter bullet settings
-// and does not topple a bike merely because the rider was hit.
-@wrapMethod(NPCPuppet)
+// The known-good standalone wraps ScriptedPuppet because that is where the
+// inherited OnHit implementation used by NPCPuppet actually lives.
+// Filter back down to NPC riders so V/player behavior is untouched here.
+@wrapMethod(ScriptedPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
-  // Cache only. Do NOT topple on speculative/nonlethal rider hits.
-  // Confirmed mounted-rider death is prepared from the motorcycle OnDeath path.
-  SMBTF_InternalCacheBike(this);
-  return wrappedMethod(evt);
+  let npc: wref<NPCPuppet> = this as NPCPuppet;
+  let bikeBefore: wref<BikeObject>;
+  let bikeAfter: wref<BikeObject>;
+  let candidate: Bool = false;
+  let cfg: RFCConfig = RFC.Cfg();
+  let result: Bool;
+
+  if IsDefined(npc) {
+    bikeBefore = SMBTF_InternalResolveMountedBike(npc);
+
+    candidate =
+      IsDefined(bikeBefore)
+      && SMBTF_InternalIsStandaloneBulletHit(evt)
+      && !cfg.vanillaMode
+      && SMBTF_InternalRiderToppleEnabled(npc);
+
+    if candidate
+      && cfg.vehicleBulletPlayerOnly
+      && !RFC_IsPlayerAttack(bikeBefore, evt.attackData) {
+      candidate = false;
+    }
+
+    if candidate {
+      // OnDeath can run inside wrappedMethod(evt). Mark the rider first so the
+      // old motorcycle-death wrapper does not inject a competing ragdoll.
+      npc.smbtf_standaloneRiderHitActive = true;
+      npc.smbtf_standaloneRiderHitHandledUntil =
+        SMBTF_InternalNow(npc) + 1.00;
+      npc.smbtf_lastMountedBike = bikeBefore;
+      npc.smbtf_lastMountedBikeTime = SMBTF_InternalNow(npc);
+    }
+  }
+
+  // Match the standalone: process the rider hit first.
+  result = wrappedMethod(evt);
+
+  if candidate && IsDefined(npc) {
+    // Match the standalone's post-hit resolution first.
+    bikeAfter = SMBTF_InternalResolveMountedBike(npc);
+
+    // If death processing cleared only the mount relationship, use the exact
+    // bike captured before wrappedMethod so moving/stopped bikes behave alike.
+    if !IsDefined(bikeAfter) {
+      bikeAfter = bikeBefore;
+    }
+
+    if IsDefined(bikeAfter) {
+      SMBTF_InternalStandaloneRiderBulletTopple(
+        npc,
+        bikeAfter,
+        evt,
+        cfg
+      );
+    }
+
+    npc.smbtf_standaloneRiderHitActive = false;
+  }
+
+  return result;
 }
 
 @wrapMethod(NPCPuppet)
@@ -483,7 +714,8 @@ protected cb func OnRagdollEnabledEvent(
   let bike: wref<BikeObject> = SMBTF_InternalCurrentOrRecentBike(this);
   let now: Float = SMBTF_InternalNow(this);
   let coordinated: Bool = now <= this.smbtf_coordinatedRagdollUntil;
-  let riderDeathBikePrepared: Bool = now <= this.smbtf_riderDeathBikePreparedUntil;
+  let standaloneRiderHitHandled: Bool =
+    now <= this.smbtf_standaloneRiderHitHandledUntil;
 
   // The engine's normal ragdoll transition runs first.
   let result: Bool = wrappedMethod(evt);
@@ -504,10 +736,11 @@ protected cb func OnRagdollEnabledEvent(
       false
     );
   } else {
-    if riderDeathBikePrepared {
-      // Confirmed mounted-rider death already started the motorcycle knockover
-      // BEFORE vanilla OnDeath. Do not issue a second topple here.
-      this.smbtf_riderDeathBikePreparedUntil = 0.0;
+    if standaloneRiderHitHandled {
+      // Direct rider bullet already used the known-good standalone handoff:
+      // bike knockover -> impulse -> rider off -> ragdoll -> NoDriver.
+      // Never schedule a second bike topple from this later ragdoll callback.
+      this.smbtf_standaloneRiderHitHandledUntil = 0.0;
     } else {
       if !coordinated
         && IsDefined(bike)
@@ -515,7 +748,7 @@ protected cb func OnRagdollEnabledEvent(
         let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(this.GetGame());
         if IsDefined(ws) { ws.UnmountFromVehicle(bike, this, true); }
 
-        // Non-death rider ragdoll still uses the normal ragdoll-first slider path.
+        // Preserve the existing non-bullet rider-ragdoll slider path.
         SMBTF_InternalScheduleBikeDrop(
           bike,
           1.0,
