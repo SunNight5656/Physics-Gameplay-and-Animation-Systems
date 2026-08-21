@@ -212,7 +212,7 @@ local BVC_MODE_INDEX = {
 local BVC_MODE_DEFAULTS = {
   realismCustom = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletChance = 100.0, bulletStrength = 3.8,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 3.8,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 2.0,
     vehicleImpactChance = 100.0, vehicleImpactStrength = 4.0,
     worldImpactEnabled = true, worldImpactThreshold = 4.5,
@@ -225,7 +225,7 @@ local BVC_MODE_DEFAULTS = {
   },
   realismPlus = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletChance = 100.0, bulletStrength = 4.2,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.2,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 1.75,
     vehicleImpactChance = 100.0, vehicleImpactStrength = 4.6,
     worldImpactEnabled = true, worldImpactThreshold = 4.0,
@@ -238,7 +238,7 @@ local BVC_MODE_DEFAULTS = {
   },
   dirtyHarry = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletChance = 100.0, bulletStrength = 4.8,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.8,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 1.25,
     vehicleImpactChance = 100.0, vehicleImpactStrength = 5.2,
     worldImpactEnabled = true, worldImpactThreshold = 3.25,
@@ -251,7 +251,7 @@ local BVC_MODE_DEFAULTS = {
   },
   arnoldArcade = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletChance = 100.0, bulletStrength = 6.5,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 6.5,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 0.75,
     vehicleImpactChance = 100.0, vehicleImpactStrength = 7.0,
     worldImpactEnabled = true, worldImpactThreshold = 2.0,
@@ -264,7 +264,7 @@ local BVC_MODE_DEFAULTS = {
   },
   vanilla = {
     enabled = false, bulletEnabled = false, bulletPlayerOnly = false,
-    bulletChance = 0.0, bulletStrength = 0.0,
+    bulletHitsRequired = 3.0, bulletChance = 0.0, bulletStrength = 0.0,
     vehicleImpactEnabled = false, vehicleImpactThreshold = 9999.0,
     vehicleImpactChance = 0.0, vehicleImpactStrength = 0.0,
     worldImpactEnabled = false, worldImpactThreshold = 9999.0,
@@ -1279,7 +1279,7 @@ local BVC_BOOL_NAMES = {
 }
 
 local BVC_FLOAT_NAMES = {
-  "bulletChance", "bulletStrength", "vehicleImpactThreshold",
+  "bulletHitsRequired", "bulletChance", "bulletStrength", "vehicleImpactThreshold",
   "vehicleImpactChance", "vehicleImpactStrength", "worldImpactThreshold",
   "worldImpactChance", "worldImpactStrength", "toppleCooldown",
   "leanFallAngle", "leanFallMinSpeed", "leanFallMaxSpeed",
@@ -1444,7 +1444,11 @@ local function addBikeModeCategory(mode, index)
     "Master switch for bullet, impact, rider, V lean, and pickup recovery behavior.", i)
   i = addBikeSwitch(path, key, state, defaults, "bulletEnabled",
     "Bullets Topple Motorcycles",
-    "Applies to empty motorcycles, NPC riders, and V while mounted.", i)
+    "OFF fully disables custom bullet-triggered motorcycle toppling for this mode.", i)
+  i = addBikeFloat(path, key, state, defaults, "bulletHitsRequired",
+    "Bullets Required Before Topple",
+    "Exact number of valid bullet hits required before the working motorcycle topple fires. 1 = first hit; 3 = third hit.",
+    1.0, 10.0, 1.0, "%.0f", i)
   i = addBikeSwitch(path, key, state, defaults, "bulletPlayerOnly",
     "Player Bullets Only",
     "When enabled, NPC bullets cannot trigger motorcycle topples.", i)

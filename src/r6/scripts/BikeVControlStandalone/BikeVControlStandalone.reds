@@ -31,6 +31,7 @@ public class BVCModeConfig {
 
   public let bulletEnabled: Bool;
   public let bulletPlayerOnly: Bool;
+  public let bulletHitsRequired: Float;
   public let bulletChance: Float;
   public let bulletStrength: Float;
 
@@ -125,6 +126,9 @@ public let bvc_suppressAfterReceiver: Bool;
 public let bvc_lastToppleTime: Float;
 
 @addField(BikeObject)
+public let bvc_bulletHitCount: Float;
+
+@addField(BikeObject)
 public let bvc_leanLatched: Bool;
 
 public func BVCNow(owner: wref<GameObject>) -> Float {
@@ -189,6 +193,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
 
     config.bulletEnabled = true;
     config.bulletPlayerOnly = false;
+    config.bulletHitsRequired = 3.00;
     config.bulletChance = 100.00;
     config.bulletStrength = 3.80;
 
@@ -222,6 +227,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
 
     config.bulletEnabled = true;
     config.bulletPlayerOnly = false;
+    config.bulletHitsRequired = 3.00;
     config.bulletChance = 100.00;
     config.bulletStrength = 4.20;
 
@@ -255,6 +261,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
 
     config.bulletEnabled = true;
     config.bulletPlayerOnly = false;
+    config.bulletHitsRequired = 3.00;
     config.bulletChance = 100.00;
     config.bulletStrength = 4.80;
 
@@ -288,6 +295,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
 
     config.bulletEnabled = true;
     config.bulletPlayerOnly = false;
+    config.bulletHitsRequired = 3.00;
     config.bulletChance = 100.00;
     config.bulletStrength = 6.50;
 
@@ -320,6 +328,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
 
   config.bulletEnabled = false;
   config.bulletPlayerOnly = false;
+  config.bulletHitsRequired = 3.00;
   config.bulletChance = 0.00;
   config.bulletStrength = 0.00;
 
@@ -504,6 +513,12 @@ public final func BVCSetModeFloat(
 
   if !IsDefined(config) {
     return false;
+  };
+
+  if Equals(name, n"bulletHitsRequired") {
+    config.bulletHitsRequired =
+      BVCClampFloat(value, 1.00, 10.00);
+    return true;
   };
 
   if Equals(name, n"bulletChance") {
@@ -1452,9 +1467,18 @@ public func BVCTryBulletTopple(
 
   config = BVCGetActiveConfig(bike, mode);
 
+  // Hard master-mode gate. Turning the motorcycle mode OFF must also clear any
+  // partially accumulated bullet threshold.
   if !IsDefined(config)
-    || !config.enabled
-    || !config.bulletEnabled {
+    || !config.enabled {
+    bike.bvc_bulletHitCount = 0.00;
+    return;
+  };
+
+  // Hard bullet-topple gate. OFF means bullets cannot trigger the custom bike
+  // topple path at all, and no hidden hit count is retained.
+  if !config.bulletEnabled {
+    bike.bvc_bulletHitCount = 0.00;
     return;
   };
 
@@ -1467,6 +1491,25 @@ public func BVCTryBulletTopple(
     };
   };
 
+  // Deterministic per-bike threshold. 1 = first valid hit, 3 = third valid hit.
+  // This applies to the existing working bullet-topple route without changing
+  // its topple/rider physics.
+  bike.bvc_bulletHitCount += 1.00;
+
+  if bike.bvc_bulletHitCount
+    < BVCClampFloat(
+      config.bulletHitsRequired,
+      1.00,
+      10.00
+    ) {
+    return;
+  };
+
+  // A completed group starts fresh whether chance/cooldown passes or not.
+  bike.bvc_bulletHitCount = 0.00;
+
+  // Preserve the existing chance behavior exactly as it was, but only AFTER
+  // the selected number of bullet hits has been reached.
   if !BVCPassChance(config.bulletChance) {
     return;
   };
