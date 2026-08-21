@@ -1486,24 +1486,18 @@ local function addBikeFloat(path, modeKey, state, defaults, name, label, descrip
   return index + 1
 end
 
-local function rebuildBikeModeControls(mode)
-  if not mode or mode.key == "vanilla" then return end
+local function addBikeModeCategory(mode, index)
+  if not mode or mode.key == "vanilla" then return index end
 
   local path = bikeModePath(mode)
-  clearDynamic(path)
-
-  local context = "mode/" .. mode.key .. "/motorcycleWip"
-  local bucket = uiGateBucket(context)
-  local showKey = "showMotorcycleWip"
-
-  if bucket[showKey] ~= true then
-    return
-  end
+  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+  dynamicRefs[path] = {}
+  nativeSettings.addSubcategory(path, mode.label .. " - Motorcycle", index)
 
   local key = mode.key
   local state = bikeModeState(key)
   local defaults = BVC_MODE_DEFAULTS[key]
-  local i = 2
+  local i = 1
 
   i = addBikeSwitch(path, key, state, defaults, "enabled",
     "Enable " .. mode.label .. " Bike System",
@@ -1596,46 +1590,7 @@ local function rebuildBikeModeControls(mode)
   i = addBikeSwitch(path, key, state, defaults, "pickupRecoveryEnabled",
     "Restore Bike Controls When V Picks It Up",
     "Uses the working BVC1604 pickup recovery sequence.", i)
-end
 
-local function addBikeModeCategory(mode, index)
-  if not mode or mode.key == "vanilla" then return index end
-
-  local path = bikeModePath(mode)
-  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
-  dynamicRefs[path] = {}
-
-  -- Keep the feature visibly marked as unfinished while preserving the tested
-  -- runtime behavior unchanged.
-  nativeSettings.addSubcategory(path, "Motorcycle (WIP)", index)
-
-  local context = "mode/" .. mode.key .. "/motorcycleWip"
-  local bucket = uiGateBucket(context)
-  local showKey = "showMotorcycleWip"
-
-  if bucket[showKey] == nil then
-    bucket[showKey] = false
-  end
-
-  -- Stable Show/Hide switch: this option itself is never part of dynamicRefs,
-  -- so collapsing the section removes only the motorcycle controls beneath it.
-  nativeSettings.addSwitch(
-    path,
-    "Show Motorcycle (WIP) Controls",
-    "Shows or hides the motorcycle controls without changing any saved motorcycle settings or physics values.",
-    bucket[showKey] == true,
-    false,
-    function(value)
-      bucket[showKey] = value == true
-      uiDirty = true
-      defer(function()
-        rebuildBikeModeControls(mode)
-      end)
-    end,
-    1
-  )
-
-  rebuildBikeModeControls(mode)
   return index + 1
 end
 
