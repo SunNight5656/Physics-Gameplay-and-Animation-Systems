@@ -24,8 +24,8 @@ local initialized = false
 local STATE_VERSION = 161
 local BRIDGE_VERSION = 141
 local SESSION_TOKEN = 141
-local BVC_BRIDGE_VERSION = 1604
-local BVC_BUILD_MARKER = "SPLAT_BVC_COMBINED_20260818"
+local BVC_BRIDGE_VERSION = 1605
+local BVC_BUILD_MARKER = "BVC1605_MOTORCYCLE_DEATH_TOGGLE_EXTREME_LANDING"
 local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
@@ -218,7 +218,7 @@ local BVC_MODE_DEFAULTS = {
     vehicleImpactChance = 100.0, vehicleImpactStrength = 4.0,
     worldImpactEnabled = true, worldImpactThreshold = 4.5,
     worldImpactChance = 100.0, worldImpactStrength = 4.0,
-    riderKnockoffEnabled = true, impactDirectionFlip = false,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = true, impactDirectionFlip = false,
     toppleCooldown = 0.35, leanFallEnabled = true, leanFallAngle = 38.0,
     leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
     leanFallBikeStrength = 3.8, playerGravityFallStrength = 8.0,
@@ -231,7 +231,7 @@ local BVC_MODE_DEFAULTS = {
     vehicleImpactChance = 100.0, vehicleImpactStrength = 4.6,
     worldImpactEnabled = true, worldImpactThreshold = 4.0,
     worldImpactChance = 100.0, worldImpactStrength = 4.6,
-    riderKnockoffEnabled = true, impactDirectionFlip = false,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = true, impactDirectionFlip = false,
     toppleCooldown = 0.30, leanFallEnabled = true, leanFallAngle = 34.0,
     leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
     leanFallBikeStrength = 4.2, playerGravityFallStrength = 8.0,
@@ -244,7 +244,7 @@ local BVC_MODE_DEFAULTS = {
     vehicleImpactChance = 100.0, vehicleImpactStrength = 5.2,
     worldImpactEnabled = true, worldImpactThreshold = 3.25,
     worldImpactChance = 100.0, worldImpactStrength = 5.0,
-    riderKnockoffEnabled = true, impactDirectionFlip = false,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = true, impactDirectionFlip = false,
     toppleCooldown = 0.25, leanFallEnabled = true, leanFallAngle = 30.0,
     leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
     leanFallBikeStrength = 4.8, playerGravityFallStrength = 8.5,
@@ -257,7 +257,7 @@ local BVC_MODE_DEFAULTS = {
     vehicleImpactChance = 100.0, vehicleImpactStrength = 7.0,
     worldImpactEnabled = true, worldImpactThreshold = 2.0,
     worldImpactChance = 100.0, worldImpactStrength = 7.0,
-    riderKnockoffEnabled = true, impactDirectionFlip = false,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = true, impactDirectionFlip = false,
     toppleCooldown = 0.20, leanFallEnabled = true, leanFallAngle = 24.0,
     leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
     leanFallBikeStrength = 6.5, playerGravityFallStrength = 9.0,
@@ -270,7 +270,7 @@ local BVC_MODE_DEFAULTS = {
     vehicleImpactChance = 0.0, vehicleImpactStrength = 0.0,
     worldImpactEnabled = false, worldImpactThreshold = 9999.0,
     worldImpactChance = 0.0, worldImpactStrength = 0.0,
-    riderKnockoffEnabled = false, impactDirectionFlip = false,
+    riderKnockoffEnabled = false, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
     toppleCooldown = 0.35, leanFallEnabled = false, leanFallAngle = 90.0,
     leanFallMinSpeed = 0.0, leanFallMaxSpeed = 0.0,
     leanFallBikeStrength = 0.0, playerGravityFallStrength = 0.0,
@@ -345,7 +345,7 @@ local function vehicleLandingScale()
   end
 
   if value < 0.0 then value = 0.0 end
-  if value > 2.0 then value = 2.0 end
+  if value > 50.0 then value = 50.0 end
   return value
 end
 
@@ -438,7 +438,7 @@ end
 local function setVehicleLandingScale(value)
   value = tonumber(value) or 0.0
   if value < 0.0 then value = 0.0 end
-  if value > 2.0 then value = 2.0 end
+  if value > 50.0 then value = 50.0 end
 
   settingsStore.values[VEHICLE_LANDING_STORE_KEY] = {
     type = "Float",
@@ -447,6 +447,35 @@ local function setVehicleLandingScale(value)
 
   saveSettingsDebounced()
   applyVehicleLandingScale(nil)
+end
+
+local function rebuildVehicleLandingControls()
+  clearDynamic(VEHICLE_LANDING_PATH)
+
+  local context = "shared/vehicleLanding"
+  local bucket = uiGateBucket(context)
+  local showKey = "showAllVehicleLanding"
+
+  if bucket[showKey] ~= true then
+    return
+  end
+
+  local ref = nativeSettings.addRangeFloat(
+    VEHICLE_LANDING_PATH,
+    "Player Jump / Landing Vehicle Push Multiplier",
+    "Controls SPLAT's extra shove when V jumps or lands on a vehicle, including occupied vehicles. 0.00 = no SPLAT landing push. 1.00 = normal landing push. 10.00 = very strong. 25.00 = extreme. 50.00 = stress-test level. This does not change weapon bullet push.",
+    0.0,
+    50.0,
+    0.25,
+    "%.2f",
+    vehicleLandingScale(),
+    0.0,
+    function(value)
+      setVehicleLandingScale(value)
+    end,
+    2
+  )
+  remember(VEHICLE_LANDING_PATH, ref)
 end
 
 local function storedEntry(setting)
@@ -1334,8 +1363,8 @@ end
 
 local BVC_BOOL_NAMES = {
   "enabled", "bulletEnabled", "bulletPlayerOnly", "vehicleImpactEnabled",
-  "worldImpactEnabled", "riderKnockoffEnabled", "impactDirectionFlip",
-  "leanFallEnabled", "pickupRecoveryEnabled"
+  "worldImpactEnabled", "riderKnockoffEnabled", "killMotorcycleDeathAnimation",
+  "impactDirectionFlip", "leanFallEnabled", "pickupRecoveryEnabled"
 }
 
 local BVC_FLOAT_NAMES = {
@@ -1459,7 +1488,8 @@ local function applyBikeAll(playerHint, activeMode)
 end
 
 local function bikeModePath(mode)
-  return TAB .. "/mode_" .. mode.key .. "_motorcycle"
+  -- One stable section for the currently selected SPLAT mode.
+  return MOTORCYCLE_PATH
 end
 
 local function addBikeSwitch(path, modeKey, state, defaults, name, label, description, index)
@@ -1486,18 +1516,24 @@ local function addBikeFloat(path, modeKey, state, defaults, name, label, descrip
   return index + 1
 end
 
-local function addBikeModeCategory(mode, index)
-  if not mode or mode.key == "vanilla" then return index end
+local function rebuildBikeModeControls(mode)
+  if not mode or mode.key == "vanilla" then return end
 
   local path = bikeModePath(mode)
-  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
-  dynamicRefs[path] = {}
-  nativeSettings.addSubcategory(path, mode.label .. " - Motorcycle", index)
+  clearDynamic(path)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showMotorcycleWip"
+
+  if bucket[showKey] ~= true then
+    return
+  end
 
   local key = mode.key
   local state = bikeModeState(key)
   local defaults = BVC_MODE_DEFAULTS[key]
-  local i = 1
+  local i = 2
 
   i = addBikeSwitch(path, key, state, defaults, "enabled",
     "Enable " .. mode.label .. " Bike System",
@@ -1555,7 +1591,10 @@ local function addBikeModeCategory(mode, index)
 
   i = addBikeSwitch(path, key, state, defaults, "riderKnockoffEnabled",
     "Impacts and Bullets Remove Riders",
-    "Uses the working BVC1604 rider removal path for NPCs and V.", i)
+    "Uses the working BVC1605 rider removal path for NPCs and V.", i)
+  i = addBikeSwitch(path, key, state, defaults, "killMotorcycleDeathAnimation",
+    "Kill Motorcycle Death Animation",
+    "ON = a rider killed while mounted skips the native motorcycle death animation and immediately enters the BVC ragdoll handoff. OFF = preserve the native motorcycle death animation.", i)
   i = addBikeSwitch(path, key, state, defaults, "impactDirectionFlip",
     "Reverse Collision Fall Side",
     "Flip the side derived from the vehicle impact normal.", i)
@@ -1566,7 +1605,7 @@ local function addBikeModeCategory(mode, index)
 
   i = addBikeSwitch(path, key, state, defaults, "leanFallEnabled",
     "V Falls From Excessive Lean",
-    "Uses the working BVC1604 BikeTilt detector while V is driving.", i)
+    "Uses the working BVC1605 BikeTilt detector while V is driving.", i)
   i = addBikeFloat(path, key, state, defaults, "leanFallAngle",
     "V Lean Fall Angle",
     "Absolute BikeTilt angle that triggers V's lean fall.",
@@ -1589,8 +1628,47 @@ local function addBikeModeCategory(mode, index)
     0.0, 30.0, 0.5, "%.1f", i)
   i = addBikeSwitch(path, key, state, defaults, "pickupRecoveryEnabled",
     "Restore Bike Controls When V Picks It Up",
-    "Uses the working BVC1604 pickup recovery sequence.", i)
+    "Uses the working BVC1605 pickup recovery sequence.", i)
+end
 
+local function addBikeModeCategory(mode, index)
+  if not mode or mode.key == "vanilla" then return index end
+
+  local path = bikeModePath(mode)
+  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+  dynamicRefs[path] = {}
+
+  -- Keep the feature visibly marked as unfinished while preserving the tested
+  -- runtime behavior unchanged.
+  nativeSettings.addSubcategory(path, "Motorcycle (WIP)", index)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showMotorcycleWip"
+
+  if bucket[showKey] == nil then
+    bucket[showKey] = false
+  end
+
+  -- Stable Show/Hide switch: this option itself is never part of dynamicRefs,
+  -- so collapsing the section removes only the motorcycle controls beneath it.
+  nativeSettings.addSwitch(
+    path,
+    "Show All Motorcycle (WIP) Controls",
+    "ON shows every Motorcycle (WIP) control for the selected SPLAT mode. OFF hides them all without changing any saved motorcycle settings or physics values.",
+    bucket[showKey] == true,
+    false,
+    function(value)
+      bucket[showKey] = value == true
+      uiDirty = true
+      defer(function()
+        rebuildBikeModeControls(mode)
+      end)
+    end,
+    1
+  )
+
+  rebuildBikeModeControls(mode)
   return index + 1
 end
 
@@ -1810,8 +1888,8 @@ local function buildMenu()
 
   local subIndex = 2
   for _, section in ipairs(schema.sharedSections or {}) do
-    -- Motorcycle controls are already selected and rendered inside Global
-    -- Impulse Controls. Do not create a second Motorcycle category.
+    -- BVC1605 owns motorcycles in the dedicated Motorcycle (WIP) category.
+    -- Do not expose the legacy schema motorcycle category a second time.
     if section.key ~= "motorcycles" then
       local path = sharedPath(section)
       local label = section.label
@@ -1829,22 +1907,30 @@ local function buildMenu()
     "Vehicle Contact",
     subIndex
   )
+  dynamicRefs[VEHICLE_LANDING_PATH] = {}
 
-  nativeSettings.addRangeFloat(
+  local landingContext = "shared/vehicleLanding"
+  local landingBucket = uiGateBucket(landingContext)
+  local landingShowKey = "showAllVehicleLanding"
+  if landingBucket[landingShowKey] == nil then
+    landingBucket[landingShowKey] = false
+  end
+
+  nativeSettings.addSwitch(
     VEHICLE_LANDING_PATH,
-    "Player Jump / Landing Vehicle Push",
-    "Adjusts SPLAT's extra shove when V jumps or lands on a car. 0.00 = vanilla contact only; SPLAT adds no movement or self-righting changes. 1.00 = one full active-mode Vehicle Bullet Push strength. This does not change weapon bullet push.",
-    0.0,
-    2.0,
-    0.05,
-    "%.2f",
-    vehicleLandingScale(),
-    0.0,
+    "Show All Vehicle Contact Controls",
+    "ON shows the player jump / landing vehicle controls. OFF hides them without changing the saved multiplier.",
+    landingBucket[landingShowKey] == true,
+    false,
     function(value)
-      setVehicleLandingScale(value)
+      landingBucket[landingShowKey] = value == true
+      uiDirty = true
+      defer(rebuildVehicleLandingControls)
     end,
     1
   )
+
+  rebuildVehicleLandingControls()
 
   subIndex = subIndex + 1
 
@@ -1977,7 +2063,7 @@ local function handlePlayerReady(player, source)
   buildRestoreQueue()
   if not processRestoreQueue() then return false end
   if not applyBikeAll(live, selectedMode()) then
-    loge("BVC1604 bridge not ready during PlayerPuppet lifecycle")
+    loge("BVC1605 bridge not ready during PlayerPuppet lifecycle")
     return false
   end
   if not applyVehicleLandingScale(live) then

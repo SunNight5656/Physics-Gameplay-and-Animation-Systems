@@ -46,6 +46,10 @@ public class BVCModeConfig {
   public let worldImpactStrength: Float;
 
   public let riderKnockoffEnabled: Bool;
+  // ON keeps the current BVC behavior for a rider killed while mounted:
+  // skip the mounted death animation and immediately hand the dead NPC to ragdoll.
+  // OFF leaves a dead NPC rider in the native motorcycle death-animation path.
+  public let killMotorcycleDeathAnimation: Bool;
   public let impactDirectionFlip: Bool;
   public let toppleCooldown: Float;
 
@@ -208,6 +212,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
     config.worldImpactStrength = 4.00;
 
     config.riderKnockoffEnabled = true;
+    config.killMotorcycleDeathAnimation = true;
     config.impactDirectionFlip = false;
     config.toppleCooldown = 0.35;
 
@@ -242,6 +247,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
     config.worldImpactStrength = 4.60;
 
     config.riderKnockoffEnabled = true;
+    config.killMotorcycleDeathAnimation = true;
     config.impactDirectionFlip = false;
     config.toppleCooldown = 0.30;
 
@@ -276,6 +282,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
     config.worldImpactStrength = 5.00;
 
     config.riderKnockoffEnabled = true;
+    config.killMotorcycleDeathAnimation = true;
     config.impactDirectionFlip = false;
     config.toppleCooldown = 0.25;
 
@@ -310,6 +317,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
     config.worldImpactStrength = 7.00;
 
     config.riderKnockoffEnabled = true;
+    config.killMotorcycleDeathAnimation = true;
     config.impactDirectionFlip = false;
     config.toppleCooldown = 0.20;
 
@@ -343,6 +351,7 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
   config.worldImpactStrength = 0.00;
 
   config.riderKnockoffEnabled = false;
+  config.killMotorcycleDeathAnimation = false;
   config.impactDirectionFlip = false;
   config.toppleCooldown = 0.35;
 
@@ -383,7 +392,7 @@ public final func BVCEnsureState() -> ref<BVCState> {
 
 @addMethod(PlayerPuppet)
 public final func BVCGetBridgeVersion() -> Int32 {
-  return 1604;
+  return 1605;
 }
 
 @addMethod(PlayerPuppet)
@@ -481,6 +490,11 @@ public final func BVCSetModeBool(
 
   if Equals(name, n"riderKnockoffEnabled") {
     config.riderKnockoffEnabled = value;
+    return true;
+  };
+
+  if Equals(name, n"killMotorcycleDeathAnimation") {
+    config.killMotorcycleDeathAnimation = value;
     return true;
   };
 
@@ -1044,6 +1058,9 @@ public func BVCForceCurrentRiderOff(
   sourceLabel: String
 ) -> Bool {
   let rider: wref<GameObject>;
+  let npcRider: wref<NPCPuppet>;
+  let activeConfig: ref<BVCModeConfig>;
+  let activeMode: Int32;
   let workspotSystem: ref<WorkspotGameSystem>;
 
   if !IsDefined(bike) {
@@ -1071,6 +1088,30 @@ public func BVCForceCurrentRiderOff(
       gravityOnlyPlayerExit,
       sourceLabel
     );
+  };
+
+  // This is the actual Motorcycle Death Animation toggle. BVC's OnHit wrapper
+  // runs after vanilla has determined whether the rider died. If the NPC is
+  // dead and this switch is OFF, do not perform BVC's forced unmount/ragdoll
+  // handoff; leave the native mounted death-animation path intact.
+  npcRider = rider as NPCPuppet;
+
+  if IsDefined(npcRider) && npcRider.IsDead() {
+    activeConfig = BVCGetActiveConfig(
+      bike,
+      activeMode
+    );
+
+    if IsDefined(activeConfig)
+      && !activeConfig.killMotorcycleDeathAnimation {
+      BVCNotify(
+        bike,
+        sourceLabel
+          + " | NPC MOTORCYCLE DEATH ANIMATION PRESERVED"
+      );
+
+      return false;
+    };
   };
 
   // NPCs do not use the player's vehicle transition state machine.
@@ -2183,7 +2224,7 @@ protected cb func OnGameAttached() -> Bool {
 
     if IsDefined(activityLog) {
       activityLog.AddLog(
-        "BVC1604_SYMMETRIC_TOUCH_KNOCKOFF loaded"
+        "BVC1605_MOTORCYCLE_DEATH_TOGGLE_EXTREME_LANDING loaded"
       );
     };
   };

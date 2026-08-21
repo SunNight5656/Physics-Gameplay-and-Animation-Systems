@@ -19,7 +19,7 @@ module RealisticPush
 @addMethod(PlayerPuppet)
 public final func RFCSetVehicleLandingPushScale(value: Float) -> Bool {
   this.rfc_vehicleLandingPushScale =
-    MinF(MaxF(value, 0.00), 2.00);
+    MinF(MaxF(value, 0.00), 50.00);
   return true;
 }
 
@@ -27,7 +27,7 @@ public final func RFCSetVehicleLandingPushScale(value: Float) -> Bool {
 public final func RFCGetVehicleLandingPushScale() -> Float {
   return MinF(
     MaxF(this.rfc_vehicleLandingPushScale, 0.00),
-    2.00
+    50.00
   );
 }
 
