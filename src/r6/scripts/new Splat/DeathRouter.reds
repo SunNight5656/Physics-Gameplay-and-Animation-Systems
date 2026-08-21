@@ -141,7 +141,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let isBlackwall: Bool = RFC_IsBlackwallKill(this);
   let isFinisher: Bool = RFC_IsFinisherKill(this);
   let isStealthOrFinisher: Bool = RFC_IsStealthOrFinisher(this);
-  let isStealthKill: Bool = isStealthOrFinisher && !isFinisher && !isBlackwall;
+  let isStealthKill: Bool = RFC_IsStealthKill(this);
   let restoreSpecialAnimation: Bool =
     (isBlackwall && c.restoreBlackwallAnimations)
     || (isFinisher && c.restoreFinisherAnimations)
@@ -164,7 +164,15 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   // STEALTH / FINISHER / (optional) BLACKWALL
   if isStealth {
     // Each special animation lane can now be restored independently.
-    if restoreSpecialAnimation { return wrappedMethod(evt); }
+    if restoreSpecialAnimation {
+      // Preserve the selected native animation before the original death
+      // callback chooses Death versus ForcedRagdoll. The old early return left
+      // SPLAT's skip/force-ragdoll gates active, so the toggle was saved and
+      // read but could not actually restore the animation.
+      RFC_ArmRestoredSpecialAnimation(this, c.animCompatDelay);
+      RFC_BlockAllDeathImpulseLanes(this);
+      return wrappedMethod(evt);
+    }
 
     let resStealth: Bool = wrappedMethod(evt);
 
