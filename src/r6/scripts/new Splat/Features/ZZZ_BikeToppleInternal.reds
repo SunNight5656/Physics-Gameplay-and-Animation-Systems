@@ -1,6 +1,5 @@
 module RealisticPush
 
-// MOTORCYCLE ISOLATION TEST
+// SPLAT_BVC_COMBINED_20260818
 // Intentionally inert.
-// The known-good standalone motorcycle controller is the sole motorcycle owner.
-// No SPLAT BikeObject/NPCPuppet wrappers or topple/ragdoll events live here.
+// Exact BikeVControlStandalone.reds BVC1604 is the sole motorcycle runtime.

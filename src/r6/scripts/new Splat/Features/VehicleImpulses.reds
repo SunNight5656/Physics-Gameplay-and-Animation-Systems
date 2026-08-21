@@ -274,22 +274,22 @@ private func RFC_ArcadeBikeScheduleLeanCheck(player: ref<PlayerPuppet>, delay: F
 
 @addMethod(PlayerPuppet)
 protected cb func OnRFC_ArcadeBikeLeanCheckEvent(evt: ref<RFC_ArcadeBikeLeanCheckEvent>) -> Bool {
-  // MOTORCYCLE ISOLATION TEST:
-  // Do not reschedule or topple from SPLAT. Standalone owns motorcycle control.
+  // SPLAT_BVC_COMBINED_20260818
+  // Old SPLAT motorcycle lean polling is disabled.
+  // Exact BVC1604 player monitoring owns motorcycle lean/topple behavior.
   this.rfc_arcadeBikeLeanCheckScheduled = false;
   return true;
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
-  // Preserve normal PlayerPuppet attach behavior, but do not start SPLAT's
-  // motorcycle lean/topple polling loop.
+  // Keep SPLAT's wrapper chain, but do not start its old motorcycle poller.
   return wrappedMethod();
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnTakeControl(resolveInterface: EntityResolveComponentsInterface) -> Bool {
-  // Preserve normal control handoff, but do not start SPLAT's motorcycle loop.
+  // Keep SPLAT's wrapper chain, but do not start its old motorcycle poller.
   return wrappedMethod(resolveInterface);
 }
 
@@ -962,6 +962,17 @@ private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool
 private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
   if !IsDefined(vehicle) || !IsDefined(evt) || !IsDefined(evt.attackData) { return; }
 
+  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_7_ROUTE
+  let smbtfBike: ref<BikeObject> = vehicle as BikeObject;
+  if IsDefined(smbtfBike) {
+    let smbtfSource: RFCVehicleHitSource = RFC_VehClassifySource(evt.attackData);
+    switch smbtfSource {
+      case RFCVehicleHitSource.Bullet:
+        RFC_BikeBulletThresholdHandle(smbtfBike, evt, cfg);
+        return;
+    }
+  }
+
   // Runtime kill for built-in air/tilt self-righting. This does not affect normal NPC bullet damage.
   RFC_VehScheduleSelfRightingKill(vehicle);
 
@@ -1140,17 +1151,28 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     return wrappedMethod(evt);
   }
 
-  // MOTORCYCLE ISOLATION TEST:
-  // SPLAT does not own BikeObject hits at all. Pass straight through so the
-  // known-good standalone motorcycle controller is the only bike-hit owner.
-  let isolatedBike: ref<BikeObject> = this as BikeObject;
-  if IsDefined(isolatedBike) {
+  // SPLAT_BVC_COMBINED_20260818
+  // BikeObject hits bypass SPLAT vehicle impulse/topple logic completely.
+  // wrappedMethod continues the chain into exact BVC1604.
+  let bvcOwnedBike: ref<BikeObject> = this as BikeObject;
+  if IsDefined(bvcOwnedBike) {
     return wrappedMethod(evt);
+  }
+
+  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_7_WRAPPER_GATE
+  let smbtfBikeBulletHit: Bool = false;
+  let smbtfWrapperBike: ref<BikeObject> = this as BikeObject;
+  if IsDefined(smbtfWrapperBike) && IsDefined(evt) && IsDefined(evt.attackData) {
+    switch RFC_VehClassifySource(evt.attackData) {
+      case RFCVehicleHitSource.Bullet:
+        smbtfBikeBulletHit = true;
+        break;
+    }
   }
 
   // Kill built-in air/tilt correction before and after vanilla vehicle hit handling.
   // Some native bike/car paths re-enable these during collision handling.
-  RFC_VehScheduleSelfRightingKill(this);
+  if !smbtfBikeBulletHit { RFC_VehScheduleSelfRightingKill(this); }
 
   // Mark current occupants before and after vanilla vehicle hit processing. This
   // catches delayed NPC impulse events that may fire after the vehicle hit frame.
@@ -1160,7 +1182,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
 
   let res: Bool = wrappedMethod(evt);
 
-  RFC_VehScheduleSelfRightingKill(this);
+  if !smbtfBikeBulletHit { RFC_VehScheduleSelfRightingKill(this); }
 
   if cfg.killImpulsesVehiclesOnly {
     RFC_VehMarkAllOccupants(this, 4.0);

@@ -1206,10 +1206,9 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // The v8 TweakDB DriverKill block remains in place so shooting the car itself
   // does not create the synthetic Attacks.DriverKill puppet hit too early.
   if RFC_IsVehicleContext(this) {
-    // MOTORCYCLE/VEHICLE OCCUPANT ISOLATION TEST:
-    // Do not arm, consume, topple, unmount, or ragdoll a mounted rider here.
-    // Let the original hit pipeline run. The standalone motorcycle controller
-    // is the only motorcycle/rider-topple owner during this test.
+    // SPLAT_BVC_COMBINED_20260818
+    // Mounted rider hits bypass SPLAT's motorcycle arm/consume/death path.
+    // Exact BVC1604 ScriptedPuppet.OnHit owns rider + motorcycle handling.
     return wrappedMethod(evt);
   }
 
