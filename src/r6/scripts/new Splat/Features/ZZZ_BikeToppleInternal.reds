@@ -1,7 +1,7 @@
 module RealisticPush
 
-// SPLAT Bike Topple Internal v8.8
-// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V8_8_20260817
+// SPLAT Bike Topple Internal v8.9
+// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V8_9_20260817
 //
 // This file deliberately does NOT wrap VehicleObject.OnHit.
 // VehicleImpulses.reds calls RFC_BikeBulletThresholdHandle directly so there is
@@ -19,6 +19,7 @@ module RealisticPush
 @addField(NPCPuppet) public let smbtf_lastMountedBike: wref<BikeObject>;
 @addField(NPCPuppet) public let smbtf_lastMountedBikeTime: Float;
 @addField(NPCPuppet) public let smbtf_coordinatedRagdollUntil: Float;
+@addField(NPCPuppet) public let smbtf_riderShotBikePreToppledUntil: Float;
 
 @addField(PlayerPuppet) private let smbtf_hitsRequired: Int32;
 @addField(PlayerPuppet) private let smbtf_thresholdGeneration: Int32;
@@ -101,7 +102,7 @@ public final func SMBTFGetRiderLeadTime() -> Float {
 
 @addMethod(PlayerPuppet)
 public final func SMBTFGetBridgeVersion() -> Int32 {
-  return 88;
+  return 89;
 }
 
 private func SMBTF_InternalPlayer(obj: wref<GameObject>) -> ref<PlayerPuppet> {
@@ -284,6 +285,70 @@ private func SMBTF_InternalScheduleBikeDrop(
   }
 }
 
+private func SMBTF_InternalIsDirectRiderBullet(
+  evt: ref<gameHitEvent>
+) -> Bool {
+  if !IsDefined(evt) || !IsDefined(evt.attackData) { return false; }
+
+  let ad: ref<AttackData> = evt.attackData;
+  let at: gamedataAttackType = ad.GetAttackType();
+
+  if ad.HasFlag(hitFlag.VehicleImpact)
+    || ad.HasFlag(hitFlag.Explosion)
+    || AttackData.IsExplosion(at)
+    || AttackData.IsAreaOfEffect(at) {
+    return false;
+  }
+
+  if Equals(at, gamedataAttackType.Melee)
+    || Equals(at, gamedataAttackType.QuickMelee)
+    || Equals(at, gamedataAttackType.StrongMelee) {
+    return false;
+  }
+
+  // Direct firearm/projectile hits normally retain a WeaponObject.
+  return IsDefined(ad.GetWeapon() as WeaponObject);
+}
+
+// Direct-rider path only.
+// This intentionally does NOT use the motorcycle-shot threshold counter.
+// It begins the native bike knockover before the rider hit enters the NPC
+// damage/death pipeline, so a lethal rider shot is not resolved against a
+// perfectly upright motorcycle.
+private func SMBTF_InternalPreToppleForRiderShot(
+  rider: wref<NPCPuppet>,
+  bike: wref<BikeObject>,
+  evt: ref<gameHitEvent>
+) -> Bool {
+  if !IsDefined(rider) || !IsDefined(bike) { return false; }
+  if !SMBTF_InternalRiderToppleEnabled(rider) { return false; }
+  if !SMBTF_InternalIsDirectRiderBullet(evt) { return false; }
+
+  let now: Float = SMBTF_InternalNow(rider);
+
+  // Avoid re-issuing the native knockover for burst/multi-projectile callbacks.
+  if rider.smbtf_riderShotBikePreToppledUntil > now {
+    return true;
+  }
+
+  rider.smbtf_riderShotBikePreToppledUntil = now + 1.00;
+  rider.smbtf_lastMountedBike = bike;
+  rider.smbtf_lastMountedBikeTime = now;
+
+  // Native directional bike topple FIRST.
+  // No rider ragdoll is requested here. The existing SPLAT motorcycle-death
+  // path remains the single owner of rider death/ragdoll.
+  SMBTF_InternalScheduleBikeDrop(
+    bike,
+    1.0,
+    0.0,
+    0.0,
+    true
+  );
+
+  return true;
+}
+
 private func SMBTF_InternalCacheBike(rider: wref<NPCPuppet>) -> wref<BikeObject> {
   if !IsDefined(rider) { return null; }
 
@@ -431,7 +496,22 @@ public func RFC_BikeBulletThresholdHandle(
 // and does not topple a bike merely because the rider was hit.
 @wrapMethod(NPCPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
-  SMBTF_InternalCacheBike(this);
+  let bike: wref<BikeObject> = SMBTF_InternalCacheBike(this);
+
+  // v8.9 split sequencing:
+  //
+  // BIKE SHOT:
+  //   VehicleImpulses -> threshold -> rider ragdoll -> slider -> bike.
+  //
+  // RIDER SHOT:
+  //   bike pre-topple -> normal rider damage/death pipeline.
+  //
+  // Do not request rider ragdoll here. This wrapper only gives the motorcycle
+  // a head start before a direct rider bullet is processed.
+  if IsDefined(bike) {
+    SMBTF_InternalPreToppleForRiderShot(this, bike, evt);
+  }
+
   return wrappedMethod(evt);
 }
 
@@ -440,7 +520,9 @@ protected cb func OnRagdollEnabledEvent(
   evt: ref<RagdollNotifyEnabledEvent>
 ) -> Bool {
   let bike: wref<BikeObject> = SMBTF_InternalCurrentOrRecentBike(this);
-  let coordinated: Bool = SMBTF_InternalNow(this) <= this.smbtf_coordinatedRagdollUntil;
+  let now: Float = SMBTF_InternalNow(this);
+  let coordinated: Bool = now <= this.smbtf_coordinatedRagdollUntil;
+  let riderShotPreToppled: Bool = now <= this.smbtf_riderShotBikePreToppledUntil;
 
   // The engine's normal ragdoll transition runs first.
   let result: Bool = wrappedMethod(evt);
@@ -461,20 +543,27 @@ protected cb func OnRagdollEnabledEvent(
       false
     );
   } else {
-    if !coordinated
-      && IsDefined(bike)
-      && SMBTF_InternalRiderToppleEnabled(this) {
-      let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(this.GetGame());
-      if IsDefined(ws) { ws.UnmountFromVehicle(bike, this, true); }
+    if riderShotPreToppled {
+      // Direct rider bullet already started the motorcycle fall BEFORE damage.
+      // Do not topple the bike again from the later ragdoll callback.
+      this.smbtf_riderShotBikePreToppledUntil = 0.0;
+    } else {
+      if !coordinated
+        && IsDefined(bike)
+        && SMBTF_InternalRiderToppleEnabled(this) {
+        let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(this.GetGame());
+        if IsDefined(ws) { ws.UnmountFromVehicle(bike, this, true); }
 
-      // Direct rider ragdoll path remains separate from motorcycle-shot threshold.
-      SMBTF_InternalScheduleBikeDrop(
-        bike,
-        1.0,
-        0.0,
-        SMBTF_InternalRiderLeadTime(this),
-        true
-      );
+        // Non-bullet rider ragdoll/death still uses the normal ragdoll-first
+        // slider path.
+        SMBTF_InternalScheduleBikeDrop(
+          bike,
+          1.0,
+          0.0,
+          SMBTF_InternalRiderLeadTime(this),
+          true
+        );
+      }
     }
   }
 

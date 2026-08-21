@@ -559,7 +559,7 @@ local function isMotorcycleSetting(setting)
   return marker:find("motorcycle", 1, true) ~= nil
 end
 
--- SPLAT_BIKE_MENU_LAYOUT_V8_8
+-- SPLAT_BIKE_MENU_LAYOUT_V8_9
 -- V/player motorcycle controls remain with the mode's ordinary V/Arcade controls.
 -- NPC motorcycle controls get their own SPLAT subcategory.
 local function isPlayerMotorcycleSetting(setting)
@@ -1324,7 +1324,7 @@ local function npcMotorcycleSettings(mode)
   return out
 end
 
--- SPLAT_BIKE_TOPPLE_INTEGRATED_CONTROLS_V8_8
+-- SPLAT_BIKE_TOPPLE_INTEGRATED_CONTROLS_V8_9
 local function bikeToppleInternalState()
   settingsStore.bikeToppleInternal = settingsStore.bikeToppleInternal or {}
   local s = settingsStore.bikeToppleInternal
@@ -1350,8 +1350,8 @@ local function applyBikeToppleInternal(playerHint)
 
   local s = bikeToppleInternalState()
   local vok, version = pcall(function() return player:SMBTFGetBridgeVersion() end)
-  if not vok or tonumber(version) ~= 88 then
-    loge("NPC Motorcycle backend bridge mismatch; expected 88")
+  if not vok or tonumber(version) ~= 89 then
+    loge("NPC Motorcycle backend bridge mismatch; expected 89")
     return false
   end
 
@@ -1391,7 +1391,7 @@ local function addBikeToppleInternalControls(path, startIndex)
   local delayRef = nativeSettings.addRangeFloat(
     path,
     "Bike Delay After NPC Ragdolls",
-    "Seconds to wait AFTER the NPC has actually entered ragdoll before the motorcycle begins to topple.",
+    "Bike-shot and non-bullet rider-ragdoll path: seconds to wait AFTER the NPC has actually entered ragdoll before the motorcycle begins to topple. Direct rider bullets use bike-first sequencing.",
     0.00, 0.50, 0.01, "%.2f", s.riderLeadTime, 0.08,
     function(value)
       s.riderLeadTime = tonumber(value) or 0.08
@@ -1641,7 +1641,7 @@ local function initialize()
       settingsDirty = true
       saveSettingsNow(true)
     end
-    logi("Menu registered. Integrated NPC Motorcycle v8.8 active; SPLAT bridge 141 + bike bridge 88 expected")
+    logi("Menu registered. Integrated NPC Motorcycle v8.9 active; SPLAT bridge 141 + bike bridge 89 expected")
   end
 end
 

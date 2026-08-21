@@ -911,7 +911,7 @@ private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool
 private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
   if !IsDefined(vehicle) || !IsDefined(evt) || !IsDefined(evt.attackData) { return; }
 
-  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_8_ROUTE
+  // SPLAT_BIKE_TOPPLE_INTERNAL_V8_9_ROUTE
   let smbtfBike: ref<BikeObject> = vehicle as BikeObject;
   if IsDefined(smbtfBike) {
     let smbtfSource: RFCVehicleHitSource = RFC_VehClassifySource(evt.attackData);
