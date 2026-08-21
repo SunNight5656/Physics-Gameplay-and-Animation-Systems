@@ -72,7 +72,7 @@ private func RFC_MotorcycleDeathAnim_IsMotoContext(p: wref<ScriptedPuppet>) -> B
   return np.RFC_GetWSKindLastSeen() == 6 && RFC_MotorcycleDeathAnim_HasMotoTags(np);
 }
 
-private func RFC_MotorcycleDeathAnim_ForceCut(
+private func RFC_MotorcycleDeathAnim_PrepareDeath(
   p: wref<NPCPuppet>,
   bike: wref<BikeObject>,
   cfg: RFCConfig
@@ -81,29 +81,44 @@ private func RFC_MotorcycleDeathAnim_ForceCut(
     return;
   };
 
-  // v8.8: this existing SPLAT path is the ONLY motorcycle rider-death ragdoll owner.
-  // It never topples the bike. It only:
-  //   1) caches the bike for the ragdoll callback,
-  //   2) stops the dead-driver AI,
-  //   3) unmounts,
-  //   4) requests one rider ragdoll.
-  // ZZZ_BikeToppleInternal.OnRagdollEnabledEvent observes the confirmed ragdoll
-  // and starts the user-controlled bike-delay timer afterward.
+  // v9.0 ordering fix:
+  // This runs BEFORE wrapped OnDeath so vanilla never gets first ownership of
+  // an upright, still-AI-driven motorcycle rider death.
   if IsDefined(bike) {
     p.smbtf_lastMountedBike = bike;
     p.smbtf_lastMountedBikeTime = EngineTime.ToFloat(
       GameInstance.GetSimTime(p.GetGame())
     );
 
+    // Stop the bike's driver AI before vanilla death processing.
     RFC_VehStopDeadBikeDriverAI(bike);
 
+    // Disable the two balance helpers immediately instead of waiting for the
+    // queued AI events / native knockover receiver.
+    bike.EnableAirControl(false);
+    bike.EnableTiltControl(false);
+
+    // Begin the motorcycle knockover before vanilla finishes the NPC death.
+    SMBTF_PrepareMountedRiderDeathBike(p, bike);
+
+    // Remove the rider from the workspot before wrapped OnDeath so the seat is
+    // no longer treated as the rider's support surface during death resolution.
     let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(p.GetGame());
     if IsDefined(ws) {
       ws.UnmountFromVehicle(bike, p, true);
     }
   }
+}
 
-  // Exactly one rider ragdoll request for motorcycle death.
+private func RFC_MotorcycleDeathAnim_FinishDeath(
+  p: wref<NPCPuppet>
+) -> Void {
+  if !IsDefined(p) {
+    return;
+  };
+
+  // Exactly one rider ragdoll request, AFTER vanilla death has processed the
+  // already-unmounted rider.
   p.QueueEvent(CreateForceRagdollEvent(n"Splat_MotorcycleDeathAnimCut"));
 }
 
@@ -114,25 +129,29 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let mountedBike: wref<BikeObject>;
   let result: Bool;
 
-  // Capture the strict vehicle type before vanilla death processing can clear
-  // the NPC's mounting relationship.
+  // Capture the strict motorcycle before vanilla death can clear the mount.
   shouldCutMotorcycleAnim = !cfg.vanillaMode
     && !this.rfc_vanillaDeathAnimArmed
     && cfg.killMotorcycleDeathAnim
     && !this.rfc_motorcycleDeathAnimCutDone
     && RFC_MotorcycleDeathAnim_IsMotoContext(this);
+
   if shouldCutMotorcycleAnim {
     mountedBike = RFC_GetMountedVehicle(this) as BikeObject;
+
+    // Mark first to protect against re-entrant death handling.
+    this.rfc_motorcycleDeathAnimCutDone = true;
+
+    // CRITICAL: prepare bike + unmount BEFORE vanilla death processing.
+    RFC_MotorcycleDeathAnim_PrepareDeath(this, mountedBike, cfg);
   }
 
   result = wrappedMethod(evt);
 
-  if !shouldCutMotorcycleAnim {
-    return result;
-  };
-
-  this.rfc_motorcycleDeathAnimCutDone = true;
-  RFC_MotorcycleDeathAnim_ForceCut(this, mountedBike, cfg);
+  if shouldCutMotorcycleAnim {
+    // Existing SPLAT motorcycle-death path remains the sole rider ragdoll owner.
+    RFC_MotorcycleDeathAnim_FinishDeath(this);
+  }
 
   return result;
 }

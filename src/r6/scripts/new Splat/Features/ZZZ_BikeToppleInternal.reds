@@ -1,7 +1,7 @@
 module RealisticPush
 
-// SPLAT Bike Topple Internal v8.9
-// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V8_9_20260817
+// SPLAT Bike Topple Internal v9.0
+// Build: SPLAT_BIKE_TOPPLE_INTERNAL_V9_0_20260817
 //
 // This file deliberately does NOT wrap VehicleObject.OnHit.
 // VehicleImpulses.reds calls RFC_BikeBulletThresholdHandle directly so there is
@@ -19,7 +19,7 @@ module RealisticPush
 @addField(NPCPuppet) public let smbtf_lastMountedBike: wref<BikeObject>;
 @addField(NPCPuppet) public let smbtf_lastMountedBikeTime: Float;
 @addField(NPCPuppet) public let smbtf_coordinatedRagdollUntil: Float;
-@addField(NPCPuppet) public let smbtf_riderShotBikePreToppledUntil: Float;
+@addField(NPCPuppet) public let smbtf_riderDeathBikePreparedUntil: Float;
 
 @addField(PlayerPuppet) private let smbtf_hitsRequired: Int32;
 @addField(PlayerPuppet) private let smbtf_thresholdGeneration: Int32;
@@ -102,7 +102,7 @@ public final func SMBTFGetRiderLeadTime() -> Float {
 
 @addMethod(PlayerPuppet)
 public final func SMBTFGetBridgeVersion() -> Int32 {
-  return 89;
+  return 90;
 }
 
 private func SMBTF_InternalPlayer(obj: wref<GameObject>) -> ref<PlayerPuppet> {
@@ -285,70 +285,6 @@ private func SMBTF_InternalScheduleBikeDrop(
   }
 }
 
-private func SMBTF_InternalIsDirectRiderBullet(
-  evt: ref<gameHitEvent>
-) -> Bool {
-  if !IsDefined(evt) || !IsDefined(evt.attackData) { return false; }
-
-  let ad: ref<AttackData> = evt.attackData;
-  let at: gamedataAttackType = ad.GetAttackType();
-
-  if ad.HasFlag(hitFlag.VehicleImpact)
-    || ad.HasFlag(hitFlag.Explosion)
-    || AttackData.IsExplosion(at)
-    || AttackData.IsAreaOfEffect(at) {
-    return false;
-  }
-
-  if Equals(at, gamedataAttackType.Melee)
-    || Equals(at, gamedataAttackType.QuickMelee)
-    || Equals(at, gamedataAttackType.StrongMelee) {
-    return false;
-  }
-
-  // Direct firearm/projectile hits normally retain a WeaponObject.
-  return IsDefined(ad.GetWeapon() as WeaponObject);
-}
-
-// Direct-rider path only.
-// This intentionally does NOT use the motorcycle-shot threshold counter.
-// It begins the native bike knockover before the rider hit enters the NPC
-// damage/death pipeline, so a lethal rider shot is not resolved against a
-// perfectly upright motorcycle.
-private func SMBTF_InternalPreToppleForRiderShot(
-  rider: wref<NPCPuppet>,
-  bike: wref<BikeObject>,
-  evt: ref<gameHitEvent>
-) -> Bool {
-  if !IsDefined(rider) || !IsDefined(bike) { return false; }
-  if !SMBTF_InternalRiderToppleEnabled(rider) { return false; }
-  if !SMBTF_InternalIsDirectRiderBullet(evt) { return false; }
-
-  let now: Float = SMBTF_InternalNow(rider);
-
-  // Avoid re-issuing the native knockover for burst/multi-projectile callbacks.
-  if rider.smbtf_riderShotBikePreToppledUntil > now {
-    return true;
-  }
-
-  rider.smbtf_riderShotBikePreToppledUntil = now + 1.00;
-  rider.smbtf_lastMountedBike = bike;
-  rider.smbtf_lastMountedBikeTime = now;
-
-  // Native directional bike topple FIRST.
-  // No rider ragdoll is requested here. The existing SPLAT motorcycle-death
-  // path remains the single owner of rider death/ragdoll.
-  SMBTF_InternalScheduleBikeDrop(
-    bike,
-    1.0,
-    0.0,
-    0.0,
-    true
-  );
-
-  return true;
-}
-
 private func SMBTF_InternalCacheBike(rider: wref<NPCPuppet>) -> wref<BikeObject> {
   if !IsDefined(rider) { return null; }
 
@@ -374,6 +310,44 @@ private func SMBTF_InternalCurrentOrRecentBike(
     if age >= 0.0 && age <= 1.00 { return bike; }
   }
   return null;
+}
+
+// Confirmed mounted-rider death handoff.
+// Called BEFORE vanilla death processing by ZZ_MotorcycleDeathAnimation_CompileFix.
+//
+// Important ownership:
+// - this function prepares ONLY the motorcycle
+// - it does NOT force the NPC ragdoll
+// - the motorcycle death file remains the one rider-death ragdoll owner
+public func SMBTF_PrepareMountedRiderDeathBike(
+  rider: wref<NPCPuppet>,
+  bike: wref<BikeObject>
+) -> Bool {
+  if !IsDefined(rider) || !IsDefined(bike) { return false; }
+  if !SMBTF_InternalRiderToppleEnabled(rider) { return false; }
+
+  let now: Float = SMBTF_InternalNow(rider);
+
+  rider.smbtf_lastMountedBike = bike;
+  rider.smbtf_lastMountedBikeTime = now;
+  rider.smbtf_riderDeathBikePreparedUntil = now + 1.00;
+
+  // Make the vehicle stop fighting the death handoff synchronously.
+  // DriverDead / NoDriver are also sent by the caller.
+  bike.EnableAirControl(false);
+  bike.EnableTiltControl(false);
+  bike.PhysicsWakeUp();
+
+  // Start the native motorcycle knockover NOW, before wrapped OnDeath runs.
+  // nativeDirectional=true uses the game's own bike knockover force.
+  SMBTF_InternalToppleBike(
+    bike,
+    1.0,
+    0.0,
+    true
+  );
+
+  return true;
 }
 
 private func SMBTF_InternalUnmountAndRagdollRiders(
@@ -496,22 +470,9 @@ public func RFC_BikeBulletThresholdHandle(
 // and does not topple a bike merely because the rider was hit.
 @wrapMethod(NPCPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
-  let bike: wref<BikeObject> = SMBTF_InternalCacheBike(this);
-
-  // v8.9 split sequencing:
-  //
-  // BIKE SHOT:
-  //   VehicleImpulses -> threshold -> rider ragdoll -> slider -> bike.
-  //
-  // RIDER SHOT:
-  //   bike pre-topple -> normal rider damage/death pipeline.
-  //
-  // Do not request rider ragdoll here. This wrapper only gives the motorcycle
-  // a head start before a direct rider bullet is processed.
-  if IsDefined(bike) {
-    SMBTF_InternalPreToppleForRiderShot(this, bike, evt);
-  }
-
+  // Cache only. Do NOT topple on speculative/nonlethal rider hits.
+  // Confirmed mounted-rider death is prepared from the motorcycle OnDeath path.
+  SMBTF_InternalCacheBike(this);
   return wrappedMethod(evt);
 }
 
@@ -522,7 +483,7 @@ protected cb func OnRagdollEnabledEvent(
   let bike: wref<BikeObject> = SMBTF_InternalCurrentOrRecentBike(this);
   let now: Float = SMBTF_InternalNow(this);
   let coordinated: Bool = now <= this.smbtf_coordinatedRagdollUntil;
-  let riderShotPreToppled: Bool = now <= this.smbtf_riderShotBikePreToppledUntil;
+  let riderDeathBikePrepared: Bool = now <= this.smbtf_riderDeathBikePreparedUntil;
 
   // The engine's normal ragdoll transition runs first.
   let result: Bool = wrappedMethod(evt);
@@ -543,10 +504,10 @@ protected cb func OnRagdollEnabledEvent(
       false
     );
   } else {
-    if riderShotPreToppled {
-      // Direct rider bullet already started the motorcycle fall BEFORE damage.
-      // Do not topple the bike again from the later ragdoll callback.
-      this.smbtf_riderShotBikePreToppledUntil = 0.0;
+    if riderDeathBikePrepared {
+      // Confirmed mounted-rider death already started the motorcycle knockover
+      // BEFORE vanilla OnDeath. Do not issue a second topple here.
+      this.smbtf_riderDeathBikePreparedUntil = 0.0;
     } else {
       if !coordinated
         && IsDefined(bike)
@@ -554,8 +515,7 @@ protected cb func OnRagdollEnabledEvent(
         let ws: ref<WorkspotGameSystem> = GameInstance.GetWorkspotSystem(this.GetGame());
         if IsDefined(ws) { ws.UnmountFromVehicle(bike, this, true); }
 
-        // Non-bullet rider ragdoll/death still uses the normal ragdoll-first
-        // slider path.
+        // Non-death rider ragdoll still uses the normal ragdoll-first slider path.
         SMBTF_InternalScheduleBikeDrop(
           bike,
           1.0,
