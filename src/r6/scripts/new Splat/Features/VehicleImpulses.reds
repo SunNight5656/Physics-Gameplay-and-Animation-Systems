@@ -274,66 +274,23 @@ private func RFC_ArcadeBikeScheduleLeanCheck(player: ref<PlayerPuppet>, delay: F
 
 @addMethod(PlayerPuppet)
 protected cb func OnRFC_ArcadeBikeLeanCheckEvent(evt: ref<RFC_ArcadeBikeLeanCheckEvent>) -> Bool {
+  // SPLAT_BVC_COMBINED_20260818
+  // Old SPLAT motorcycle lean polling is disabled.
+  // Exact BVC1604 player monitoring owns motorcycle lean/topple behavior.
   this.rfc_arcadeBikeLeanCheckScheduled = false;
-
-  let cfg: RFCConfig = RFC.Cfg();
-  let nextDelay: Float = 0.50;
-
-  if cfg.vehicleImpulseEnabled
-    && cfg.playerMotorcycleLeanToppleEnabled {
-    nextDelay = 0.05;
-
-    let vehicle: wref<VehicleObject> = RFC_GetMountedVehicle(this);
-    let bike: ref<BikeObject> = vehicle as BikeObject;
-
-    if IsDefined(bike)
-      && VehicleComponent.IsDriver(this.GetGame(), this)
-      && bike.IsTiltControlEnabled()
-      && !RFC_TimeDilationBlocksImpulses(bike, cfg) {
-      // The chassis transform can remain nearly upright while the controller
-      // applies its full lean. BikeTilt is the controller's live signed value.
-      let leanValue: Float = bike.GetBlackboard().GetFloat(
-        GetAllBlackboardDefs().Vehicle.BikeTilt
-      );
-      let tiltAngle: Float = AbsF(leanValue);
-
-      if tiltAngle < cfg.playerMotorcycleLeanToppleAngle - 4.0 {
-        bike.rfc_arcadeLeanToppleLatched = false;
-      }
-
-      if !bike.rfc_arcadeLeanToppleLatched
-        && tiltAngle >= cfg.playerMotorcycleLeanToppleAngle
-        && AbsF(bike.GetCurrentSpeed()) <= cfg.playerMotorcycleLeanToppleMaxSpeed {
-        let side: Float = 1.0;
-        if leanValue < 0.0 { side = -1.0; }
-
-        bike.rfc_arcadeLeanToppleLatched = true;
-        RFC_VehTopplePlayerBikeFromLean(
-          bike,
-          this,
-          side,
-          cfg
-        );
-      }
-    }
-  }
-
-  RFC_ArcadeBikeScheduleLeanCheck(this, nextDelay);
   return true;
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
-  let result: Bool = wrappedMethod();
-  RFC_ArcadeBikeScheduleLeanCheck(this, 0.25);
-  return result;
+  // Keep SPLAT's wrapper chain, but do not start its old motorcycle poller.
+  return wrappedMethod();
 }
 
 @wrapMethod(PlayerPuppet)
 protected cb func OnTakeControl(resolveInterface: EntityResolveComponentsInterface) -> Bool {
-  let result: Bool = wrappedMethod(resolveInterface);
-  RFC_ArcadeBikeScheduleLeanCheck(this, 0.25);
-  return result;
+  // Keep SPLAT's wrapper chain, but do not start its old motorcycle poller.
+  return wrappedMethod(resolveInterface);
 }
 
 private func RFC_VehIsUpsideDown(vehicle: ref<VehicleObject>) -> Bool {
@@ -384,7 +341,8 @@ private enum RFCVehicleHitSource {
   Explosion = 0,
   Bullet = 1,
   Melee = 2,
-  Ignore = 3
+  PlayerImpact = 3,
+  Ignore = 4
 }
 
 private enum RFCVehicleWeaponGroup {
@@ -427,22 +385,46 @@ private func RFC_VehIsMelee(ad: ref<AttackData>) -> Bool {
 }
 
 private func RFC_VehClassifySource(ad: ref<AttackData>) -> RFCVehicleHitSource {
+  let at: gamedataAttackType;
+  let instigator: ref<GameObject>;
+  let sourceVehicle: ref<VehicleObject>;
+
   if !IsDefined(ad) { return RFCVehicleHitSource.Ignore; }
   if RFC_VehIsExplosion(ad) { return RFCVehicleHitSource.Explosion; }
   if RFC_VehIsMelee(ad) { return RFCVehicleHitSource.Melee; }
 
-  // Some vehicle bullet hits do not expose a normal WeaponObject on AttackData.
-  // Treat non-explosion, non-melee weapon damage as bullet fallback so bullets
-  // still get a chance to move cars instead of silently doing nothing.
-  if IsDefined(ad.GetWeapon() as WeaponObject) { return RFCVehicleHitSource.Bullet; }
-  if !ad.HasFlag(hitFlag.VehicleImpact) { return RFCVehicleHitSource.Bullet; }
+  at = ad.GetAttackType();
 
-  // VehicleImpact is also present on a subset of legitimate bullet hits after
-  // their WeaponObject has already been released. Only suppress this lane when
-  // the actual attacker is a vehicle; otherwise keep the unknown-bullet fallback.
-  let sourceVehicle: ref<VehicleObject> = ad.GetInstigator() as VehicleObject;
-  if IsDefined(sourceVehicle) { return RFCVehicleHitSource.Ignore; }
-  return RFCVehicleHitSource.Bullet;
+  // Preserve legitimate ranged/direct bullet hits even if WeaponObject has
+  // already been released by the time VehicleObject.OnHit receives them.
+  if AttackData.IsRangedOrDirect(at) {
+    return RFCVehicleHitSource.Bullet;
+  };
+
+  if IsDefined(ad.GetWeapon() as WeaponObject) {
+    return RFCVehicleHitSource.Bullet;
+  };
+
+  if ad.HasFlag(hitFlag.VehicleImpact) {
+    instigator = ad.GetInstigator();
+
+    // V physically landing/jumping on a vehicle is not a bullet.
+    if IsDefined(instigator)
+      && instigator.IsPlayer() {
+      return RFCVehicleHitSource.PlayerImpact;
+    };
+
+    sourceVehicle = instigator as VehicleObject;
+    if IsDefined(sourceVehicle) {
+      return RFCVehicleHitSource.Ignore;
+    };
+  };
+
+  if !ad.HasFlag(hitFlag.VehicleImpact) {
+    return RFCVehicleHitSource.Bullet;
+  };
+
+  return RFCVehicleHitSource.Ignore;
 }
 
 private func RFC_VehIsBadPos(v: Vector4) -> Bool {
@@ -480,6 +462,7 @@ private func RFC_VehSourceUsesInstigator(source: RFCVehicleHitSource) -> Bool {
   switch source {
     case RFCVehicleHitSource.Bullet: return true;
     case RFCVehicleHitSource.Melee: return true;
+    case RFCVehicleHitSource.PlayerImpact: return true;
   }
   return false;
 }
@@ -1005,19 +988,24 @@ private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool
 private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
   if !IsDefined(vehicle) || !IsDefined(evt) || !IsDefined(evt.attackData) { return; }
 
-  // Runtime kill for built-in air/tilt self-righting. This does not affect normal NPC bullet damage.
+  let ad: ref<AttackData> = evt.attackData;
+  let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
+
+  // HARD BYPASS: V jumping/landing on a vehicle is not a SPLAT impulse source.
+  // No custom shove, no self-righting suppression, no weapon-source fallback,
+  // and no occupant impulse marking from this contact.
+  if Equals(source, RFCVehicleHitSource.PlayerImpact) {
+    return;
+  };
+
   RFC_VehScheduleSelfRightingKill(vehicle);
 
-  // This is independent from whether vehicle impulses are enabled: even if the
-  // car shove is off, SPLAT NPC impulse lanes must not launch mounted occupants.
+  // Keep occupant protection for actual SPLAT attack paths.
   if cfg.killImpulsesVehiclesOnly {
     RFC_VehMarkAllOccupants(vehicle, 4.0);
   }
 
   if !cfg.vehicleImpulseEnabled { return; }
-
-  let ad: ref<AttackData> = evt.attackData;
-  let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
 
   switch source {
     case RFCVehicleHitSource.Bullet:
@@ -1036,6 +1024,9 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       if cfg.vehicleImpulsePlayerOnly && !RFC_VehPassesPlayerOnly(vehicle, ad, source) {
         return;
       }
+      break;
+
+    case RFCVehicleHitSource.PlayerImpact:
       break;
   }
 
@@ -1172,6 +1163,7 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       if mMul <= 0.0 { return; }
       RFC_VehApplyPhysicalImpulse(vehicle, hitPos, srcPos, cfg.vehicleMeleeStrength * mMul, cfg.vehicleMeleeLift * mMul, cfg.vehicleMeleeRadius, cfg);
       return;
+
   }
 }
 
@@ -1183,19 +1175,41 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     return wrappedMethod(evt);
   }
 
-  // Kill built-in air/tilt correction before and after vanilla vehicle hit handling.
-  // Some native bike/car paths re-enable these during collision handling.
-  RFC_VehScheduleSelfRightingKill(this);
+  // SPLAT_BVC_COMBINED_20260818
+  // BikeObject hits bypass SPLAT vehicle impulse/topple logic completely.
+  // wrappedMethod continues the chain into exact BVC1604.
+  let bvcOwnedBike: ref<BikeObject> = this as BikeObject;
+  if IsDefined(bvcOwnedBike) {
+    return wrappedMethod(evt);
+  }
 
-  // Mark current occupants before and after vanilla vehicle hit processing. This
-  // catches delayed NPC impulse events that may fire after the vehicle hit frame.
+  // Cars/general vehicles retain SPLAT self-righting suppression for normal
+  // attack hits, but not for V simply jumping/landing on them.
+  let preSource: RFCVehicleHitSource =
+    RFC_VehClassifySource(evt.attackData);
+
+  switch preSource {
+    case RFCVehicleHitSource.PlayerImpact:
+      break;
+    default:
+      RFC_VehScheduleSelfRightingKill(this);
+      break;
+  }
+
+  // Mark occupants both before and after vanilla processing.
   if cfg.killImpulsesVehiclesOnly {
     RFC_VehMarkAllOccupants(this, 4.0);
   }
 
   let res: Bool = wrappedMethod(evt);
 
-  RFC_VehScheduleSelfRightingKill(this);
+  switch preSource {
+    case RFCVehicleHitSource.PlayerImpact:
+      break;
+    default:
+      RFC_VehScheduleSelfRightingKill(this);
+      break;
+  }
 
   if cfg.killImpulsesVehiclesOnly {
     RFC_VehMarkAllOccupants(this, 4.0);

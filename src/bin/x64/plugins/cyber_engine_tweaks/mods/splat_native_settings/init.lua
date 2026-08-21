@@ -1,4 +1,4 @@
--- SPLAT Physics 11.1 - V157 REDscript load-order compile fix
+-- SPLAT Physics 11.1 - V157 + BVC1604 single motorcycle system
 -- Architecture: Native Settings callbacks -> live PlayerPuppet -> REDscript settings state.
 -- No external runtime framework, Mod Settings, permanent update loop, or repeated player polling.
 
@@ -23,6 +23,8 @@ local initialized = false
 local STATE_VERSION = 161
 local BRIDGE_VERSION = 141
 local SESSION_TOKEN = 141
+local BVC_BRIDGE_VERSION = 1605
+local BVC_BUILD_MARKER = "BVC1605_FULL_MENU_RESTORED"
 local LEGACY_VISIBILITY_BASELINE_MARKER = "V158 closed every menu and situational disclosure by default"
 local settingsDirty = false
 local uiDirty = false
@@ -199,8 +201,94 @@ local function settingKey(setting)
   return tostring(setting.mode or "global") .. "|" .. tostring(setting.class) .. "." .. tostring(setting.name)
 end
 
+local BVC_MODE_INDEX = {
+  realismCustom = 0,
+  realismPlus = 1,
+  dirtyHarry = 2,
+  arnoldArcade = 3,
+  vanilla = 4
+}
+
+local BVC_MODE_DEFAULTS = {
+  realismCustom = {
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 3.8,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 2.0,
+    vehicleImpactChance = 100.0, vehicleImpactStrength = 4.0,
+    worldImpactEnabled = true, worldImpactThreshold = 4.5,
+    worldImpactChance = 100.0, worldImpactStrength = 4.0,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.35, leanFallEnabled = true, leanFallAngle = 38.0,
+    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
+    leanFallBikeStrength = 3.8, playerGravityFallStrength = 8.0,
+    pickupRecoveryEnabled = true
+  },
+  realismPlus = {
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.2,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 1.75,
+    vehicleImpactChance = 100.0, vehicleImpactStrength = 4.6,
+    worldImpactEnabled = true, worldImpactThreshold = 4.0,
+    worldImpactChance = 100.0, worldImpactStrength = 4.6,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.30, leanFallEnabled = true, leanFallAngle = 34.0,
+    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
+    leanFallBikeStrength = 4.2, playerGravityFallStrength = 8.0,
+    pickupRecoveryEnabled = true
+  },
+  dirtyHarry = {
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.8,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 1.25,
+    vehicleImpactChance = 100.0, vehicleImpactStrength = 5.2,
+    worldImpactEnabled = true, worldImpactThreshold = 3.25,
+    worldImpactChance = 100.0, worldImpactStrength = 5.0,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.25, leanFallEnabled = true, leanFallAngle = 30.0,
+    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
+    leanFallBikeStrength = 4.8, playerGravityFallStrength = 8.5,
+    pickupRecoveryEnabled = true
+  },
+  arnoldArcade = {
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
+    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 6.5,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 0.75,
+    vehicleImpactChance = 100.0, vehicleImpactStrength = 7.0,
+    worldImpactEnabled = true, worldImpactThreshold = 2.0,
+    worldImpactChance = 100.0, worldImpactStrength = 7.0,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.20, leanFallEnabled = true, leanFallAngle = 24.0,
+    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
+    leanFallBikeStrength = 6.5, playerGravityFallStrength = 9.0,
+    pickupRecoveryEnabled = true
+  },
+  vanilla = {
+    enabled = false, bulletEnabled = false, bulletPlayerOnly = false,
+    bulletHitsRequired = 3.0, bulletChance = 0.0, bulletStrength = 0.0,
+    vehicleImpactEnabled = false, vehicleImpactThreshold = 9999.0,
+    vehicleImpactChance = 0.0, vehicleImpactStrength = 0.0,
+    worldImpactEnabled = false, worldImpactThreshold = 9999.0,
+    worldImpactChance = 0.0, worldImpactStrength = 0.0,
+    riderKnockoffEnabled = false, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.35, leanFallEnabled = false, leanFallAngle = 90.0,
+    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 0.0,
+    leanFallBikeStrength = 0.0, playerGravityFallStrength = 0.0,
+    pickupRecoveryEnabled = false
+  }
+}
+
 local function defaultSettingsStore()
-  return {version = STATE_VERSION, writeSerial = 0, valueCount = 0, values = {}}
+  return {
+    version = STATE_VERSION,
+    writeSerial = 0,
+    valueCount = 0,
+    values = {},
+    bikeSystem = {
+      debugPopups = true,
+      manualControllerEnabled = true,
+      modes = BVC_MODE_DEFAULTS
+    }
+  }
 end
 
 local function savedValueCount()
@@ -291,9 +379,17 @@ local function resolveBridge(playerHint)
     bridgeConnected = true
     restoreCursor = 1
     logi("Direct REDscript player bridge connected")
+    pcall(function()
+      logi(
+        "LIVE MODE stored=" .. tostring(player:SPLATGetMode())
+        .. " runtimePreset=" .. tostring(player:SPLATGetRuntimePresetValue())
+        .. " vanilla=" .. tostring(player:SPLATIsVanillaRuntime())
+      )
+    end)
   end
   return player
 end
+
 local function storedEntry(setting)
   if not settingsStore or not settingsStore.values then return nil end
   return settingsStore.values[settingKey(setting)]
@@ -314,7 +410,22 @@ local function callBridgeSet(setting, value, bridge)
     if setting.type == "Bool" then return b:SPLATSetBool(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), value == true) end
     if setting.type == "Float" then return b:SPLATSetFloat(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), tonumber(value) or 0.0) end
     if setting.type == "Int32" then return b:SPLATSetInt(cn(setting.mode or "global"), cn(setting.class), cn(setting.name), math.floor(tonumber(value) or 0)) end
-    if setting.type == "RFCSplatPresetMode" then return b:SPLATSetMode(math.floor(tonumber(value) or 1)) end
+    if setting.type == "RFCSplatPresetMode" then
+      local requested = math.floor(tonumber(value) or 1)
+      local ok = b:SPLATSetMode(requested)
+      if ok == true then
+        local storedMode = b:SPLATGetMode()
+        local runtimePreset = b:SPLATGetRuntimePresetValue()
+        local runtimeVanilla = b:SPLATIsVanillaRuntime()
+        logi(
+          "MODE APPLY requested=" .. tostring(requested)
+          .. " stored=" .. tostring(storedMode)
+          .. " runtimePreset=" .. tostring(runtimePreset)
+          .. " vanilla=" .. tostring(runtimeVanilla)
+        )
+      end
+      return ok
+    end
     return false
   end)
   if not ok or applied ~= true then
@@ -431,6 +542,22 @@ local function migrateArcadeAttackSourceSettings()
   if migrated > 0 or removed > 0 then
     settingsDirty = true
     logi("Migrated legacy Arcade Player Only values into " .. tostring(migrated) .. " independent attack-source values")
+  end
+end
+
+local function purgeLegacySplatMotorcycleValues()
+  local values = (settingsStore and settingsStore.values) or {}
+  local removed = 0
+  for key, _ in pairs(values) do
+    local lower = string.lower(tostring(key))
+    if lower:find("motorcycle", 1, true) ~= nil then
+      values[key] = nil
+      removed = removed + 1
+    end
+  end
+  if removed > 0 then
+    settingsDirty = true
+    logi("Removed " .. tostring(removed) .. " legacy SPLAT motorcycle saved values; BVC1604 is sole owner")
   end
 end
 
@@ -683,10 +810,14 @@ local function addSettings(path, settings, startIndex, context, rebuild, collect
   local scope = context:match("^mode/([^/]+)") or "global"
   local scopedSettings = {}
   for _, setting in ipairs(settings or {}) do
-    local copy = {}
-    for key, value in pairs(setting) do copy[key] = value end
-    copy.mode = scope
-    table.insert(scopedSettings, copy)
+    -- BVC1604 is the sole motorcycle runtime. Never expose old SPLAT
+    -- motorcycle fields in any generic/global/mode section.
+    if not isMotorcycleSetting(setting) then
+      local copy = {}
+      for key, value in pairs(setting) do copy[key] = value end
+      copy.mode = scope
+      table.insert(scopedSettings, copy)
+    end
   end
   -- The first UI-only Bool in a mode topic is that topic's master visibility
   -- gate. Dependencies remain intact so turning it off hides every child Show
@@ -1042,17 +1173,49 @@ local function vanillaImpulseParts(mode)
   for _, setting in ipairs(data.settings or {}) do
     if isVanillaImpulseShowSetting(setting) then
       master = copySettingEarly(setting)
-      master.label = "Show Vanilla Impulse Controls"
-      master.description = "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+      master.label = "Show Vanilla Impulse + Death Animation Controls"
+      master.description = "Shows weapon-by-weapon exceptions that restore both the game's original push-back reaction and its death animation."
       master.dependency = nil
       master.dependencyName = ""
     elseif isVanillaImpulseValueSetting(setting) then
       local copy = copySettingEarly(setting)
       copy.dependency = nil
       copy.dependencyName = ""
-      if endsWithPlain(string.lower(tostring(copy.name or "")), "vanillaimpulsesenabled") then
-        copy.label = "Enable Selected Vanilla Impulses"
+
+      local lowerName = string.lower(tostring(copy.name or ""))
+
+      if endsWithPlain(lowerName, "vanillaimpulsesenabled") then
+        copy.label = "Enable Selected Vanilla Reactions"
+        copy.description = "Master switch for the weapon choices below. An enabled weapon restores both its original hit push-back reaction and its death animation on lethal hits."
+      elseif endsWithPlain(lowerName, "vanillaallowhandgun") then
+        copy.label = "Handgun — Vanilla Push + Death Animation"
+        copy.description = "Handguns only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowmagnum") then
+        copy.label = "Magnum — Vanilla Push + Death Animation"
+        copy.description = "Magnums only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowshotgun") then
+        copy.label = "Shotgun — Vanilla Push + Death Animation"
+        copy.description = "Shotguns only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowsniper") then
+        copy.label = "Sniper — Vanilla Push + Death Animation"
+        copy.description = "Sniper rifles only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowsmg") then
+        copy.label = "SMG — Vanilla Push + Death Animation"
+        copy.description = "SMGs only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowar") then
+        copy.label = "Assault Rifle — Vanilla Push + Death Animation"
+        copy.description = "Assault rifles only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowlmg") then
+        copy.label = "LMG — Vanilla Push + Death Animation"
+        copy.description = "LMGs only: restores the original push-back hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowblunt") then
+        copy.label = "Blunt — Vanilla Push + Death Animation"
+        copy.description = "Blunt weapons only: restores the original hit reaction and the original death animation on kills. Other weapon groups are unchanged."
+      elseif endsWithPlain(lowerName, "vanillaallowblade") then
+        copy.label = "Blade — Vanilla Push + Death Animation"
+        copy.description = "Bladed weapons only: restores the original hit reaction and the original death animation on kills. Other weapon groups are unchanged."
       end
+
       table.insert(values, copy)
     end
   end
@@ -1080,7 +1243,7 @@ local function rebuildVanillaImpulseControl(mode)
 end
 
 local function addVanillaImpulseControl(mode, index)
-  nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse Control", index)
+  nativeSettings.addSubcategory(VANILLA_PATH, "Vanilla Impulse + Death Animation", index)
   dynamicRefs[VANILLA_PATH] = {}
 
   local master = vanillaImpulseParts(mode)
@@ -1091,8 +1254,8 @@ local function addVanillaImpulseControl(mode, index)
     master,
     context,
     again,
-    "Show Vanilla Impulse Controls",
-    "Shows or hides the selected vanilla impulse allow-list without changing any saved values."
+    "Show Vanilla Impulse + Death Animation Controls",
+    "Shows or hides weapon-by-weapon exceptions that restore both vanilla push-back reactions and vanilla death animations."
   )
   rebuildVanillaImpulseControl(mode)
 end
@@ -1110,6 +1273,314 @@ local function modeInsertIndex(targetModeIndex)
   return idx
 end
 
+local BVC_BOOL_NAMES = {
+  "enabled", "bulletEnabled", "bulletPlayerOnly", "vehicleImpactEnabled",
+  "worldImpactEnabled", "riderKnockoffEnabled", "killMotorcycleDeathAnimation",
+  "impactDirectionFlip", "leanFallEnabled", "pickupRecoveryEnabled"
+}
+
+local BVC_FLOAT_NAMES = {
+  "bulletHitsRequired", "bulletChance", "bulletStrength", "vehicleImpactThreshold",
+  "vehicleImpactChance", "vehicleImpactStrength", "worldImpactThreshold",
+  "worldImpactChance", "worldImpactStrength", "toppleCooldown",
+  "leanFallAngle", "leanFallMinSpeed", "leanFallMaxSpeed",
+  "leanFallBikeStrength", "playerGravityFallStrength"
+}
+
+local function resolveBikeBridge(playerHint)
+  local player = playerHint or livePlayer
+  if not player or not IsDefined(player) then
+    local ok, current = pcall(function() return Game.GetPlayer() end)
+    if ok then player = current end
+  end
+  if not player or not IsDefined(player) then return nil end
+
+  local ok, version = pcall(function() return player:BVCGetBridgeVersion() end)
+  if not ok or tonumber(version) ~= BVC_BRIDGE_VERSION then return nil end
+  return player
+end
+
+local function bikeModeState(modeKey)
+  settingsStore.bikeSystem = settingsStore.bikeSystem or {}
+  settingsStore.bikeSystem.modes = settingsStore.bikeSystem.modes or {}
+  local defaults = BVC_MODE_DEFAULTS[modeKey]
+  if not defaults then return nil end
+  settingsStore.bikeSystem.modes[modeKey] =
+    merge(settingsStore.bikeSystem.modes[modeKey], defaults)
+  return settingsStore.bikeSystem.modes[modeKey]
+end
+
+local function setBikeModeBool(modeKey, name, value)
+  local state = bikeModeState(modeKey)
+  local modeIndex = BVC_MODE_INDEX[modeKey]
+  if not state or modeIndex == nil then return end
+
+  state[name] = value == true
+  saveSettingsDebounced()
+
+  local player = resolveBikeBridge()
+  if player then
+    pcall(function()
+      player:BVCSetModeBool(modeIndex, cn(name), state[name])
+    end)
+  end
+end
+
+local function setBikeModeFloat(modeKey, name, value)
+  local state = bikeModeState(modeKey)
+  local modeIndex = BVC_MODE_INDEX[modeKey]
+  if not state or modeIndex == nil then return end
+
+  state[name] = tonumber(value) or state[name]
+  saveSettingsDebounced()
+
+  local player = resolveBikeBridge()
+  if player then
+    pcall(function()
+      player:BVCSetModeFloat(modeIndex, cn(name), state[name])
+    end)
+  end
+end
+
+local function applyBikeMode(modeKey, playerHint)
+  local player = resolveBikeBridge(playerHint)
+  local modeIndex = BVC_MODE_INDEX[modeKey]
+  local state = bikeModeState(modeKey)
+  if not player or modeIndex == nil or not state then return false end
+
+  for _, name in ipairs(BVC_BOOL_NAMES) do
+    local ok, applied = pcall(function()
+      return player:BVCSetModeBool(modeIndex, cn(name), state[name] == true)
+    end)
+    if not ok or applied ~= true then return false end
+  end
+
+  for _, name in ipairs(BVC_FLOAT_NAMES) do
+    local ok, applied = pcall(function()
+      return player:BVCSetModeFloat(modeIndex, cn(name), tonumber(state[name]) or 0.0)
+    end)
+    if not ok or applied ~= true then return false end
+  end
+
+  return true
+end
+
+local function applyBikeActiveMode(mode, playerHint)
+  if not mode then return false end
+  local player = resolveBikeBridge(playerHint)
+  local modeIndex = BVC_MODE_INDEX[mode.key]
+  if not player or modeIndex == nil then return false end
+  local ok, applied = pcall(function()
+    return player:BVCSetActiveMode(modeIndex)
+  end)
+  return ok and applied == true
+end
+
+local function applyBikeAll(playerHint, activeMode)
+  local player = resolveBikeBridge(playerHint)
+  if not player then return false end
+
+  settingsStore.bikeSystem = settingsStore.bikeSystem or {}
+  if settingsStore.bikeSystem.debugPopups == nil then settingsStore.bikeSystem.debugPopups = true end
+  if settingsStore.bikeSystem.manualControllerEnabled == nil then settingsStore.bikeSystem.manualControllerEnabled = true end
+
+  local okDebug, debugApplied = pcall(function()
+    return player:BVCSetGlobalBool(cn("debugPopups"), settingsStore.bikeSystem.debugPopups == true)
+  end)
+  local okManual, manualApplied = pcall(function()
+    return player:BVCSetGlobalBool(cn("manualControllerEnabled"), settingsStore.bikeSystem.manualControllerEnabled == true)
+  end)
+  if not okDebug or debugApplied ~= true or not okManual or manualApplied ~= true then return false end
+
+  for _, key in ipairs({"realismCustom", "realismPlus", "dirtyHarry", "arnoldArcade", "vanilla"}) do
+    if not applyBikeMode(key, player) then return false end
+  end
+
+  return applyBikeActiveMode(activeMode, player)
+end
+
+local function bikeModePath(mode)
+  return TAB .. "/mode_" .. mode.key .. "_motorcycle"
+end
+
+local function addBikeSwitch(path, modeKey, state, defaults, name, label, description, index)
+  local ref = nativeSettings.addSwitch(
+    path, label, description,
+    state[name] == true, defaults[name] == true,
+    function(value) setBikeModeBool(modeKey, name, value) end,
+    index
+  )
+  remember(path, ref)
+  return index + 1
+end
+
+local function addBikeFloat(path, modeKey, state, defaults, name, label, description, mn, mx, step, fmt, index)
+  local ref = nativeSettings.addRangeFloat(
+    path, label, description,
+    mn, mx, step, fmt,
+    tonumber(state[name]) or tonumber(defaults[name]) or 0.0,
+    tonumber(defaults[name]) or 0.0,
+    function(value) setBikeModeFloat(modeKey, name, value) end,
+    index
+  )
+  remember(path, ref)
+  return index + 1
+end
+
+local function rebuildBikeModeControls(mode)
+  if not mode or mode.key == "vanilla" then return end
+
+  local path = bikeModePath(mode)
+  clearDynamic(path)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showAll"
+
+  if bucket[showKey] ~= true then
+    return
+  end
+
+  local key = mode.key
+  local state = bikeModeState(key)
+  local defaults = BVC_MODE_DEFAULTS[key]
+  local i = 2
+
+  i = addBikeSwitch(path, key, state, defaults, "enabled",
+    "Enable " .. mode.label .. " Bike System",
+    "Master switch for bullet, impact, rider, V lean, and pickup recovery behavior.", i)
+  i = addBikeSwitch(path, key, state, defaults, "bulletEnabled",
+    "Bullets Topple Motorcycles",
+    "OFF hard-disables the custom bullet-topple path and clears any partial bullet count.", i)
+  i = addBikeFloat(path, key, state, defaults, "bulletHitsRequired",
+    "Bullets Required Before Topple",
+    "Exact valid bullet hits required before the motorcycle topples. 1 = first hit; 3 = third hit.",
+    1.0, 10.0, 1.0, "%.0f", i)
+  i = addBikeSwitch(path, key, state, defaults, "bulletPlayerOnly",
+    "Player Bullets Only",
+    "When enabled, NPC bullets cannot trigger motorcycle topples.", i)
+  i = addBikeFloat(path, key, state, defaults, "bulletChance",
+    "Bullet Topple Chance",
+    "Chance for a valid ranged/direct hit to trigger the working topple actuator after the hit threshold is reached.",
+    0.0, 100.0, 1.0, "%.0f", i)
+  i = addBikeFloat(path, key, state, defaults, "bulletStrength",
+    "Bullet Topple Strength",
+    "Mass-scaled motorcycle-local side force.",
+    0.0, 12.0, 0.1, "%.1f", i)
+
+  i = addBikeSwitch(path, key, state, defaults, "vehicleImpactEnabled",
+    "Car / Vehicle Impacts Topple Bikes",
+    "Qualifying vehicle collisions topple the bike and can remove the rider.", i)
+  i = addBikeFloat(path, key, state, defaults, "vehicleImpactThreshold",
+    "Car Impact Threshold",
+    "Minimum impact velocity change. Set to 0 for any reported vehicle contact.",
+    0.0, 30.0, 0.25, "%.2f", i)
+  i = addBikeFloat(path, key, state, defaults, "vehicleImpactChance",
+    "Car Impact Topple Chance",
+    "Chance for a qualifying vehicle-to-bike collision to topple the motorcycle.",
+    0.0, 100.0, 1.0, "%.0f", i)
+  i = addBikeFloat(path, key, state, defaults, "vehicleImpactStrength",
+    "Car Impact Topple Strength",
+    "Mass-scaled side force for vehicle-to-bike collisions.",
+    0.0, 12.0, 0.1, "%.1f", i)
+
+  i = addBikeSwitch(path, key, state, defaults, "worldImpactEnabled",
+    "Wall / World Impacts Topple Bikes",
+    "Qualifying impacts with walls/world geometry topple the bike and can remove the rider.", i)
+  i = addBikeFloat(path, key, state, defaults, "worldImpactThreshold",
+    "Wall Impact Threshold",
+    "Minimum wall/world impact velocity change. Set to 0 for any reported contact.",
+    0.0, 30.0, 0.25, "%.2f", i)
+  i = addBikeFloat(path, key, state, defaults, "worldImpactChance",
+    "Wall Impact Topple Chance",
+    "Chance for a qualifying wall/world collision to topple the motorcycle.",
+    0.0, 100.0, 1.0, "%.0f", i)
+  i = addBikeFloat(path, key, state, defaults, "worldImpactStrength",
+    "Wall Impact Topple Strength",
+    "Mass-scaled side force for wall/world collisions.",
+    0.0, 12.0, 0.1, "%.1f", i)
+
+  i = addBikeSwitch(path, key, state, defaults, "riderKnockoffEnabled",
+    "Impacts and Bullets Remove Riders",
+    "Uses the working BVC1605 rider removal path for NPCs and V.", i)
+  i = addBikeSwitch(path, key, state, defaults, "killMotorcycleDeathAnimation",
+    "Kill Motorcycle Death Animation",
+    "ON = a rider killed while mounted skips the native motorcycle death animation and enters BVC ragdoll handoff. OFF = preserve the native motorcycle death-animation path.", i)
+  i = addBikeSwitch(path, key, state, defaults, "impactDirectionFlip",
+    "Reverse Collision Fall Side",
+    "Flip the side derived from the vehicle impact normal.", i)
+  i = addBikeFloat(path, key, state, defaults, "toppleCooldown",
+    "Topple Cooldown",
+    "Minimum seconds between topples on the same motorcycle.",
+    0.0, 3.0, 0.05, "%.2f", i)
+
+  i = addBikeSwitch(path, key, state, defaults, "leanFallEnabled",
+    "V Falls From Excessive Lean",
+    "Uses the working BVC1605 BikeTilt detector while V is driving.", i)
+  i = addBikeFloat(path, key, state, defaults, "leanFallAngle",
+    "V Lean Fall Angle",
+    "Absolute BikeTilt angle that triggers V's lean fall.",
+    5.0, 90.0, 1.0, "%.0f", i)
+  i = addBikeFloat(path, key, state, defaults, "leanFallMinSpeed",
+    "V Lean Fall Minimum Speed",
+    "Minimum absolute motorcycle speed for a lean fall.",
+    0.0, 100.0, 0.5, "%.1f", i)
+  i = addBikeFloat(path, key, state, defaults, "leanFallMaxSpeed",
+    "V Lean Fall Maximum Speed",
+    "Maximum absolute motorcycle speed for a lean fall.",
+    0.0, 100.0, 0.5, "%.1f", i)
+  i = addBikeFloat(path, key, state, defaults, "leanFallBikeStrength",
+    "V Lean Fall Bike Strength",
+    "Motorcycle side force when V exceeds the lean angle.",
+    0.0, 12.0, 0.1, "%.1f", i)
+  i = addBikeFloat(path, key, state, defaults, "playerGravityFallStrength",
+    "V Downward Gravity Fall Strength",
+    "Downward-only ragdoll impulse applied to V after unmounting.",
+    0.0, 30.0, 0.5, "%.1f", i)
+  i = addBikeSwitch(path, key, state, defaults, "pickupRecoveryEnabled",
+    "Restore Bike Controls When V Picks It Up",
+    "Uses the working BVC1605 pickup recovery sequence.", i)
+end
+
+local function addBikeModeCategory(mode, index)
+  if not mode or mode.key == "vanilla" then return index end
+
+  local path = bikeModePath(mode)
+  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+  dynamicRefs[path] = {}
+
+  nativeSettings.addSubcategory(path, "Motorcycle (WIP)", index)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showAll"
+
+  if bucket[showKey] == nil then
+    bucket[showKey] = false
+  end
+
+  -- Stable disclosure switch. OFF hides the whole child set and does not alter
+  -- any saved motorcycle physics value.
+  nativeSettings.addSwitch(
+    path,
+    "Show All Motorcycle (WIP) Controls",
+    "ON shows every Motorcycle (WIP) control for the selected SPLAT mode. OFF hides all child controls without changing saved motorcycle settings.",
+    bucket[showKey] == true,
+    false,
+    function(value)
+      bucket[showKey] = value == true
+      uiDirty = true
+      defer(function()
+        rebuildBikeModeControls(mode)
+      end)
+    end,
+    1
+  )
+
+  rebuildBikeModeControls(mode)
+  return index + 1
+end
+
 local function removeModeCategories(mode)
   for _, topic in ipairs(schema.topics) do
     local path = topicPath(mode, topic)
@@ -1124,6 +1595,9 @@ local function removeModeCategories(mode)
       end
     end
   end
+  local bikePath = bikeModePath(mode)
+  if nativeSettings.pathExists(bikePath) then nativeSettings.removeSubcategory(bikePath) end
+  dynamicRefs[bikePath] = nil
 end
 
 local function showModeCategories(mode, modeIndex)
@@ -1159,6 +1633,7 @@ local function showModeCategories(mode, modeIndex)
       end
     end
   end
+  idx = addBikeModeCategory(mode, idx)
 end
 
 local globalStaticCount = 0
@@ -1288,17 +1763,6 @@ rebuildGlobalImpulseControls = function(section)
     idx = addSettings(IMPULSE_PATH, globalMoveSettings(), idx, "global/moveNpcFeet", again, true)
   end
 
-  local motorcycle = globalMotorcycleSettings(mode)
-  if #motorcycle > 0 then
-    idx = addImpulseSectionToggle("Show Motorcycle Impulse Controls - " .. mode.label,
-      "Shows motorcycle topple and rider lean impulse controls for the selected mode.",
-      "motorcycle", idx, again)
-    if uiConfig.impulseSections.motorcycle then
-      idx = addSettings(IMPULSE_PATH, motorcycle, idx,
-        "mode/" .. tostring(mode.key) .. "/motorcycle", again, true)
-    end
-  end
-
   -- Native Settings 1.4+ applies add/remove operations to an open tab directly.
   -- A full refresh here repopulates persistent controls, including the mode selector.
 end
@@ -1319,6 +1783,7 @@ local function buildMenu()
   local function rebuildSelectedMenu()
     if globalImpulseSection then rebuildGlobalImpulseControls(globalImpulseSection) end
     local active = selectedMode()
+    applyBikeActiveMode(active)
     for _, candidate in ipairs(schema.modes) do
       removeModeCategories(candidate)
     end
@@ -1356,6 +1821,8 @@ local function buildMenu()
     saveSettingsNow(true)
     local b = resolveBridge()
     if b then pcall(function() b:SPLATResetAll() end) end
+
+    applyBikeAll(nil, selectedMode())
     uiConfig = defaultUI()
     uiDirty = true
     saveUI(true)
@@ -1431,15 +1898,7 @@ local function initialize()
   migrateObsoleteShoulderButtSettings()
   migrateArcadeAttackSourceSettings()
 
-  -- One-time migration: an earlier test build shipped V's unfinished lean
-  -- topple toggle enabled. Force that experimental control off once, then let
-  -- the user change it normally afterward if they deliberately want to test it.
-  if settingsStore.vMotorcycleWipDisabled ~= true then
-    settingsStore.values["arnoldArcade|RFCModSettings.arnold_playerMotorcycleLeanToppleEnabled"] = {type = "Bool", value = false}
-    settingsStore.vMotorcycleWipDisabled = true
-    settingsDirty = true
-    logi("Disabled unfinished V motorcycle lean topple during migration")
-  end
+  purgeLegacySplatMotorcycleValues()
 
   if settingsSource == "primary" or settingsSource == "backup" then
     logi("PERSISTENCE RELOAD CONFIRMED: loaded " .. tostring(savedValueCount()) .. " gameplay values; serial=" .. tostring(settingsStore.writeSerial or 0))
@@ -1455,7 +1914,7 @@ local function initialize()
       settingsDirty = true
       saveSettingsNow(true)
     end
-    logi("Menu registered. Standalone event-driven CET bridge active; REDscript bridge version 141 expected; V155 audited menu rebuild active")
+    logi("Menu registered. SPLAT bridge 141 + BVC1604 single motorcycle system active")
   end
 end
 
@@ -1474,8 +1933,12 @@ local function handlePlayerReady(player, source)
   -- session are guaranteed to replay onto a recreated PlayerPuppet.
   buildRestoreQueue()
   if not processRestoreQueue() then return false end
+  if not applyBikeAll(live, selectedMode()) then
+    loge("BVC1605 bridge not ready during PlayerPuppet lifecycle")
+    return false
+  end
   if settingsDirty then saveSettingsNow(false) end
-  logi("Standalone PlayerPuppet lifecycle connected via " .. tostring(source or "event"))
+  logi("SPLAT + BVC1604 PlayerPuppet lifecycle connected via " .. tostring(source or "event"))
   return true
 end
 
@@ -1502,6 +1965,7 @@ local function registerPlayerLifecycleObserver()
 end
 
 registerForEvent("onInit", function()
+  logi("BUILD MARKER: SPLAT_TRIP_STEALTH_FINISHER_GUARD_1706")
   logi("TEST BUILD MARKER: SPLAT_ISSUE9_INJURY_SHOCK_INTEGRATED_S")
   registerPlayerLifecycleObserver()
   initialize()
