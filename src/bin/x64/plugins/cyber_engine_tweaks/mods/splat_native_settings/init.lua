@@ -9,6 +9,7 @@ local IMPULSE_PATH = TAB .. "/global_impulse"
 local MOTORCYCLE_PATH = TAB .. "/global_motorcycles"
 local ANIMATION_PATH = TAB .. "/animation_controls"
 local VANILLA_PATH = TAB .. "/vanilla_impulse_control"
+local VEHICLE_LANDING_PATH = TAB .. "/vehicle_landing"
 
 local nativeSettings, schema, uiConfig
 local livePlayer = nil
@@ -326,6 +327,28 @@ local function saveSettingsDebounced()
   settingsDirty = true
 end
 
+local VEHICLE_LANDING_STORE_KEY = "global|VehicleLanding.pushScale"
+
+local function vehicleLandingScale()
+  local entry =
+    settingsStore
+      and settingsStore.values
+      and settingsStore.values[VEHICLE_LANDING_STORE_KEY]
+      or nil
+
+  local value = 0.0
+
+  if type(entry) == "table" then
+    value = tonumber(entry.value) or 0.0
+  elseif entry ~= nil then
+    value = tonumber(entry) or 0.0
+  end
+
+  if value < 0.0 then value = 0.0 end
+  if value > 2.0 then value = 2.0 end
+  return value
+end
+
 local function resolveBridge(playerHint)
   -- Fast path: once this PlayerPuppet has passed bridge/version validation, menu
   -- callbacks reuse it directly. IsDefined protects against stale native handles.
@@ -389,6 +412,43 @@ local function resolveBridge(playerHint)
   end
   return player
 end
+
+local function applyVehicleLandingScale(playerHint)
+  local player = playerHint or resolveBridge()
+
+  if not player or not IsDefined(player) then
+    return false
+  end
+
+  local value = vehicleLandingScale()
+
+  local ok, applied =
+    pcall(function()
+      return player:RFCSetVehicleLandingPushScale(value)
+    end)
+
+  if not ok or applied ~= true then
+    loge("Vehicle landing push bridge rejected value " .. tostring(value))
+    return false
+  end
+
+  return true
+end
+
+local function setVehicleLandingScale(value)
+  value = tonumber(value) or 0.0
+  if value < 0.0 then value = 0.0 end
+  if value > 2.0 then value = 2.0 end
+
+  settingsStore.values[VEHICLE_LANDING_STORE_KEY] = {
+    type = "Float",
+    value = value
+  }
+
+  saveSettingsDebounced()
+  applyVehicleLandingScale(nil)
+end
+
 local function storedEntry(setting)
   if not settingsStore or not settingsStore.values then return nil end
   return settingsStore.values[settingKey(setting)]
@@ -1426,18 +1486,24 @@ local function addBikeFloat(path, modeKey, state, defaults, name, label, descrip
   return index + 1
 end
 
-local function addBikeModeCategory(mode, index)
-  if not mode or mode.key == "vanilla" then return index end
+local function rebuildBikeModeControls(mode)
+  if not mode or mode.key == "vanilla" then return end
 
   local path = bikeModePath(mode)
-  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
-  dynamicRefs[path] = {}
-  nativeSettings.addSubcategory(path, mode.label .. " - Motorcycle", index)
+  clearDynamic(path)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showMotorcycleWip"
+
+  if bucket[showKey] ~= true then
+    return
+  end
 
   local key = mode.key
   local state = bikeModeState(key)
   local defaults = BVC_MODE_DEFAULTS[key]
-  local i = 1
+  local i = 2
 
   i = addBikeSwitch(path, key, state, defaults, "enabled",
     "Enable " .. mode.label .. " Bike System",
@@ -1530,7 +1596,46 @@ local function addBikeModeCategory(mode, index)
   i = addBikeSwitch(path, key, state, defaults, "pickupRecoveryEnabled",
     "Restore Bike Controls When V Picks It Up",
     "Uses the working BVC1604 pickup recovery sequence.", i)
+end
 
+local function addBikeModeCategory(mode, index)
+  if not mode or mode.key == "vanilla" then return index end
+
+  local path = bikeModePath(mode)
+  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+  dynamicRefs[path] = {}
+
+  -- Keep the feature visibly marked as unfinished while preserving the tested
+  -- runtime behavior unchanged.
+  nativeSettings.addSubcategory(path, "Motorcycle (WIP)", index)
+
+  local context = "mode/" .. mode.key .. "/motorcycleWip"
+  local bucket = uiGateBucket(context)
+  local showKey = "showMotorcycleWip"
+
+  if bucket[showKey] == nil then
+    bucket[showKey] = false
+  end
+
+  -- Stable Show/Hide switch: this option itself is never part of dynamicRefs,
+  -- so collapsing the section removes only the motorcycle controls beneath it.
+  nativeSettings.addSwitch(
+    path,
+    "Show Motorcycle (WIP) Controls",
+    "Shows or hides the motorcycle controls without changing any saved motorcycle settings or physics values.",
+    bucket[showKey] == true,
+    false,
+    function(value)
+      bucket[showKey] = value == true
+      uiDirty = true
+      defer(function()
+        rebuildBikeModeControls(mode)
+      end)
+    end,
+    1
+  )
+
+  rebuildBikeModeControls(mode)
   return index + 1
 end
 
@@ -1764,6 +1869,30 @@ local function buildMenu()
     end
   end
 
+  nativeSettings.addSubcategory(
+    VEHICLE_LANDING_PATH,
+    "Vehicle Contact",
+    subIndex
+  )
+
+  nativeSettings.addRangeFloat(
+    VEHICLE_LANDING_PATH,
+    "Player Jump / Landing Vehicle Push",
+    "Adjusts SPLAT's extra shove when V jumps or lands on a car. 0.00 = vanilla contact only; SPLAT adds no movement or self-righting changes. 1.00 = one full active-mode Vehicle Bullet Push strength. This does not change weapon bullet push.",
+    0.0,
+    2.0,
+    0.05,
+    "%.2f",
+    vehicleLandingScale(),
+    0.0,
+    function(value)
+      setVehicleLandingScale(value)
+    end,
+    1
+  )
+
+  subIndex = subIndex + 1
+
   showModeCategories(selectedMode(), tonumber(selectedMode().enumIndex) or 1)
 
 
@@ -1774,6 +1903,13 @@ local function buildMenu()
     saveSettingsNow(true)
     local b = resolveBridge()
     if b then pcall(function() b:SPLATResetAll() end) end
+
+    settingsStore.values[VEHICLE_LANDING_STORE_KEY] = {
+      type = "Float",
+      value = 0.0
+    }
+    applyVehicleLandingScale(b)
+
     applyBikeAll(nil, selectedMode())
     uiConfig = defaultUI()
     uiDirty = true
@@ -1887,6 +2023,10 @@ local function handlePlayerReady(player, source)
   if not processRestoreQueue() then return false end
   if not applyBikeAll(live, selectedMode()) then
     loge("BVC1604 bridge not ready during PlayerPuppet lifecycle")
+    return false
+  end
+  if not applyVehicleLandingScale(live) then
+    loge("Vehicle landing push bridge not ready during PlayerPuppet lifecycle")
     return false
   end
   if settingsDirty then saveSettingsNow(false) end
