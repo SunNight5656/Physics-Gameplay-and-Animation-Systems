@@ -1,17 +1,12 @@
 module RealisticPush
 
-private func RFC_SitOverrideBodyBlock(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
+public func RFC_SitOverrideBodyBlock(p: wref<NPCPuppet>, c: RFCConfig) -> Bool {
   if !IsDefined(p) { return false; }
-
-  if p.gs_sitSnapValid {
-    if p.gs_sitSnapWsStand && c.overrideWsStand && (c.wsStand_overrideGlobalForward || c.wsStand_overrideGlobalChest || c.wsStand_overrideGlobalPelvis || c.wsStand_overrideGlobalKnees) { return true; }
-    if p.gs_sitSnapStairs && c.overrideStairs && (c.stair_overrideGlobalForward || c.stair_overrideGlobalChest || c.stair_overrideGlobalPelvis || c.stair_overrideGlobalKnees) { return true; }
-    if p.gs_sitSnapCower && c.overrideCower && (c.cow_overrideGlobalForward || c.cow_overrideGlobalChest || c.cow_overrideGlobalPelvis || c.cow_overrideGlobalKnees) { return true; }
-    if p.gs_sitSnapRun && c.overrideRun && (c.run_overrideGlobalForward || c.run_overrideGlobalChest || c.run_overrideGlobalPelvis || c.run_overrideGlobalKnees) { return true; }
-    if p.gs_sitSnapStand && c.overrideStand && (c.st_overrideGlobalForward || c.st_overrideGlobalChest || c.st_overrideGlobalPelvis || c.st_overrideGlobalKnees) { return true; }
-  }
-
-  return false;
+  return GS_CurrentOverrideForward(p, c)
+    || GS_CurrentOverrideChest(p, c)
+    || GS_CurrentOverridePelvis(p, c)
+    || GS_CurrentOverrideKnees(p, c)
+    || GS_CurrentOverrideHead(p, c);
 }
 
 private func GS_OverrideForwardActive(
@@ -426,7 +421,7 @@ private func GS_EaseIn(t: Float) -> Float {
   return x * x;
 }
 
-private func GS_ShouldRun(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Bool {
+public func GS_ShouldRun(p: wref<NPCPuppet>, s: ref<GS_Settings>) -> Bool {
   let chance01: Float;
   let roll: Float;
   let c: RFCConfig;

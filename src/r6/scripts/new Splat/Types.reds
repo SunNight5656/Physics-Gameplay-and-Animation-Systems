@@ -1606,12 +1606,12 @@ c.vanillaAllowBlade = menu.vanillaAllowBlade;
 c.tumbleEnabled = menu.tumbleEnabled;
 c.directionalTumbleEnabled = menu.directionalTumbleEnabled;
 
-// OVERRIDES
-c.overrideStand = menu.st_overrideGlobalHead || menu.st_overrideGlobalForward || menu.st_overrideGlobalChest || menu.st_overrideGlobalPelvis || menu.st_overrideGlobalKnees;
-c.overrideRun = menu.run_overrideGlobalHead || menu.run_overrideGlobalForward || menu.run_overrideGlobalChest || menu.run_overrideGlobalPelvis || menu.run_overrideGlobalKnees;
-c.overrideCower = menu.cow_overrideGlobalHead || menu.cow_overrideGlobalChest || menu.cow_overrideGlobalPelvis || menu.cow_overrideGlobalKnees;
-c.overrideStairs = menu.stair_overrideGlobalHead || menu.stair_overrideGlobalForward || menu.stair_overrideGlobalChest || menu.stair_overrideGlobalPelvis || menu.stair_overrideGlobalKnees;
-c.overrideWsStand = menu.wsStand_overrideGlobalForward || menu.wsStand_overrideGlobalChest || menu.wsStand_overrideGlobalPelvis || menu.wsStand_overrideGlobalKnees;
+// SITUATIONAL SECTION MASTERS + PER-BODY OWNERSHIP
+c.overrideStand = menu.standEnabled && (menu.st_overrideGlobalHead || menu.st_overrideGlobalForward || menu.st_overrideGlobalChest || menu.st_overrideGlobalPelvis || menu.st_overrideGlobalKnees);
+c.overrideRun = menu.runEnabled && (menu.run_overrideGlobalHead || menu.run_overrideGlobalForward || menu.run_overrideGlobalChest || menu.run_overrideGlobalPelvis || menu.run_overrideGlobalKnees);
+c.overrideCower = menu.cowerEnabled && (menu.cow_overrideGlobalHead || menu.cow_overrideGlobalChest || menu.cow_overrideGlobalPelvis || menu.cow_overrideGlobalKnees);
+c.overrideStairs = menu.stairsEnabled && (menu.stair_overrideGlobalHead || menu.stair_overrideGlobalForward || menu.stair_overrideGlobalChest || menu.stair_overrideGlobalPelvis || menu.stair_overrideGlobalKnees);
+c.overrideWsStand = menu.wsStandEnabled && (menu.wsStand_overrideGlobalForward || menu.wsStand_overrideGlobalChest || menu.wsStand_overrideGlobalPelvis || menu.wsStand_overrideGlobalKnees);
 c.overrideBulletImpulse = menu.overrideBulletImpulse;
 c.overrideSettle = menu.overrideSettle;
 c.overrideTwitch = menu.overrideTwitch;
