@@ -1,4 +1,4 @@
--- SPLAT Physics 11.1 - V157 + BVC1604 single motorcycle system
+-- SPLAT Physics 11.3 - V157 + BVC1604 single motorcycle system
 -- Architecture: Native Settings callbacks -> live PlayerPuppet -> REDscript settings state.
 -- No external runtime framework, Mod Settings, permanent update loop, or repeated player polling.
 
@@ -18,6 +18,15 @@ local restoreQueue = {}
 local restoreCursor = 1
 local sectionCache = {}
 local dynamicRefs = {}
+local animationGroupRefs = {}
+local situationalCategoryIndexes = {}
+local motorcycleDeathAnimationRefs = {}
+local motorcycleDeathAnimationSyncing = false
+local getBikeDeathAnimationState
+local setBikeDeathAnimationState
+local syncMotorcycleDeathAnimationControls
+local selectedMode
+local showModeCategories
 local globalModeRef = nil
 local initialized = false
 local STATE_VERSION = 161
@@ -562,6 +571,22 @@ local function purgeLegacySplatMotorcycleValues()
   end
 end
 
+local function purgeRemovedAnimationValues()
+  local values = (settingsStore and settingsStore.values) or {}
+  local removed = 0
+  for key, _ in pairs(values) do
+    local lower = string.lower(tostring(key))
+    if lower:find("restorestealthkillanimations", 1, true) ~= nil then
+      values[key] = nil
+      removed = removed + 1
+    end
+  end
+  if removed > 0 then
+    settingsDirty = true
+    logi("Removed " .. tostring(removed) .. " obsolete Restore Stealth Animation saved values")
+  end
+end
+
 local function buildRestoreQueue()
   restoreQueue = {}
   restoreCursor = 1
@@ -720,6 +745,7 @@ local function clearDynamic(path)
   local refs = dynamicRefs[path] or {}
   for i = #refs, 1, -1 do pcall(function() nativeSettings.removeOption(refs[i]) end) end
   dynamicRefs[path] = {}
+  motorcycleDeathAnimationRefs[path] = nil
 end
 local function defer(fn)
   -- Native Settings supports adding/removing options and subcategories while its
@@ -742,7 +768,14 @@ local hiddenNonRuntimeControls = {
   tumbleDir_sideDelay = true,
   -- The old mounted-hit shield is intentionally not implemented: it could
   -- make ordinary workspot and vehicle occupants appear invulnerable.
-  vehicleMountedHitImmunity = true
+  vehicleMountedHitImmunity = true,
+  -- Blackwall already has its own explicit Enable Blackwall Animations switch.
+  -- Keep this older classification detail internal rather than showing a second
+  -- Blackwall toggle in Animation Control.
+  blackwallCountsAsStealth = true,
+  -- Stealth behavior is owned by the Stealth Ragdoll enable switch and delay.
+  -- Do not expose the older, competing vanilla-animation restore switch.
+  restoreStealthKillAnimations = true
 }
 
 local function suppressDuplicateOrDeadControl(setting, context)
@@ -767,19 +800,33 @@ end
 
 local function addSetting(path, setting, index, context, gates, rebuild, collect)
   if suppressDuplicateOrDeadControl(setting, context) then return nil end
+  local isBikeDeathAnimation = context == "shared/animation"
+    and setting.name == "killMotorcycleDeathAnim"
+  local invertAnimationBool = context == "shared/animation"
+    and (setting.name == "skipDeathAnim" or setting.name == "hitReactionsDisabled")
   local current = gateState(setting, gates, context)
   local default = isShowGate(setting, gates) and (false) or readVar(setting, true)
+  if isBikeDeathAnimation and getBikeDeathAnimationState then
+    current, default = getBikeDeathAnimationState()
+  elseif invertAnimationBool then
+    current = not (current == true)
+    default = not (default == true)
+  end
   local desc = setting.description or ""
   local ref
   if setting.type == "Bool" then
     ref = nativeSettings.addSwitch(path, setting.label, desc, current, default, function(value)
-      if isShowGate(setting, gates) then
+      if isBikeDeathAnimation and setBikeDeathAnimationState then
+        setBikeDeathAnimationState(value)
+      elseif isShowGate(setting, gates) then
         local bucket = uiGateBucket(context)
         bucket[setting.id] = value
         uiDirty = true
         if rebuild then defer(rebuild) end
       else
-        writeVar(setting, value, true)
+        local storedValue = value
+        if invertAnimationBool then storedValue = not (value == true) end
+        writeVar(setting, storedValue, true)
       end
     end, index)
   elseif setting.type == "Float" then
@@ -803,6 +850,9 @@ local function addSetting(path, setting, index, context, gates, rebuild, collect
         if rebuild then defer(rebuild) end
       end, index)
   end
+  if isBikeDeathAnimation and ref then
+    motorcycleDeathAnimationRefs[path] = ref
+  end
   if collect then remember(path, ref) end
   return ref
 end
@@ -813,10 +863,18 @@ local function addSettings(path, settings, startIndex, context, rebuild, collect
   for _, setting in ipairs(settings or {}) do
     -- BVC1604 is the sole motorcycle runtime. Never expose old SPLAT
     -- motorcycle fields in any generic/global/mode section.
-    if not isMotorcycleSetting(setting) then
+    local animationBikeDeath = context == "shared/animation"
+      and setting.name == "killMotorcycleDeathAnim"
+    if not isMotorcycleSetting(setting) or animationBikeDeath then
       local copy = {}
       for key, value in pairs(setting) do copy[key] = value end
       copy.mode = scope
+      if animationBikeDeath then
+        copy.label = "Enable Motorcycle Death Animation"
+        copy.description = "ON preserves the mounted motorcycle death animation. OFF immediately hands the dead rider to ragdoll."
+        copy.dependency = nil
+        copy.dependencyName = ""
+      end
       table.insert(scopedSettings, copy)
     end
   end
@@ -904,8 +962,228 @@ local function addStableShowSwitch(path, setting, context, rebuild, label, descr
   )
 end
 
+local rebuildAnimationLayout
+local rebuildAnimationValues
+
+local ANIMATION_GROUPS = {
+  {id = "explosions.showDeathAnimControls", index = 2},
+  {id = "explosions.showIncapacitatedAnimationControls", index = 3},
+  {id = "explosions.showHitReactionAnimationControls", index = 4},
+  {id = "explosions.showInjuryShockControls", index = 5}
+}
+
+local function animationSettingById(section, id)
+  for _, setting in ipairs(section.settings or {}) do
+    if setting.id == id then return setting end
+  end
+  return nil
+end
+
+local function clearAnimationGroupRefs()
+  for i = #animationGroupRefs, 1, -1 do
+    pcall(function() nativeSettings.removeOption(animationGroupRefs[i]) end)
+  end
+  animationGroupRefs = {}
+end
+
+local function buildAnimationSection(section)
+  local path = ANIMATION_PATH
+  local context = "shared/animation"
+  local master = nil
+
+  for _, setting in ipairs(section.settings or {}) do
+    if setting.name == "showAnimationControls" then
+      master = setting
+      break
+    end
+  end
+
+  if not master then
+    loge("Animation master setting missing from schema")
+    return
+  end
+
+  local function again() rebuildAnimationLayout(section) end
+  addStableShowSwitch(
+    path,
+    master,
+    context,
+    again,
+    "Show Animations",
+    "Shows or hides the organized animation-control groups without changing their saved values."
+  )
+  rebuildAnimationLayout(section)
+end
+
+rebuildAnimationValues = function(section)
+  local path = ANIMATION_PATH
+  local context = "shared/animation"
+  local master = animationSettingById(section, "RFCModSettings.showAnimationControls")
+  local bucket = uiGateBucket(context)
+
+  clearDynamic(path)
+
+  if not master then return end
+  if bucket[master.id] == nil then bucket[master.id] = false end
+  if bucket[master.id] ~= true then return end
+
+  local function again() rebuildAnimationValues(section) end
+  -- Native Settings stores options in a contiguous Lua array. Sparse indexes
+  -- such as 100/200/300/400 do not extend that array and can place widgets
+  -- beneath a later category header. Keep all Animation values contiguous
+  -- after the master and four stable Show switches.
+  local idx = 6
+  for _, group in ipairs(ANIMATION_GROUPS) do
+    if bucket[group.id] == true then
+      local values = {}
+      for _, setting in ipairs(section.settings or {}) do
+        if setting.uiOnly ~= true and setting.dependency == group.id then
+          table.insert(values, setting)
+        end
+      end
+      idx = addSettings(path, values, idx, context, again, true)
+    end
+  end
+end
+
+rebuildAnimationLayout = function(section)
+  local path = ANIMATION_PATH
+  local context = "shared/animation"
+  local master = animationSettingById(section, "RFCModSettings.showAnimationControls")
+  local bucket = uiGateBucket(context)
+
+  clearDynamic(path)
+  clearAnimationGroupRefs()
+
+  if not master then return end
+  if bucket[master.id] == nil then bucket[master.id] = false end
+  if bucket[master.id] ~= true then return end
+
+  for _, group in ipairs(ANIMATION_GROUPS) do
+    local setting = animationSettingById(section, group.id)
+    if setting then
+      if bucket[setting.id] == nil then bucket[setting.id] = false end
+      local ref = nativeSettings.addSwitch(
+        path,
+        setting.label,
+        setting.description or "",
+        bucket[setting.id] == true,
+        false,
+        function(value)
+          bucket[setting.id] = value == true
+          uiDirty = true
+          defer(function() rebuildAnimationValues(section) end)
+        end,
+        group.index
+      )
+      if ref then table.insert(animationGroupRefs, ref) end
+    end
+  end
+
+  rebuildAnimationValues(section)
+end
+
 local function situationalGroupPath(mode, groupKey)
   return TAB .. "/mode_" .. mode.key .. "_situational_" .. groupKey
+end
+
+local HEAD_COLUMN_SPECS = {
+  {key = "forward", root = "HIS_Settings.showHeadForwardSection", label = "Head Falls - Forward"},
+  {key = "rebound", root = "HIS_Settings.showReboundForwardSection", label = "Head Falls - Forward Rebound"},
+  {key = "backward", root = "HIS_Settings.showHeadBackSection", label = "Head Falls - Backward"}
+}
+
+local BODY_COLUMN_SPECS = {
+  {key = "regular", label = "Gravity Falls - Regular", names = {
+    regularGravityEnabled = true, bodyDownPerSecMin = true, bodyDownPerSec = true, bodyStartDelay = true, bodyDuration = true
+  }},
+  {key = "impact", label = "Gravity Falls - Impact", names = {
+    impactEnabled = true, impactStrengthPctMin = true, impactStrengthPct = true, impactDelaySec = true, impactDuration = true
+  }}
+}
+
+local function headColumnPath(mode, key)
+  return TAB .. "/mode_" .. mode.key .. "_head_" .. key
+end
+
+local function bodyColumnPath(mode, key)
+  return TAB .. "/mode_" .. mode.key .. "_body_" .. key
+end
+
+local function tumbleSettleColumnPath(mode, key)
+  return TAB .. "/mode_" .. mode.key .. "_tumble_settle_" .. key
+end
+
+local function descendantSettings(settings, rootId)
+  local included = {[rootId] = true}
+  local changed = true
+  while changed do
+    changed = false
+    for _, setting in ipairs(settings or {}) do
+      if setting.dependency and included[setting.dependency] and not included[setting.id] then
+        included[setting.id] = true
+        changed = true
+      end
+    end
+  end
+
+  local out = {}
+  for _, setting in ipairs(settings or {}) do
+    if included[setting.id] then table.insert(out, copySettingEarly(setting)) end
+  end
+  return out
+end
+
+local function rebuildHeadColumn(mode, spec)
+  local data = loadSection(mode.key, "head")
+  if not data then return end
+  local path = headColumnPath(mode, spec.key)
+  clearDynamic(path)
+  local values = descendantSettings(data.settings or {}, spec.root)
+  local context = "mode/" .. mode.key .. "/head"
+  local function again() rebuildHeadColumn(mode, spec) end
+  addSettings(path, values, 1, context, again, true)
+end
+
+local function rebuildBodyColumn(mode, spec)
+  local data = loadSection(mode.key, "body")
+  if not data then return end
+  local path = bodyColumnPath(mode, spec.key)
+  clearDynamic(path)
+  local values = {}
+  for _, setting in ipairs(data.settings or {}) do
+    if spec.names[setting.name] then
+      local copy = copySettingEarly(setting)
+      copy.dependency = nil
+      copy.dependencyName = ""
+      table.insert(values, copy)
+    end
+  end
+  local context = "mode/" .. mode.key .. "/body/" .. spec.key
+  local function again() rebuildBodyColumn(mode, spec) end
+  addSettings(path, values, 1, context, again, true)
+end
+
+local function rebuildTumbleSettleColumn(mode, key)
+  local data = loadSection(mode.key, key)
+  if not data then return end
+  local path = tumbleSettleColumnPath(mode, key)
+  clearDynamic(path)
+  local context = "mode/" .. mode.key .. "/" .. key
+  local function again() rebuildTumbleSettleColumn(mode, key) end
+  addSettings(path, data.settings or {}, 1, context, again, true)
+end
+
+local function tumbleSettleColumnsMaster(mode)
+  return {
+    id = "ui." .. mode.key .. ".tumbleSettle.columns",
+    name = "showTumbleSettleColumns",
+    type = "Bool",
+    default = false,
+    label = "Show Tumble and Settle Columns",
+    description = "Shows separate Tumble and Settle columns. Each column keeps its own Show switch and saved state.",
+    uiOnly = true
+  }
 end
 
 local function rebuildTopic(mode, topic)
@@ -982,7 +1260,7 @@ local function rebuildTopic(mode, topic)
   local allRef = nativeSettings.addSwitch(
     path,
     "Show Situational Fall Sections",
-    "Shows or hides the separate Standing, Walking & Running, Workspots, Cower, Stairs, and Gravity categories. Saved controls are not changed.",
+    "Shows or hides the separate Standing, Walking & Running, Workspots, Cower, Stairs, and Situational Gravity categories. Saved controls are not changed.",
     state.__master == true,
     false,
     function(value)
@@ -1013,10 +1291,11 @@ local function rebuildTopic(mode, topic)
     local groupPath = situationalGroupPath(mode, gkey)
     local groupLabel = group.label
     if gkey == "runningWalking" then groupLabel = "Walking & Running" end
-    -- These are sibling Native Settings categories, so their explicit indexes
-    -- must immediately follow Situational Falls. The old 100+ indexes forced
-    -- every opened situation below Tumble.
-    nativeSettings.addSubcategory(groupPath, mode.label .. " - " .. groupLabel, 8 + groupIndex)
+    -- These are sibling Native Settings categories. Their indexes are based on
+    -- the live position of Situational Falls so opened Head columns never make
+    -- them sparse or push later controls beneath the wrong category header.
+    local situationalIndex = situationalCategoryIndexes[mode.key] or 6
+    nativeSettings.addSubcategory(groupPath, mode.label .. " - " .. groupLabel, situationalIndex + groupIndex)
     dynamicRefs[groupPath] = {}
 
     local open = state[gkey] == true
@@ -1051,8 +1330,8 @@ local function rebuildTopic(mode, topic)
           table.insert(buckets.head, 1, {
             id = "RFCModSettings." .. headNames[gkey], class = "RFCModSettings",
             name = headNames[gkey], type = "Bool", default = false,
-            label = "Override General Head Falls",
-            description = "Uses this situation's Head controls instead of General Head Falls.",
+            label = "Use Situational Head Gravity",
+            description = "Uses this situation's Head controls instead of General Head Falls and suppresses whole-ragdoll General Gravity for this situation.",
             modeScoped = true
           })
         end
@@ -1103,11 +1382,11 @@ local function rebuildTopic(mode, topic)
 
         local arranged = {}
         local sections = {
-          {"head", "Show Head Falls", "Shows the independent Head override and Head controls."},
-          {"forward", "Show Forward Falls", "Shows the independent Forward override and Forward controls."},
-          {"shoulder", "Show Shoulder Falls", "Shows the independent Shoulder/Chest override and controls."},
-          {"butt", "Show Butt / Waist Falls", "Shows the independent Butt/Waist override and controls."},
-          {"knee", "Show Knee Falls", "Shows the independent Knee override and controls."},
+          {"head", "Show Head Gravity", "Shows the independent situational Head gravity and its controls."},
+          {"forward", "Show Forward Gravity", "Shows the independent situational Forward control."},
+          {"shoulder", "Show Shoulder / Chest Gravity", "Shows the independent situational Shoulder/Chest gravity and its controls."},
+          {"butt", "Show Butt / Waist Gravity", "Shows the independent situational Butt/Waist gravity and its controls."},
+          {"knee", "Show Knee Gravity", "Shows the independent situational Knee gravity and its controls."},
           {"other", "Show Additional Situation Controls", "Shows remaining controls specific to this situation."}
         }
         for _, spec in ipairs(sections) do
@@ -1143,6 +1422,104 @@ local function addTopicCategory(mode, topic, index)
   nativeSettings.addSubcategory(path, topic.label, index)
   dynamicRefs[path] = {}
 
+  if topic.key == "body" then
+    local data = loadSection(mode.key, "body")
+    local master = data and firstUIOnlyBool(data.settings or {}) or nil
+    local context = "mode/" .. mode.key .. "/body"
+    local function rebuildAllModeColumns()
+      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
+    end
+    addStableShowSwitch(
+      path, master, context, rebuildAllModeColumns,
+      "Show Gravity Falls",
+      "Shows General Gravity Falls plus separate Regular and Impact columns. Saved physics values are not changed."
+    )
+
+    local nextIndex = index + 1
+    if master and stableGateOpen(master, context) then
+      local parentValues = {}
+      local columnNames = {}
+      for _, spec in ipairs(BODY_COLUMN_SPECS) do
+        for name, enabled in pairs(spec.names) do
+          if enabled then columnNames[name] = true end
+        end
+      end
+      for _, setting in ipairs(data.settings or {}) do
+        if setting.id ~= master.id and not columnNames[setting.name] then
+          table.insert(parentValues, copySettingEarly(setting))
+        end
+      end
+      local function againParent() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+      addSettings(path, parentValues, 2, context, againParent, true)
+
+      for _, spec in ipairs(BODY_COLUMN_SPECS) do
+        local columnPath = bodyColumnPath(mode, spec.key)
+        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
+        dynamicRefs[columnPath] = {}
+        rebuildBodyColumn(mode, spec)
+        nextIndex = nextIndex + 1
+      end
+    end
+    return nextIndex
+  end
+
+  if topic.key == "head" then
+    local data = loadSection(mode.key, "head")
+    local master = data and firstUIOnlyBool(data.settings or {}) or nil
+    local context = "mode/" .. mode.key .. "/head"
+    local function rebuildAllModeColumns()
+      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
+    end
+    addStableShowSwitch(
+      path,
+      master,
+      context,
+      rebuildAllModeColumns,
+      "Show General Head Fall Columns",
+      "Shows separate Forward, Forward Rebound, and Backward columns. Each column keeps its own Show controls."
+    )
+
+    local nextIndex = index + 1
+    if master and stableGateOpen(master, context) then
+      for _, spec in ipairs(HEAD_COLUMN_SPECS) do
+        local columnPath = headColumnPath(mode, spec.key)
+        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
+        dynamicRefs[columnPath] = {}
+        rebuildHeadColumn(mode, spec)
+        nextIndex = nextIndex + 1
+      end
+    end
+    return nextIndex
+  end
+
+  if topic.key == "tumble" then
+    local master = tumbleSettleColumnsMaster(mode)
+    local context = "mode/" .. mode.key .. "/tumbleSettle"
+    local function rebuildAllModeColumns()
+      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
+    end
+    addStableShowSwitch(path, master, context, rebuildAllModeColumns)
+
+    local nextIndex = index + 1
+    if stableGateOpen(master, context) then
+      for _, spec in ipairs({
+        {key = "tumble", label = "Tumble Controls"},
+        {key = "settle", label = "Settle Controls"}
+      }) do
+        local columnPath = tumbleSettleColumnPath(mode, spec.key)
+        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
+        dynamicRefs[columnPath] = {}
+        rebuildTumbleSettleColumn(mode, spec.key)
+        nextIndex = nextIndex + 1
+      end
+    end
+    return nextIndex
+  end
+
+  if topic.key == "situational" then
+    situationalCategoryIndexes[mode.key] = index
+  end
+
   if topic.key == "arcade" or topic.key == "explosions" then
     local data = loadSection(mode.key, topic.key)
     local master = data and firstUIOnlyBool(data.settings or {}) or nil
@@ -1163,6 +1540,14 @@ local function addTopicCategory(mode, topic, index)
   end
 
   rebuildTopic(mode, topic)
+  if topic.key == "situational" then
+    local state = uiConfig.situationalGroups[mode.key]
+    local data = loadSection(mode.key, "situational")
+    if state and state.__master == true then
+      return index + 1 + #((data and data.groups) or {})
+    end
+  end
+  return index + 1
 end
 
 local function vanillaImpulseParts(mode)
@@ -1330,6 +1715,35 @@ local function setBikeModeBool(modeKey, name, value)
   end
 end
 
+getBikeDeathAnimationState = function()
+  local mode = selectedMode and selectedMode() or nil
+  local modeKey = mode and mode.key or "realismCustom"
+  local state = bikeModeState(modeKey)
+  local defaults = BVC_MODE_DEFAULTS[modeKey] or BVC_MODE_DEFAULTS.realismCustom
+  local current = not (state and state.killMotorcycleDeathAnimation == true or false)
+  local default = not (defaults and defaults.killMotorcycleDeathAnimation == true or false)
+  return current, default
+end
+
+syncMotorcycleDeathAnimationControls = function(value)
+  if motorcycleDeathAnimationSyncing or not nativeSettings then return end
+  motorcycleDeathAnimationSyncing = true
+  for _, ref in pairs(motorcycleDeathAnimationRefs) do
+    if ref and ref.state ~= (value == true) then
+      pcall(function() nativeSettings.setOption(ref, value == true) end)
+    end
+  end
+  motorcycleDeathAnimationSyncing = false
+end
+
+setBikeDeathAnimationState = function(value)
+  if motorcycleDeathAnimationSyncing then return end
+  local mode = selectedMode and selectedMode() or nil
+  if not mode or mode.key == "vanilla" then return end
+  setBikeModeBool(mode.key, "killMotorcycleDeathAnimation", not (value == true))
+  syncMotorcycleDeathAnimationControls(value == true)
+end
+
 local function setBikeModeFloat(modeKey, name, value)
   local state = bikeModeState(modeKey)
   local modeIndex = BVC_MODE_INDEX[modeKey]
@@ -1438,12 +1852,27 @@ local function bikeModePath(mode)
 end
 
 local function addBikeSwitch(path, modeKey, state, defaults, name, label, description, index)
+  local current = state[name] == true
+  local default = defaults[name] == true
+  if name == "killMotorcycleDeathAnimation" then
+    current = not current
+    default = not default
+  end
   local ref = nativeSettings.addSwitch(
     path, label, description,
-    state[name] == true, defaults[name] == true,
-    function(value) setBikeModeBool(modeKey, name, value) end,
+    current, default,
+    function(value)
+      if name == "killMotorcycleDeathAnimation" and setBikeDeathAnimationState then
+        setBikeDeathAnimationState(value)
+      else
+        setBikeModeBool(modeKey, name, value)
+      end
+    end,
     index
   )
+  if name == "killMotorcycleDeathAnimation" and ref then
+    motorcycleDeathAnimationRefs[path] = ref
+  end
   remember(path, ref)
   return index + 1
 end
@@ -1558,8 +1987,8 @@ local function rebuildBikeModeControls(mode)
     "Impacts and Bullets Remove Riders",
     "Uses the working BVC1605 rider removal path for NPCs and V.", i)
   i = addBikeSwitch(path, key, state, defaults, "killMotorcycleDeathAnimation",
-    "Kill Motorcycle Death Animation",
-    "ON = a rider killed while mounted skips the native motorcycle death animation and enters BVC ragdoll handoff. OFF = preserve the native motorcycle death-animation path.", i)
+    "Enable Motorcycle Death Animation",
+    "ON preserves the mounted motorcycle death animation. OFF immediately hands the dead rider to ragdoll.", i)
   i = addBikeSwitch(path, key, state, defaults, "impactDirectionFlip",
     "Reverse Collision Fall Side",
     "Flip the side derived from the vehicle impact normal.", i)
@@ -1649,12 +2078,28 @@ local function removeModeCategories(mode)
       end
     end
   end
+  for _, spec in ipairs(HEAD_COLUMN_SPECS) do
+    local path = headColumnPath(mode, spec.key)
+    if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+    dynamicRefs[path] = nil
+  end
+  for _, spec in ipairs(BODY_COLUMN_SPECS) do
+    local path = bodyColumnPath(mode, spec.key)
+    if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+    dynamicRefs[path] = nil
+  end
+  for _, key in ipairs({"tumble", "settle"}) do
+    local path = tumbleSettleColumnPath(mode, key)
+    if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+    dynamicRefs[path] = nil
+  end
+  situationalCategoryIndexes[mode.key] = nil
   local bikePath = bikeModePath(mode)
   if nativeSettings.pathExists(bikePath) then nativeSettings.removeSubcategory(bikePath) end
   dynamicRefs[bikePath] = nil
 end
 
-local function showModeCategories(mode, modeIndex)
+showModeCategories = function(mode, modeIndex)
   removeModeCategories(mode)
   if nativeSettings.pathExists(VANILLA_PATH) then nativeSettings.removeSubcategory(VANILLA_PATH) end
   dynamicRefs[VANILLA_PATH] = nil
@@ -1662,25 +2107,18 @@ local function showModeCategories(mode, modeIndex)
   local idx = 4
   local topicByKey = {}
   for _, topic in ipairs(schema.topics) do topicByKey[topic.key] = topic end
-  for _, key in ipairs({"head", "body"}) do
+  for _, key in ipairs({"body", "head"}) do
     local topic = topicByKey[key]
     if topic and topicExists(mode, topic) then
-      addTopicCategory(mode, topic, idx)
-      idx = idx + 1
+      idx = addTopicCategory(mode, topic, idx)
     end
   end
-  local approvedOrder = {"situational", "arcade", "explosions", "bulletJolts", "trip", "twitch", "settle", "tumble"}
+  local approvedOrder = {"situational", "arcade", "explosions", "bulletJolts", "trip", "twitch", "tumble"}
   for _, key in ipairs(approvedOrder) do
     local topic = topicByKey[key]
     if topic.key ~= "randomization" and topic.key ~= "head" and topic.key ~= "body"
       and topic.key ~= "vehicles" and topicExists(mode, topic) then
-      addTopicCategory(mode, topic, idx)
-      if topic.key == "situational" then
-        -- Reserve indexes 9-14 for the opened situation categories.
-        idx = 20
-      else
-        idx = idx + 1
-      end
+      idx = addTopicCategory(mode, topic, idx)
       if topic.key == "explosions" then
         addVanillaImpulseControl(mode, idx)
         idx = idx + 1
@@ -1693,7 +2131,7 @@ end
 local globalStaticCount = 0
 local globalModeSetting = nil
 
-local function selectedMode()
+selectedMode = function()
   if not globalModeSetting then return schema.modes[1] end
   local selected = math.floor(tonumber(readVar(globalModeSetting, false)) or 1)
   for _, mode in ipairs(schema.modes or {}) do
@@ -1838,6 +2276,10 @@ local function buildMenu()
     if globalImpulseSection then rebuildGlobalImpulseControls(globalImpulseSection) end
     local active = selectedMode()
     applyBikeActiveMode(active)
+    if getBikeDeathAnimationState and syncMotorcycleDeathAnimationControls then
+      local enabled = getBikeDeathAnimationState()
+      syncMotorcycleDeathAnimationControls(enabled)
+    end
     for _, candidate in ipairs(schema.modes) do
       removeModeCategories(candidate)
     end
@@ -1850,17 +2292,22 @@ local function buildMenu()
   dynamicRefs[GLOBAL_PATH] = {}
 
   local subIndex = 2
-  for _, section in ipairs(schema.sharedSections or {}) do
-    -- Motorcycle controls are already selected and rendered inside Global
-    -- Impulse Controls. Do not create a second Motorcycle category.
-    if section.key ~= "motorcycles" then
+  local sharedByKey = {}
+  for _, section in ipairs(schema.sharedSections or {}) do sharedByKey[section.key] = section end
+  for _, key in ipairs({"animation", "globalImpulse"}) do
+    local section = sharedByKey[key]
+    if section then
       local path = sharedPath(section)
       local label = section.label
-      if section.key == "globalImpulse" then label = "Mode Impulse Control" end
+      if section.key == "globalImpulse" then label = "More Impulse Control" end
       if section.key == "animation" then label = "Animation Control" end
       nativeSettings.addSubcategory(path, label, subIndex)
       dynamicRefs[path] = {}
-      rebuildShared(section)
+      if section.key == "animation" then
+        buildAnimationSection(section)
+      else
+        rebuildShared(section)
+      end
       subIndex = subIndex + 1
     end
   end
@@ -1953,6 +2400,7 @@ local function initialize()
   migrateArcadeAttackSourceSettings()
 
   purgeLegacySplatMotorcycleValues()
+  purgeRemovedAnimationValues()
 
   if settingsSource == "primary" or settingsSource == "backup" then
     logi("PERSISTENCE RELOAD CONFIRMED: loaded " .. tostring(savedValueCount()) .. " gameplay values; serial=" .. tostring(settingsStore.writeSerial or 0))
@@ -2049,4 +2497,4 @@ registerForEvent("onShutdown", function()
   saveSettingsNow(false)
 end)
 
-return {title = "Splat Physics 11.1", version = STATE_VERSION, backend = "Standalone event-driven CET + direct PlayerPuppet REDscript + approved mode-driven Native Settings menu"}
+return {title = "Splat Physics 11.3", version = STATE_VERSION, backend = "Standalone event-driven CET + direct PlayerPuppet REDscript + approved mode-driven Native Settings menu"}

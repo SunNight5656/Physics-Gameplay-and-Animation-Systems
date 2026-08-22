@@ -340,10 +340,9 @@ if IsDefined(adGS) {
 if isStairLike {
 
   if gStairsActive {
-    if sitOverrideKnees && c.stair_kneeRadius > 0.0 && AbsF(c.stair_kneeDown) > 0.0001 {
-      let kv: Vector4 = Vector4(0.0, 0.0, c.stair_kneeDown, 1.0);
-      RFC_Burst(ds, puppet, leftKneePos,  kv, c.stair_kneeRadius, RFC_ClampT(c.stair_kneeDelay), c);
-      RFC_Burst(ds, puppet, rightKneePos, kv, c.stair_kneeRadius, RFC_ClampT(c.stair_kneeDelay), c);
+    if sitOverrideKnees {
+      SGF_ScheduleDownRange(puppet, c, 3, c.stair_kneeDownMin, c.stair_kneeDown, c.stair_kneeRadius, c.stair_kneeDelay);
+      SGF_ScheduleDownRange(puppet, c, 4, c.stair_kneeDownMin, c.stair_kneeDown, c.stair_kneeRadius, c.stair_kneeDelay);
     }
 
     let ax: Float = dirX;
@@ -360,21 +359,24 @@ if isStairLike {
     let stairChestVec: Vector4 = Vector4(
       sitOverrideForward ? ax * c.stair_chestFwd : 0.0,
       sitOverrideForward ? ay * c.stair_chestFwd : 0.0,
-      sitOverrideChest ? c.stair_downChest : 0.0, 1.0);
+      0.0, 1.0);
     let stairPelvisVec: Vector4 = Vector4(
-      0.0, 0.0, sitOverridePelvis ? c.stair_downPelvis : 0.0, 1.0);
+      0.0, 0.0, 0.0, 1.0);
 
     if sitOverrideHead || sitOverrideForward { RFC_Burst(ds, puppet, headPos, stairHeadVec, MaxF(c.stair_headRadius, c.stair_forwardRadius), RFC_ClampT(c.stair_kneeDelay + 0.06), c); }
     if sitOverrideHead {
-      HIS_ScheduleSituationalHeadDown(
-        puppet, ds, c,
+      SGF_ScheduleDownRange(
+        puppet, c, 0,
         c.stair_downHeadMin, c.stair_downHead,
         c.stair_headRadius,
         c.stair_kneeDelay + 0.06
       );
     }
-    if sitOverrideForward || sitOverrideChest { RFC_Burst(ds, puppet, chestPos, stairChestVec, MaxF(c.stair_chestRadius, c.stair_forwardRadius), RFC_ClampT(c.stair_kneeDelay + 0.10), c); }
-    if sitOverridePelvis { RFC_Burst(ds, puppet, pelvisPos, stairPelvisVec, MaxF(c.stair_pelvisRadius, c.stair_forwardRadius), RFC_ClampT(c.stair_kneeDelay + 0.12), c); }
+    if sitOverrideChest { SGF_ScheduleDownRange(puppet, c, 1, c.stair_downChestMin, c.stair_downChest, c.stair_chestRadius, c.stair_kneeDelay + 0.10); }
+    if sitOverridePelvis { SGF_ScheduleDownRange(puppet, c, 2, c.stair_downPelvisMin, c.stair_downPelvis, c.stair_pelvisRadius, c.stair_kneeDelay + 0.12); }
+    if sitOverrideForward {
+      RFC_Burst(ds, puppet, chestPos, stairChestVec, MaxF(c.stair_chestRadius, c.stair_forwardRadius), RFC_ClampT(c.stair_kneeDelay + 0.10), c);
+    }
 
     if sitOverrideChest && AbsF(c.stair_vSlamZ) > 0.001 {
       let sv3: Vector4 = Vector4(0.0, 0.0, c.stair_vSlamZ, 1.0);
@@ -452,11 +454,18 @@ if isStairLike {
       RFC_Burst(ds, puppet, headPos, hv, W.headRadius, RFC_ClampT(W.headDelay + 0.010), c);
     }
 
-    if W.chestRadius > 0.0 && (sitOverrideForward || sitOverrideChest) {
+    if sitOverrideChest {
+      SGF_ScheduleDownRange(puppet, c, 1, W.chestDownMin, W.chestDown, W.chestRadius, W.chestDelay + 0.012);
+    }
+    if sitOverridePelvis {
+      SGF_ScheduleDownRange(puppet, c, 2, W.pelvisDownMin, W.pelvisDown, W.pelvisRadius, W.pelvisDelay);
+    }
+
+    if W.chestRadius > 0.0 && sitOverrideForward {
       let cv: Vector4 = Vector4(
         sitOverrideForward ? dirX * W.chestFwd : 0.0,
         sitOverrideForward ? dirY * W.chestFwd : 0.0,
-        sitOverrideChest ? W.chestDown : 0.0, 1.0);
+        0.0, 1.0);
       RFC_Burst(ds, puppet, chestPos, cv, W.chestRadius, RFC_ClampT(W.chestDelay + 0.012), c);
     }
 
@@ -465,18 +474,17 @@ if isStairLike {
       RFC_Burst(ds, puppet, chestPos, bv, W.body_vSlamRadius, RFC_ClampT(W.body_vSlamDelay), c);
     }
 
-    if W.pelvisRadius > 0.0 && (sitOverrideForward || sitOverridePelvis) {
+    if W.pelvisRadius > 0.0 && sitOverrideForward {
       let pv: Vector4 = Vector4(
         sitOverrideForward ? dirX * W.pelvisFwd : 0.0,
         sitOverrideForward ? dirY * W.pelvisFwd : 0.0,
-        sitOverridePelvis ? W.pelvisDown : 0.0, 1.0);
+        0.0, 1.0);
       RFC_Burst(ds, puppet, pelvisPos, pv, W.pelvisRadius, RFC_ClampT(W.pelvisDelay), c);
     }
 
-    if sitOverrideKnees && W.kneeRadius > 0.0 && AbsF(W.kneeDown) > 0.0001 {
-      let kv: Vector4 = Vector4(0.0, 0.0, W.kneeDown, 1.0);
-      RFC_Burst(ds, puppet, leftKneePos,  kv, W.kneeRadius, RFC_ClampT(W.kneeDelay), c);
-      RFC_Burst(ds, puppet, rightKneePos, kv, W.kneeRadius, RFC_ClampT(W.kneeDelay), c);
+    if sitOverrideKnees {
+      SGF_ScheduleDownRange(puppet, c, 3, W.kneeDownMin, W.kneeDown, W.kneeRadius, W.kneeDelay);
+      SGF_ScheduleDownRange(puppet, c, 4, W.kneeDownMin, W.kneeDown, W.kneeRadius, W.kneeDelay);
     }
 
     if sitOverrideKnees && W.shinRadius > 0.0 && AbsF(W.shinDown) > 0.0001 {
@@ -546,20 +554,22 @@ if isStairLike {
     let cow: RFC_CowerConfig = c.cow;
 
     if sitOverrideHead && cow.headRadius > 0.0 {
-      HIS_ScheduleSituationalHeadDown(
-        puppet, ds, c,
+      SGF_ScheduleDownRange(
+        puppet, c, 0,
         cow.headDownMin, cow.headDown,
         cow.headRadius,
         cow.headDelay
       );
     }
-    if sitOverrideChest && cow.chestRadius > 0.0 {
-      let cv2: Vector4 = Vector4(0.0, 0.0, cow.chestDown, 1.0);
-      RFC_Burst(ds, puppet, chestPos, cv2, cow.chestRadius, RFC_ClampT(cow.chestDelay), c);
+    if sitOverrideChest {
+      SGF_ScheduleDownRange(puppet, c, 1, cow.chestDownMin, cow.chestDown, cow.chestRadius, cow.chestDelay);
     }
-    if sitOverridePelvis && cow.pelvisRadius > 0.0 {
-      let pv2: Vector4 = Vector4(0.0, 0.0, cow.pelvisDown, 1.0);
-      RFC_Burst(ds, puppet, pelvisPos, pv2, cow.pelvisRadius, RFC_ClampT(cow.pelvisDelay), c);
+    if sitOverridePelvis {
+      SGF_ScheduleDownRange(puppet, c, 2, cow.pelvisDownMin, cow.pelvisDown, cow.pelvisRadius, cow.pelvisDelay);
+    }
+    if sitOverrideKnees {
+      SGF_ScheduleDownRange(puppet, c, 3, cow.kneeDownMin, cow.kneeDown, cow.kneeRadius, cow.kneeDelay);
+      SGF_ScheduleDownRange(puppet, c, 4, cow.kneeDownMin, cow.kneeDown, cow.kneeRadius, cow.kneeDelay);
     }
     if sitOverrideKnees && cow.shinRadius > 0.0 && AbsF(cow.shinDown) > 0.0001 {
       let sv: Vector4 = Vector4(0.0, 0.0, cow.shinDown, 1.0);
@@ -664,25 +674,43 @@ let useStand: Bool = gStandActive && !movingLike;
 
   if sitOverrideHead {
     if useRun {
-      HIS_ScheduleSituationalHeadDown(
-        puppet, ds, c,
+      SGF_ScheduleDownRange(
+        puppet, c, 0,
         c.run_downHeadMin, c.run_downHead,
         c.run_headRadius,
         d_headSlam
       );
     } else if useStand {
-      HIS_ScheduleSituationalHeadDown(
-        puppet, ds, c,
+      SGF_ScheduleDownRange(
+        puppet, c, 0,
         c.st_downHeadMin, c.st_downHead,
         c.st_headRadius,
         d_headSlam
       );
     }
   }
+  if sitOverrideChest {
+    if useRun { SGF_ScheduleDownRange(puppet, c, 1, c.run_downChestMin, c.run_downChest, c.run_chestRadius, d_chestFall); }
+    else if useStand { SGF_ScheduleDownRange(puppet, c, 1, c.st_downChestMin, c.st_downChest, c.st_chestRadius, d_chestFall); }
+  }
+  if sitOverridePelvis {
+    if useRun { SGF_ScheduleDownRange(puppet, c, 2, c.run_downPelvisMin, c.run_downPelvis, c.run_pelvisRadius, d_pelvisFall); }
+    else if useStand { SGF_ScheduleDownRange(puppet, c, 2, c.st_downPelvisMin, c.st_downPelvis, c.st_pelvisRadius, d_pelvisFall); }
+  }
+  if sitOverrideKnees {
+    if useRun {
+      SGF_ScheduleDownRange(puppet, c, 3, c.run_kneeDownMin, c.run_kneeDown, c.run_kneeRadius, c.run_d_knee);
+      SGF_ScheduleDownRange(puppet, c, 4, c.run_kneeDownMin, c.run_kneeDown, c.run_kneeRadius, c.run_d_knee);
+    } else if useStand {
+      SGF_ScheduleDownRange(puppet, c, 3, c.st_kneeDownMin, c.st_kneeDown, c.st_kneeRadius, c.st_d_knee);
+      SGF_ScheduleDownRange(puppet, c, 4, c.st_kneeDownMin, c.st_kneeDown, c.st_kneeRadius, c.st_d_knee);
+    }
+  }
   downHead = 0.0;
-  if !sitOverrideChest { downChest = 0.0; vSlamZ = 0.0; }
-  if !sitOverridePelvis { downPelvis = 0.0; }
-  if !sitOverrideKnees { kneeDown = 0.0; }
+  if !sitOverrideChest { vSlamZ = 0.0; }
+  downChest = 0.0;
+  downPelvis = 0.0;
+  kneeDown = 0.0;
   if !sitOverrideForward {
     if useRun {
       c.run_forward = 0.0;
@@ -705,14 +733,11 @@ let useStand: Bool = gStandActive && !movingLike;
     if sitOverrideForward {
       RFC_Burst(ds, puppet, headPos, runHeadVec, MaxF(c.run_headRadius, c.run_forwardRadius), RFC_ClampT(d_headSlam), c);
     }
-    RFC_Burst(ds, puppet, chestPos, runChestVec, MaxF(c.run_chestRadius, c.run_forwardRadius), RFC_ClampT(d_chestFall), c);
-    RFC_Burst(ds, puppet, pelvisPos, runPelvisVec, MaxF(c.run_pelvisRadius, c.run_forwardRadius), RFC_ClampT(d_pelvisFall), c);
-
-    if AbsF(kneeDown) > 0.0001 {
-      let kvRun: Vector4 = new Vector4(0.0, 0.0, kneeDown, 1.0);
-      RFC_Burst(ds, puppet, leftKneePos, kvRun, c.run_kneeRadius, RFC_ClampT(c.run_d_knee), c);
-      RFC_Burst(ds, puppet, rightKneePos, kvRun, c.run_kneeRadius, RFC_ClampT(c.run_d_knee), c);
+    if sitOverrideForward {
+      RFC_Burst(ds, puppet, chestPos, runChestVec, MaxF(c.run_chestRadius, c.run_forwardRadius), RFC_ClampT(d_chestFall), c);
+      RFC_Burst(ds, puppet, pelvisPos, runPelvisVec, MaxF(c.run_pelvisRadius, c.run_forwardRadius), RFC_ClampT(d_pelvisFall), c);
     }
+
 
     if AbsF(vSlamZ) > 0.0001 {
       let vvecRun: Vector4 = new Vector4(0.0, 0.0, vSlamZ, 1.0);
@@ -782,14 +807,11 @@ let useStand: Bool = gStandActive && !movingLike;
     if sitOverrideForward {
       RFC_Burst(ds, puppet, headPos, stHeadVec, MaxF(c.st_headRadius, c.st_forwardRadius), RFC_ClampT(d_headSlam), c);
     }
-    RFC_Burst(ds, puppet, chestPos, stChestVec, MaxF(c.st_chestRadius, c.st_forwardRadius), RFC_ClampT(d_chestFall), c);
-    RFC_Burst(ds, puppet, pelvisPos, stPelvisVec, MaxF(c.st_pelvisRadius, c.st_forwardRadius), RFC_ClampT(d_pelvisFall), c);
-
-    if AbsF(kneeDown) > 0.0001 {
-      let kv4: Vector4 = new Vector4(0.0, 0.0, kneeDown, 1.0);
-      RFC_Burst(ds, puppet, leftKneePos, kv4, c.st_kneeRadius, RFC_ClampT(c.st_d_knee), c);
-      RFC_Burst(ds, puppet, rightKneePos, kv4, c.st_kneeRadius, RFC_ClampT(c.st_d_knee), c);
+    if sitOverrideForward {
+      RFC_Burst(ds, puppet, chestPos, stChestVec, MaxF(c.st_chestRadius, c.st_forwardRadius), RFC_ClampT(d_chestFall), c);
+      RFC_Burst(ds, puppet, pelvisPos, stPelvisVec, MaxF(c.st_pelvisRadius, c.st_forwardRadius), RFC_ClampT(d_pelvisFall), c);
     }
+
 
     if AbsF(vSlamZ) > 0.0001 {
       let vvec4: Vector4 = new Vector4(0.0, 0.0, vSlamZ, 1.0);

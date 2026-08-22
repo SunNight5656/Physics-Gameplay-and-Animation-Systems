@@ -343,6 +343,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactForwardUseFacing") { target.impactForwardUseFacing = value; return true; };
     if Equals(name, n"impactUseRamp") { target.impactUseRamp = value; return true; };
     if Equals(name, n"momentumEnabled") { target.momentumEnabled = value; return true; };
+    if Equals(name, n"regularGravityEnabled") { target.regularGravityEnabled = value; return true; };
     if Equals(name, n"useChance") { target.useChance = value; return true; };
     return false;
   }
@@ -362,6 +363,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactForwardUseFacing") { return target.impactForwardUseFacing; };
     if Equals(name, n"impactUseRamp") { return target.impactUseRamp; };
     if Equals(name, n"momentumEnabled") { return target.momentumEnabled; };
+    if Equals(name, n"regularGravityEnabled") { return target.regularGravityEnabled; };
     if Equals(name, n"useChance") { return target.useChance; };
     return false;
   }
@@ -381,6 +383,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactForwardUseFacing") { return true; };
     if Equals(name, n"impactUseRamp") { return true; };
     if Equals(name, n"momentumEnabled") { return true; };
+    if Equals(name, n"regularGravityEnabled") { return true; };
     if Equals(name, n"useChance") { return true; };
     return false;
   }
@@ -391,8 +394,14 @@ public class SPLATSettingsState {
     if Equals(name, n"earlyDropStrengthPctMin") { target.earlyDropStrengthPctMin = value; return true; };
     if Equals(name, n"impactForwardStrengthPctMin") { target.impactForwardStrengthPctMin = value; return true; };
     if Equals(name, n"impactStrengthPctMin") { target.impactStrengthPctMin = value; return true; };
+    if Equals(name, n"bodyDownPerSecMin") { target.bodyDownPerSecMin = value; return true; };
 
     if Equals(name, n"chancePct") { target.chancePct = value; return true; };
+    if Equals(name, n"bodyDownPerSec") { target.bodyDownPerSec = value; return true; };
+    if Equals(name, n"bodyStartDelay") { target.bodyStartDelay = value; return true; };
+    if Equals(name, n"bodyDuration") { target.bodyDuration = value; return true; };
+    if Equals(name, n"gravityUpdateInterval") { target.gravityUpdateInterval = value; return true; };
+    if Equals(name, n"gravityMaxDeltaTime") { target.gravityMaxDeltaTime = value; return true; };
     if Equals(name, n"earlyDropDelaySec") { target.earlyDropDelaySec = value; return true; };
     if Equals(name, n"earlyDropForwardChancePct") { target.earlyDropForwardChancePct = value; return true; };
     if Equals(name, n"earlyDropForwardRadiusM") { target.earlyDropForwardRadiusM = value; return true; };
@@ -411,6 +420,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactRadiusM") { target.impactRadiusM = value; return true; };
     if Equals(name, n"impactRampSec") { target.impactRampSec = value; return true; };
     if Equals(name, n"impactStrengthPct") { target.impactStrengthPct = value; return true; };
+    if Equals(name, n"impactDuration") { target.impactDuration = value; return true; };
     if Equals(name, n"momentumMult") { target.momentumMult = value; return true; };
     return false;
   }
@@ -420,8 +430,14 @@ public class SPLATSettingsState {
     if Equals(name, n"earlyDropStrengthPctMin") { return target.earlyDropStrengthPctMin; };
     if Equals(name, n"impactForwardStrengthPctMin") { return target.impactForwardStrengthPctMin; };
     if Equals(name, n"impactStrengthPctMin") { return target.impactStrengthPctMin; };
+    if Equals(name, n"bodyDownPerSecMin") { return target.bodyDownPerSecMin; };
 
     if Equals(name, n"chancePct") { return target.chancePct; };
+    if Equals(name, n"bodyDownPerSec") { return target.bodyDownPerSec; };
+    if Equals(name, n"bodyStartDelay") { return target.bodyStartDelay; };
+    if Equals(name, n"bodyDuration") { return target.bodyDuration; };
+    if Equals(name, n"gravityUpdateInterval") { return target.gravityUpdateInterval; };
+    if Equals(name, n"gravityMaxDeltaTime") { return target.gravityMaxDeltaTime; };
     if Equals(name, n"earlyDropDelaySec") { return target.earlyDropDelaySec; };
     if Equals(name, n"earlyDropForwardChancePct") { return target.earlyDropForwardChancePct; };
     if Equals(name, n"earlyDropForwardRadiusM") { return target.earlyDropForwardRadiusM; };
@@ -440,6 +456,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactRadiusM") { return target.impactRadiusM; };
     if Equals(name, n"impactRampSec") { return target.impactRampSec; };
     if Equals(name, n"impactStrengthPct") { return target.impactStrengthPct; };
+    if Equals(name, n"impactDuration") { return target.impactDuration; };
     if Equals(name, n"momentumMult") { return target.momentumMult; };
     return 0.0;
   }
@@ -449,8 +466,14 @@ public class SPLATSettingsState {
     if Equals(name, n"earlyDropStrengthPctMin") { return true; };
     if Equals(name, n"impactForwardStrengthPctMin") { return true; };
     if Equals(name, n"impactStrengthPctMin") { return true; };
+    if Equals(name, n"bodyDownPerSecMin") { return true; };
 
     if Equals(name, n"chancePct") { return true; };
+    if Equals(name, n"bodyDownPerSec") { return true; };
+    if Equals(name, n"bodyStartDelay") { return true; };
+    if Equals(name, n"bodyDuration") { return true; };
+    if Equals(name, n"gravityUpdateInterval") { return true; };
+    if Equals(name, n"gravityMaxDeltaTime") { return true; };
     if Equals(name, n"earlyDropDelaySec") { return true; };
     if Equals(name, n"earlyDropForwardChancePct") { return true; };
     if Equals(name, n"earlyDropForwardRadiusM") { return true; };
@@ -469,6 +492,7 @@ public class SPLATSettingsState {
     if Equals(name, n"impactRadiusM") { return true; };
     if Equals(name, n"impactRampSec") { return true; };
     if Equals(name, n"impactStrengthPct") { return true; };
+    if Equals(name, n"impactDuration") { return true; };
     if Equals(name, n"momentumMult") { return true; };
     return false;
   }

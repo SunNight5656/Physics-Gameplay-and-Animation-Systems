@@ -25,6 +25,22 @@ public let ExtraSettings: Bool = false;
 
   public let chancePct: Float = 100.000000;
 
+  // Whole-ragdoll Gravity Falls. These are the six basic controls from the
+  // standalone model: Regular force/delay/duration and Impact
+  // force/delay/duration. Force is integrated against actual simulation time.
+  public let regularGravityEnabled: Bool = true;
+
+  public let bodyDownPerSec: Float = 60.000000;
+  public let bodyDownPerSecMin: Float = 60.000000;
+
+  public let bodyStartDelay: Float = 0.000000;
+
+  public let bodyDuration: Float = 3.000000;
+
+  public let gravityUpdateInterval: Float = 0.016000;
+
+  public let gravityMaxDeltaTime: Float = 0.050000;
+
   public let momentumEnabled: Bool = true;
 
   public let momentumMult: Float = 1.000000;
@@ -109,10 +125,10 @@ public let ExtraSettings: Bool = false;
 
   public let impactForwardUseCached: Bool = false;
 
-  public let impactDelaySec: Float = 0.045000;
+  public let impactDelaySec: Float = 0.000000;
 
-  public let impactStrengthPct: Float = 4.000000;
-  public let impactStrengthPctMin: Float = 4.000000;
+  public let impactStrengthPct: Float = 40.000000;
+  public let impactStrengthPctMin: Float = 40.000000;
 
   public let impactRadiusM: Float = 1.000000;
 
@@ -121,6 +137,8 @@ public let ExtraSettings: Bool = false;
   public let impactUseRamp: Bool = false;
 
   public let impactRampSec: Float = 0.120000;
+
+  public let impactDuration: Float = 0.500000;
 
   // =========================
   // Debug Tools
