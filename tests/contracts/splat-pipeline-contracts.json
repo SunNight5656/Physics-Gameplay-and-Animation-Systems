@@ -367,15 +367,31 @@
           "function": "OnHit",
           "required": [
             "RFC_IsVehicleContext(this)",
-            "wrappedMethod(evt)",
-            "RFC_VehArmArcadeRiderBikeTopple",
-            "RFC_VehConsumeArcadeRiderBikeTopple"
+            "return wrappedMethod(evt)"
           ],
           "ordered": [
             "RFC_IsVehicleContext(this)",
+            "return wrappedMethod(evt)"
+          ],
+          "forbidden": [
             "RFC_VehArmArcadeRiderBikeTopple",
-            "wrappedMethod(evt)",
             "RFC_VehConsumeArcadeRiderBikeTopple"
+          ]
+        },
+        {
+          "label": "dedicated mounted-bike bullet route",
+          "file": "src/r6/scripts/BikeVControlStandalone/BikeVControlStandalone.reds",
+          "function": "OnHit",
+          "occurrence": 2,
+          "required": [
+            "wrappedMethod(evt)",
+            "BVCResolveMountedBike(this)",
+            "BVCTryBulletTopple"
+          ],
+          "ordered": [
+            "wrappedMethod(evt)",
+            "BVCResolveMountedBike(this)",
+            "BVCTryBulletTopple"
           ]
         },
         {

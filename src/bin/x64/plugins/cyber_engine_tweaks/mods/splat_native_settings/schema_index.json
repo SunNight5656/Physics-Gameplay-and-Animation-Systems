@@ -37,15 +37,15 @@
   "topics": [
     {
       "key": "head",
-      "label": "General Head Falls"
+      "label": "Head Falls"
     },
     {
       "key": "body",
-      "label": "Gravity Falls"
+      "label": "Gravity"
     },
     {
       "key": "situational",
-      "label": "Situational Fall Overrides"
+      "label": "Situational Overrides"
     },
     {
       "key": "arcade",
@@ -57,7 +57,7 @@
     },
     {
       "key": "bulletJolts",
-      "label": "Bullet Jolts on Ragdoll or Grounded NPCs"
+      "label": "Bullet Jolts"
     },
     {
       "key": "settle",
@@ -73,7 +73,7 @@
     },
     {
       "key": "tumble",
-      "label": "Tumble and Settle"
+      "label": "Twitch, Tumble & Settle"
     }
   ],
   "globalSettings": [

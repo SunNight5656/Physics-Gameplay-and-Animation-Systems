@@ -1016,6 +1016,30 @@ private func SHHJM_GetHitDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
   return 0.01;
 }
 
+// The per-body Hit Delay sliders are an after-death call lockout, not an
+// impulse-event delay. During this window hits are rejected. Once it expires,
+// the next qualifying corpse hit may queue its jolt immediately.
+private func SHHJM_AfterDeathCallTimerExpired(puppet: wref<NPCPuppet>, part: Int32, s: ref<SHHJM_Settings>) -> Bool {
+  let deathTime: Float;
+  let unlockTime: Float;
+
+  if !IsDefined(puppet) || !IsDefined(s) {
+    return false;
+  };
+
+  if !puppet.IsDead() {
+    return true;
+  };
+
+  deathTime = puppet.hisDeathStartTime;
+  if deathTime <= 0.0 {
+    return false;
+  };
+
+  unlockTime = deathTime + MaxF(0.0, SHHJM_GetHitDelay(part, s));
+  return SHHJM_Now(puppet) >= unlockTime;
+}
+
 private func SHHJM_GetDeathDelay(part: Int32, s: ref<SHHJM_Settings>) -> Float {
   return 0.0;
 }
