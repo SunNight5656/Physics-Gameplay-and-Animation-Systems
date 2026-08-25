@@ -180,9 +180,22 @@ local function merge(value, defaults)
 end
 
 local function defaultUI()
-  local out = {version = STATE_VERSION, impulseSections = {random = false, moveFeet = false, motorcycle = false}, modes = {}, gates = {}, situationalGroups = {}, bottomSections = {moveNpcFeet = false}}
+  local out = {
+    version = STATE_VERSION,
+    impulseSections = {rules = false, random = false, moveFeet = false, motorcycle = false},
+    modes = {},
+    gates = {},
+    pageSelections = {},
+    situationalGroups = {},
+    bottomSections = {moveNpcFeet = false}
+  }
   for _, mode in ipairs(schema.modes) do
     out.modes[mode.key] = {showAll = false, topics = {}}
+    out.pageSelections[mode.key] = {
+      gravityView = 1, headView = 1, situationalView = 1,
+      bulletJoltsView = 1, tripView = 1, motionView = 1,
+      arcadePushView = 1, explosionPushView = 1
+    }
     out.situationalGroups[mode.key] = {}
     for _, topic in ipairs(schema.topics) do out.modes[mode.key].topics[topic.key] = false end
   end
@@ -956,10 +969,70 @@ local function addStableShowSwitch(path, setting, context, rebuild, label, descr
     function(value)
       bucket[setting.id] = value
       uiDirty = true
+      logi("MENU DISCLOSURE " .. context .. "=" .. tostring(value == true))
       if rebuild then defer(rebuild) end
     end,
     1
   )
+end
+
+local function pageSelectionBucket(mode)
+  uiConfig.pageSelections = uiConfig.pageSelections or {}
+  uiConfig.pageSelections[mode.key] = uiConfig.pageSelections[mode.key] or {
+    gravityView = 1,
+    headView = 1,
+    situationalView = 1,
+    bulletJoltsView = 1,
+    tripView = 1,
+    motionView = 1,
+    arcadePushView = 1,
+    explosionPushView = 1
+  }
+  return uiConfig.pageSelections[mode.key]
+end
+
+local function pageSelection(mode, key, maximum)
+  local bucket = pageSelectionBucket(mode)
+  local value = math.floor(tonumber(bucket[key]) or 1)
+  if value < 1 or value > maximum then value = 1 end
+  if bucket[key] ~= value then uiDirty = true end
+  bucket[key] = value
+  return value
+end
+
+local function addPageSelector(path, mode, key, label, description, options, rebuild, index)
+  local current = pageSelection(mode, key, #options)
+  -- Page selectors are intentionally stable and are not added to dynamicRefs.
+  -- Rebuilding a page removes only the controls below this selector.
+  return nativeSettings.addSelectorString(
+    path,
+    label,
+    description,
+    options,
+    current,
+    1,
+    function(value)
+      local selected = math.floor(tonumber(value) or 1)
+      if selected < 1 or selected > #options then selected = 1 end
+      pageSelectionBucket(mode)[key] = selected
+      uiDirty = true
+      logi("MENU PAGE " .. mode.key .. "/" .. key .. "=" .. tostring(selected))
+      if rebuild then defer(rebuild) end
+    end,
+    index or 1
+  )
+end
+
+local function pageDisclosureMaster(mode, key, label, description)
+  return {
+    id = "ui." .. mode.key .. ".pageDisclosure." .. key .. ".v2",
+    name = "show" .. key .. "PageSelector",
+    type = "Bool",
+    default = false,
+    label = label,
+    description = description,
+    uiOnly = true
+  }
 end
 
 local rebuildAnimationLayout
@@ -1089,15 +1162,14 @@ end
 
 local HEAD_COLUMN_SPECS = {
   {key = "forward", root = "HIS_Settings.showHeadForwardSection", label = "Head Falls - Forward"},
-  {key = "rebound", root = "HIS_Settings.showReboundForwardSection", label = "Head Falls - Forward Rebound"},
-  {key = "backward", root = "HIS_Settings.showHeadBackSection", label = "Head Falls - Backward"}
+  {key = "rebound", root = "HIS_Settings.showReboundForwardSection", label = "Head Falls - Forward Rebound"}
 }
 
 local BODY_COLUMN_SPECS = {
-  {key = "regular", label = "Gravity Falls - Regular", names = {
+  {key = "regular", label = "Regular Gravity", enable = "regularGravityEnabled", names = {
     regularGravityEnabled = true, bodyDownPerSecMin = true, bodyDownPerSec = true, bodyStartDelay = true, bodyDuration = true
   }},
-  {key = "impact", label = "Gravity Falls - Impact", names = {
+  {key = "impact", label = "Impact Gravity", enable = "impactEnabled", names = {
     impactEnabled = true, impactStrengthPctMin = true, impactStrengthPct = true, impactDelaySec = true, impactDuration = true
   }}
 }
@@ -1164,6 +1236,488 @@ local function rebuildBodyColumn(mode, spec)
   addSettings(path, values, 1, context, again, true)
 end
 
+local function headPageSettings(settings, rootId)
+  local descendants = descendantSettings(settings, rootId)
+  local values = {}
+  for _, setting in ipairs(descendants) do
+    if setting.id ~= rootId then
+      local copy = copySettingEarly(setting)
+      if copy.dependency == rootId then
+        copy.dependency = nil
+        copy.dependencyName = ""
+      end
+      table.insert(values, copy)
+    end
+  end
+  return values
+end
+
+local function rebuildHeadPage(mode)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == "head" then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local selected = pageSelection(mode, "headView", #HEAD_COLUMN_SPECS)
+  local spec = HEAD_COLUMN_SPECS[selected]
+  local data = loadSection(mode.key, "head")
+  if not data or not spec then return end
+  local values = headPageSettings(data.settings or {}, spec.root)
+  local context = "mode/" .. mode.key .. "/head/" .. spec.key
+  local function again() rebuildHeadPage(mode) end
+  addSettings(path, values, 3, context, again, true)
+end
+
+local function rebuildBodyPage(mode)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == "body" then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local selected = pageSelection(mode, "gravityView", #BODY_COLUMN_SPECS)
+
+  local data = loadSection(mode.key, "body")
+  if not data then return end
+  local values = {}
+  local master = firstUIOnlyBool(data.settings or {})
+  local spec = BODY_COLUMN_SPECS[selected]
+  if not spec then return end
+
+  local byName = {}
+  for _, setting in ipairs(data.settings or {}) do byName[setting.name] = setting end
+
+  local function gravityCopy(name)
+    local setting = byName[name]
+    if not setting or (master and setting.id == master.id) then return nil end
+    local copy = copySettingEarly(setting)
+    if master and copy.dependency == master.id then
+      copy.dependency = nil
+      copy.dependencyName = ""
+    end
+    return copy
+  end
+
+  -- Keep the runtime's global Gravity master internal. The page-specific
+  -- switch below maintains it automatically, so the menu has only one clear
+  -- Enable switch on each Gravity page.
+  local globalEnable = gravityCopy("enabled")
+  local pageEnable = gravityCopy(spec.enable)
+  local otherSpec = BODY_COLUMN_SPECS[selected == 1 and 2 or 1]
+  local otherEnable = otherSpec and gravityCopy(otherSpec.enable) or nil
+
+  for _, setting in ipairs(data.settings or {}) do
+    if spec.names[setting.name] and setting.name ~= spec.enable then
+      local copy = copySettingEarly(setting)
+      copy.dependency = nil
+      copy.dependencyName = ""
+      table.insert(values, copy)
+    end
+  end
+
+  -- Chance and engine timing controls are deliberately last. The disclosure
+  -- name lists what it contains so users do not have to guess what "Advanced"
+  -- means, and hiding it never changes any saved gameplay value.
+  local advanced = gravityCopy("showGravityAdvanced")
+  if advanced then
+    advanced.label = "Show Chance & Physics Timing Controls"
+    advanced.description = "Shows Gravity chance, physics update interval, and maximum delta-time controls."
+    advanced.dependency = nil
+    advanced.dependencyName = ""
+    table.insert(values, advanced)
+
+    local advancedNames = {
+      "useChance", "chancePct", "gravityUpdateInterval", "gravityMaxDeltaTime"
+    }
+    for _, name in ipairs(advancedNames) do
+      local copy = gravityCopy(name)
+      if copy then
+        copy.dependency = advanced.id
+        copy.dependencyName = advanced.name
+        if copy.name == "useChance" then copy.label = "Use Gravity Chance" end
+        if copy.name == "chancePct" then copy.label = "Gravity Chance (%)" end
+        table.insert(values, copy)
+      end
+    end
+  end
+
+  local context = "mode/" .. mode.key .. "/body/page" .. tostring(selected)
+  local function again() rebuildBodyPage(mode) end
+  local settingsStart = 3
+  if globalEnable and pageEnable then
+    globalEnable.mode = mode.key
+    pageEnable.mode = mode.key
+    if otherEnable then otherEnable.mode = mode.key end
+
+    local current = readVar(globalEnable, false) == true and readVar(pageEnable, false) == true
+    local default = readVar(globalEnable, true) == true and readVar(pageEnable, true) == true
+    local pageEnableRef = nativeSettings.addSwitch(
+      path,
+      pageEnable.label,
+      "Enables only " .. spec.label .. ". The internal Gravity master is synchronized automatically.",
+      current,
+      default,
+      function(value)
+        if value == true then
+          -- A previously disabled global master may have preserved both old
+          -- lane values. Clear the unselected lane before re-arming it so one
+          -- click enables only the page the user selected.
+          if readVar(globalEnable, false) ~= true and otherEnable then
+            writeVar(otherEnable, false, true)
+          end
+          writeVar(globalEnable, true, true)
+          writeVar(pageEnable, true, true)
+        else
+          writeVar(pageEnable, false, true)
+          if not otherEnable or readVar(otherEnable, false) ~= true then
+            writeVar(globalEnable, false, true)
+          end
+        end
+      end,
+      settingsStart
+    )
+    remember(path, pageEnableRef)
+    settingsStart = settingsStart + 1
+  end
+  addSettings(path, values, settingsStart, context, again, true)
+end
+
+local BULLET_JOLT_PAGE_SPECS = {
+  {key = "head", label = "Head Jolts"},
+  {key = "torso", label = "Torso Jolts"},
+  {key = "arms", label = "Arm Jolts"},
+  {key = "legs", label = "Leg Jolts"},
+  {key = "ground", label = "Ground & Airborne"},
+  {key = "filters", label = "Enemy Filters"}
+}
+
+local function bulletJoltPages(data)
+  local pages = {}
+  for _, spec in ipairs(BULLET_JOLT_PAGE_SPECS) do
+    local suffix = ".bulletJolts." .. spec.key
+    local gate = nil
+    for _, setting in ipairs((data and data.settings) or {}) do
+      local id = tostring(setting.id or "")
+      if setting.uiOnly == true and id:sub(-#suffix) == suffix then
+        gate = setting
+        break
+      end
+    end
+    if gate then
+      table.insert(pages, {key = spec.key, label = spec.label, gate = gate})
+    end
+  end
+  return pages
+end
+
+local function rebuildBulletJoltPage(mode)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == "bulletJolts" then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local data = loadSection(mode.key, "bulletJolts")
+  if not data then return end
+  local pages = bulletJoltPages(data)
+  if #pages == 0 then return end
+
+  local selected = pageSelection(mode, "bulletJoltsView", #pages)
+  local page = pages[selected]
+  if not page then return end
+
+  local values = {}
+  for _, setting in ipairs(data.settings or {}) do
+    if setting.dependency == page.gate.id then
+      local copy = copySettingEarly(setting)
+      copy.dependency = nil
+      copy.dependencyName = ""
+      if page.key == "ground" and tostring(copy.name or ""):find("bulletJoltsEnabled", 1, true) then
+        copy.label = "Enable Bullet Jolts"
+      end
+      table.insert(values, copy)
+    end
+  end
+
+  local context = "mode/" .. mode.key .. "/bulletJolts/" .. page.key
+  local function again() rebuildBulletJoltPage(mode) end
+  addSettings(path, values, 3, context, again, true)
+end
+
+local function tripPages(data)
+  local settings = (data and data.settings) or {}
+  local master = nil
+  for _, setting in ipairs(settings) do
+    if setting.uiOnly == true
+      and setting.type == "Bool"
+      and tostring(setting.id or ""):find(".trip.all.clean2", 1, true) then
+      master = setting
+      break
+    end
+  end
+  if not master then return {} end
+
+  local pages = {}
+  for _, setting in ipairs(settings) do
+    if setting.uiOnly == true
+      and setting.type == "Bool"
+      and setting.dependency == master.id then
+      local label = tostring(setting.label or setting.name or "Trip Settings")
+      label = label:gsub("^Show%s+", "")
+      table.insert(pages, {label = label, gate = setting})
+    end
+  end
+  return pages
+end
+
+local function rebuildTripPage(mode)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == "trip" then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local data = loadSection(mode.key, "trip")
+  if not data then return end
+  local pages = tripPages(data)
+  if #pages == 0 then return end
+
+  local selected = pageSelection(mode, "tripView", #pages)
+  local page = pages[selected]
+  if not page then return end
+
+  local values = {}
+  for _, setting in ipairs(descendantSettings(data.settings or {}, page.gate.id)) do
+    if setting.id ~= page.gate.id then
+      if setting.dependency == page.gate.id then
+        setting.dependency = nil
+        setting.dependencyName = ""
+      end
+      table.insert(values, setting)
+    end
+  end
+
+  local context = "mode/" .. mode.key .. "/trip/" .. tostring(selected)
+  local function again() rebuildTripPage(mode) end
+  addSettings(path, values, 3, context, again, true)
+end
+
+local function combinedPushSettings(mode, topicKey)
+  local data = loadSection(mode.key, topicKey)
+  if not data then return {} end
+
+  local combined = {}
+  local seen = {}
+  for _, setting in ipairs(data.settings or {}) do
+    table.insert(combined, setting)
+    seen[setting.id] = true
+  end
+
+  local vehicles = loadSection(mode.key, "vehicles")
+  if vehicles then
+    local vehicleMaster = firstUIOnlyBool(vehicles.settings or {})
+    for _, setting in ipairs(vehicles.settings or {}) do
+      local include = false
+      if topicKey == "arcade" then
+        include = setting.id ~= (vehicleMaster and vehicleMaster.id or "")
+          and not isMotorcycleSetting(setting)
+          and not isVehicleExplosionSetting(setting)
+      else
+        include = isVehicleExplosionSetting(setting)
+      end
+      if include and not seen[setting.id] then
+        local copy = copySettingEarly(setting)
+        table.insert(combined, copy)
+        seen[copy.id] = true
+      end
+    end
+  end
+  return combined
+end
+
+local function lowerLabel(setting)
+  return string.lower(tostring((setting and setting.label) or ""))
+end
+
+local function findLabelGate(settings, exactLabel)
+  local wanted = string.lower(exactLabel)
+  for _, setting in ipairs(settings or {}) do
+    if setting.uiOnly == true and lowerLabel(setting) == wanted then return setting end
+  end
+  return nil
+end
+
+local function arcadePushPages(mode)
+  local settings = combinedPushSettings(mode, "arcade")
+  local specs = {
+    {key = "npcBullet", label = "NPC Bullet Push", root = "show bullet push on npcs"},
+    {key = "npcMelee", label = "NPC Melee Push", root = "show npc melee push"},
+    {key = "vehicleBullet", label = "Vehicle Bullet Push", root = "show bullet push on vehicles"},
+    {key = "vehicleMelee", label = "Vehicle Melee Push", root = "show vehicle melee push"}
+  }
+  local pages = {}
+  for _, spec in ipairs(specs) do
+    local root = findLabelGate(settings, spec.root)
+    if root then
+      local extras = {}
+      for _, setting in ipairs(settings) do
+        if setting.uiOnly == true and setting.id ~= root.id then
+          local label = lowerLabel(setting)
+          local include = false
+          if spec.key == "npcBullet" then
+            include = label:find("advanced bullet push on npcs", 1, true) ~= nil
+              or label:find("enemy type exclusions", 1, true) ~= nil
+              or label:find("bullet weapon filters for push on npcs", 1, true) ~= nil
+              or label:find("bullet weapon multipliers for push on npcs", 1, true) ~= nil
+          elseif spec.key == "npcMelee" then
+            include = label:find("npc melee weapon filters", 1, true) ~= nil
+              or label:find("npc melee weapon multipliers", 1, true) ~= nil
+          end
+          if include then table.insert(extras, setting) end
+        end
+      end
+      table.insert(pages, {
+        key = spec.key, label = spec.label, root = root,
+        extras = extras, settings = settings
+      })
+    end
+  end
+  return pages
+end
+
+local function explosionPushPages(mode)
+  local settings = combinedPushSettings(mode, "explosions")
+  local specs = {
+    {key = "npc", label = "NPC Explosion Push", root = "show explosion push on npcs"},
+    {key = "vehicle", label = "Vehicle Explosion Push", root = "show explosion push on vehicles"}
+  }
+  local pages = {}
+  for _, spec in ipairs(specs) do
+    local root = findLabelGate(settings, spec.root)
+    if root then
+      local extras = {}
+      if spec.key == "npc" then
+        for _, setting in ipairs(settings) do
+          if setting.uiOnly == true
+            and setting.id ~= root.id
+            and lowerLabel(setting):find("grenade exception", 1, true) then
+            table.insert(extras, setting)
+          end
+        end
+      end
+      table.insert(pages, {
+        key = spec.key, label = spec.label, root = root,
+        extras = extras, settings = settings
+      })
+    end
+  end
+  return pages
+end
+
+local function targetPageValues(page)
+  local included = {[page.root.id] = true}
+  local extraIds = {}
+  for _, extra in ipairs(page.extras or {}) do
+    included[extra.id] = true
+    extraIds[extra.id] = true
+  end
+
+  local changed = true
+  while changed do
+    changed = false
+    for _, setting in ipairs(page.settings or {}) do
+      if setting.dependency and included[setting.dependency] and not included[setting.id] then
+        included[setting.id] = true
+        changed = true
+      end
+    end
+  end
+
+  local values = {}
+  for _, setting in ipairs(page.settings or {}) do
+    if included[setting.id] and setting.id ~= page.root.id then
+      local copy = copySettingEarly(setting)
+      if copy.dependency == page.root.id
+        or extraIds[copy.id]
+        or copy.dependency == copy.id then
+        copy.dependency = nil
+        copy.dependencyName = ""
+      end
+      table.insert(values, copy)
+    end
+  end
+  return values
+end
+
+local function rebuildArcadeTargetPage(mode, topicKey)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == topicKey then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local pages = topicKey == "arcade" and arcadePushPages(mode) or explosionPushPages(mode)
+  if #pages == 0 then return end
+  local stateKey = topicKey == "arcade" and "arcadePushView" or "explosionPushView"
+  local selected = pageSelection(mode, stateKey, #pages)
+  local page = pages[selected]
+  if not page then return end
+
+  local context = "mode/" .. mode.key .. "/" .. topicKey .. "/" .. page.key
+  local function again() rebuildArcadeTargetPage(mode, topicKey) end
+  addSettings(path, targetPageValues(page), 3, context, again, true)
+end
+
+local MOTION_PAGE_SPECS = {
+  {key = "twitch", label = "Twitch"},
+  {key = "settle", label = "Settle"},
+  {key = "tumble", label = "Tumble"}
+}
+
+local function rebuildMotionPage(mode)
+  local topic = nil
+  for _, candidate in ipairs(schema.topics or {}) do
+    if candidate.key == "tumble" then topic = candidate; break end
+  end
+  if not topic then return end
+
+  local path = topicPath(mode, topic)
+  clearDynamic(path)
+  local selected = pageSelection(mode, "motionView", #MOTION_PAGE_SPECS)
+  local spec = MOTION_PAGE_SPECS[selected]
+  if not spec then return end
+  local data = loadSection(mode.key, spec.key)
+  if not data then return end
+  local master = firstUIOnlyBool(data.settings or {})
+  local values = {}
+  if master then
+    for _, setting in ipairs(descendantSettings(data.settings or {}, master.id)) do
+      if setting.id ~= master.id then
+        if setting.dependency == master.id then
+          setting.dependency = nil
+          setting.dependencyName = ""
+        end
+        table.insert(values, setting)
+      end
+    end
+  end
+
+  local context = "mode/" .. mode.key .. "/motion/" .. spec.key
+  local function again() rebuildMotionPage(mode) end
+  addSettings(path, values, 3, context, again, true)
+end
+
 local function rebuildTumbleSettleColumn(mode, key)
   local data = loadSection(mode.key, key)
   if not data then return end
@@ -1180,19 +1734,21 @@ local function tumbleSettleColumnsMaster(mode)
     name = "showTumbleSettleColumns",
     type = "Bool",
     default = false,
-    label = "Show Tumble and Settle Columns",
-    description = "Shows separate Tumble and Settle columns. Each column keeps its own Show switch and saved state.",
+    label = "Show Twitch, Tumble & Settle Columns",
+    description = "Shows separate Twitch, Tumble, and Settle columns. Each column keeps its own Show switch and saved state.",
     uiOnly = true
   }
 end
 
-local function rebuildTopic(mode, topic)
+local function rebuildTopic(mode, topic, pageOnly)
   local path = topicPath(mode, topic)
   clearDynamic(path)
   local data = loadSection(mode.key, topic.key)
   if not data then return end
   local context = "mode/" .. mode.key .. "/" .. topic.key
-  local function again() rebuildTopic(mode, topic) end
+  local function again()
+    rebuildTopic(mode, topic, topic.key == "situational")
+  end
 
   if topic.key == "arcade" or topic.key == "explosions" then
     local master = firstUIOnlyBool(data.settings or {})
@@ -1249,29 +1805,15 @@ local function rebuildTopic(mode, topic)
     dynamicRefs[oldPath] = nil
   end
 
-  local idx = 1
-  uiConfig.situationalGroups[mode.key] = uiConfig.situationalGroups[mode.key] or {}
-  local state = uiConfig.situationalGroups[mode.key]
-  if state.__master == nil then state.__master = false end
+  -- Situational Gravity Shaping remains in the schema/runtime for compatibility,
+  -- but it is intentionally omitted from Native Settings. The five real
+  -- situation override categories remain available and keep their saved values.
+  local visibleGroups = {}
   for _, group in ipairs(data.groups or {}) do
-    if state[group.key] == nil then state[group.key] = false end
+    if group.key ~= "gravity" then table.insert(visibleGroups, group) end
   end
 
-  local allRef = nativeSettings.addSwitch(
-    path,
-    "Show Situational Fall Sections",
-    "Shows or hides the separate Standing, Walking & Running, Workspots, Cower, Stairs, and Situational Gravity categories. Saved controls are not changed.",
-    state.__master == true,
-    false,
-    function(value)
-      state.__master = value
-      uiDirty = true
-      defer(again)
-    end,
-    idx
-  )
-  remember(path, allRef)
-  if state.__master ~= true then return end
+  local selectedPage = pageSelection(mode, "situationalView", #visibleGroups)
 
   local function makeShow(id, label, description)
     return {id = id, name = id, type = "Bool", default = false, label = label, description = description, uiOnly = true}
@@ -1286,36 +1828,28 @@ local function rebuildTopic(mode, topic)
     return "other"
   end
 
-  for groupIndex, group in ipairs(data.groups or {}) do
+  local group = visibleGroups[selectedPage]
+  if group then
     local gkey = group.key
-    local groupPath = situationalGroupPath(mode, gkey)
-    local groupLabel = group.label
-    if gkey == "runningWalking" then groupLabel = "Walking & Running" end
-    -- These are sibling Native Settings categories. Their indexes are based on
-    -- the live position of Situational Falls so opened Head columns never make
-    -- them sparse or push later controls beneath the wrong category header.
-    local situationalIndex = situationalCategoryIndexes[mode.key] or 6
-    nativeSettings.addSubcategory(groupPath, mode.label .. " - " .. groupLabel, situationalIndex + groupIndex)
-    dynamicRefs[groupPath] = {}
-
-    local open = state[gkey] == true
-    local ref = nativeSettings.addSwitch(groupPath, group.showLabel, group.description or "", open, false, function(value)
-      state[gkey] = value
-      uiDirty = true
-      defer(again)
-    end, 1)
-    remember(groupPath, ref)
-
-    if open then
-      if gkey == "gravity" then
-        addSettings(groupPath, group.settings or {}, 2, context .. "/" .. gkey, again, true)
-      else
-        local buckets = {head = {}, forward = {}, shoulder = {}, butt = {}, knee = {}, other = {}, advanced = {}}
+    if gkey == "gravity" then
+      addSettings(path, group.settings or {}, 3, context .. "/" .. gkey, again, true)
+    else
+        local buckets = {direct = {}, head = {}, forward = {}, shoulder = {}, butt = {}, knee = {}, other = {}, advanced = {}}
+        local enableNames = {
+          standing = "standEnabled",
+          runningWalking = "runEnabled",
+          workspots = "wsStandEnabled",
+          cower = "cowerEnabled",
+          stairs = "stairsEnabled",
+          multipliers = "realismPlus_multipliersEnabled"
+        }
         for _, setting in ipairs(group.settings or {}) do
           local n = string.lower(setting.name or "")
           local technical = n:find("delay", 1, true) or n:find("radius", 1, true) or n:find("offset", 1, true) or n:find("timing", 1, true)
           local oldMaster = n == "overridestand" or n == "overriderun" or n == "overrideworkspots" or n == "overridecower" or n == "overridestairs"
-          if not oldMaster then
+          if setting.name == enableNames[gkey] then
+            table.insert(buckets.direct, copySettingEarly(setting))
+          elseif not oldMaster then
             table.insert(technical and buckets.advanced or buckets[classify(setting)], copySettingEarly(setting))
           end
         end
@@ -1331,7 +1865,7 @@ local function rebuildTopic(mode, topic)
             id = "RFCModSettings." .. headNames[gkey], class = "RFCModSettings",
             name = headNames[gkey], type = "Bool", default = false,
             label = "Use Situational Head Gravity",
-            description = "Uses this situation's Head controls instead of General Head Falls and suppresses whole-ragdoll General Gravity for this situation.",
+            description = "Uses this situation's Head controls instead of Head Falls and suppresses whole-ragdoll General Gravity for this situation.",
             modeScoped = true
           })
         end
@@ -1381,6 +1915,7 @@ local function rebuildTopic(mode, topic)
         end
 
         local arranged = {}
+        for _, setting in ipairs(buckets.direct) do table.insert(arranged, setting) end
         local sections = {
           {"head", "Show Head Gravity", "Shows the independent situational Head gravity and its controls."},
           {"forward", "Show Forward Gravity", "Shows the independent situational Forward control."},
@@ -1410,121 +1945,164 @@ local function rebuildTopic(mode, topic)
             table.insert(arranged, setting)
           end
         end
-        addSettings(groupPath, arranged, 2, context .. "/" .. gkey, again, true)
-      end
+        addSettings(path, arranged, 3, context .. "/" .. gkey, again, true)
     end
   end
-  if data.settings and #data.settings > 0 then addSettings(path, data.settings, 2, context .. "/direct", again, true) end
+  if data.settings and #data.settings > 0 then addSettings(path, data.settings, 3, context .. "/direct", again, true) end
 end
 
 local function addTopicCategory(mode, topic, index)
   local path = topicPath(mode, topic)
-  nativeSettings.addSubcategory(path, topic.label, index)
+  local topicLabel = topic.label
+  if topic.key == "bulletJolts" then topicLabel = "Bullet Jolts on Downed NPCs" end
+  if topic.key == "trip" then topicLabel = "Trip & Push Control" end
+  if topic.key == "tumble" then topicLabel = "Twitch, Settle & Tumble" end
+  nativeSettings.addSubcategory(path, topicLabel, index)
   dynamicRefs[path] = {}
 
   if topic.key == "body" then
-    local data = loadSection(mode.key, "body")
-    local master = data and firstUIOnlyBool(data.settings or {}) or nil
-    local context = "mode/" .. mode.key .. "/body"
-    local function rebuildAllModeColumns()
-      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
-    end
-    addStableShowSwitch(
-      path, master, context, rebuildAllModeColumns,
-      "Show Gravity Falls",
-      "Shows General Gravity Falls plus separate Regular and Impact columns. Saved physics values are not changed."
+    local master = pageDisclosureMaster(
+      mode, "gravity", "Show Gravity Settings",
+      "Shows controls for choosing and editing Regular Gravity or Impact Gravity without changing any saved values."
     )
-
-    local nextIndex = index + 1
-    if master and stableGateOpen(master, context) then
-      local parentValues = {}
-      local columnNames = {}
-      for _, spec in ipairs(BODY_COLUMN_SPECS) do
-        for name, enabled in pairs(spec.names) do
-          if enabled then columnNames[name] = true end
-        end
-      end
-      for _, setting in ipairs(data.settings or {}) do
-        if setting.id ~= master.id and not columnNames[setting.name] then
-          table.insert(parentValues, copySettingEarly(setting))
-        end
-      end
-      local function againParent() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
-      addSettings(path, parentValues, 2, context, againParent, true)
-
-      for _, spec in ipairs(BODY_COLUMN_SPECS) do
-        local columnPath = bodyColumnPath(mode, spec.key)
-        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
-        dynamicRefs[columnPath] = {}
-        rebuildBodyColumn(mode, spec)
-        nextIndex = nextIndex + 1
-      end
+    local context = "mode/" .. mode.key .. "/gravityPages"
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(path, master, context, rebuildLayout)
+    if stableGateOpen(master, context) then
+      local function again() rebuildBodyPage(mode) end
+      addPageSelector(
+        path, mode, "gravityView", "Select Gravity Type",
+        "Choose whether you are editing Regular Gravity or Impact Gravity. This does not enable, disable, or reset Gravity.",
+        {"Regular Gravity", "Impact Gravity"}, again, 2
+      )
+      rebuildBodyPage(mode)
     end
-    return nextIndex
+    return index + 1
   end
 
   if topic.key == "head" then
-    local data = loadSection(mode.key, "head")
-    local master = data and firstUIOnlyBool(data.settings or {}) or nil
-    local context = "mode/" .. mode.key .. "/head"
-    local function rebuildAllModeColumns()
-      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
-    end
-    addStableShowSwitch(
-      path,
-      master,
-      context,
-      rebuildAllModeColumns,
-      "Show General Head Fall Columns",
-      "Shows separate Forward, Forward Rebound, and Backward columns. Each column keeps its own Show controls."
+    local master = pageDisclosureMaster(
+      mode, "head", "Show Head Falls Settings",
+      "Shows controls for choosing and editing Head Forward or Head Forward Rebound without changing any saved values."
     )
+    local context = "mode/" .. mode.key .. "/headPages"
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(path, master, context, rebuildLayout)
+    if stableGateOpen(master, context) then
+      local function again() rebuildHeadPage(mode) end
+      addPageSelector(
+        path, mode, "headView", "Select Head Fall Type",
+        "Choose whether you are editing Head Forward or Head Forward Rebound. This does not enable, disable, or reset Head Falls.",
+        {"Head Forward", "Head Forward Rebound"}, again, 2
+      )
+      rebuildHeadPage(mode)
+    end
+    return index + 1
+  end
 
-    local nextIndex = index + 1
-    if master and stableGateOpen(master, context) then
-      for _, spec in ipairs(HEAD_COLUMN_SPECS) do
-        local columnPath = headColumnPath(mode, spec.key)
-        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
-        dynamicRefs[columnPath] = {}
-        rebuildHeadColumn(mode, spec)
-        nextIndex = nextIndex + 1
+  if topic.key == "situational" then
+    local master = pageDisclosureMaster(
+      mode, "situational", "Show Situational Override Settings",
+      "Shows controls for choosing the NPC situation whose fall overrides you want to edit."
+    )
+    local context = "mode/" .. mode.key .. "/situationalPages"
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(path, master, context, rebuildLayout)
+    if stableGateOpen(master, context) then
+      local data = loadSection(mode.key, "situational")
+      local labels = {}
+      for _, group in ipairs((data and data.groups) or {}) do
+        if group.key ~= "gravity" then table.insert(labels, group.label) end
+      end
+      local function again() rebuildTopic(mode, topic, true) end
+      addPageSelector(
+        path, mode, "situationalView", "Select Fall Scenario to Edit",
+        "Choose when these overrides apply: Standing, Walking & Running, Cowering, Workspots, or Stairs. This does not enable, disable, or reset any override.",
+        labels, again, 2
+      )
+      rebuildTopic(mode, topic, true)
+    end
+    return index + 1
+  end
+
+  if topic.key == "bulletJolts" then
+    local master = pageDisclosureMaster(
+      mode, "bulletJolts", "Show Bullet Jolt Settings",
+      "Shows controls for choosing the body location whose Bullet Jolt movement you want to edit."
+    )
+    local context = "mode/" .. mode.key .. "/bulletJoltPages"
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(path, master, context, rebuildLayout)
+    if stableGateOpen(master, context) then
+      local data = loadSection(mode.key, "bulletJolts")
+      local labels = {}
+      for _, page in ipairs(bulletJoltPages(data)) do table.insert(labels, page.label) end
+      if #labels > 0 then
+        local function again() rebuildBulletJoltPage(mode) end
+        addPageSelector(
+          path, mode, "bulletJoltsView", "Select Body Location",
+          "Choose the body location whose Bullet Jolt movement you are editing, or select shared Ground/Airborne and Enemy Filter controls.",
+          labels, again, 2
+        )
+        rebuildBulletJoltPage(mode)
       end
     end
-    return nextIndex
+    return index + 1
+  end
+
+  if topic.key == "trip" then
+    local master = pageDisclosureMaster(
+      mode, "trip", "Show Trip & Push Settings",
+      "Shows controls for choosing Trip Emotions, Trip Animation, or Look-Triggered Trip behavior."
+    )
+    local context = "mode/" .. mode.key .. "/tripPages"
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(path, master, context, rebuildLayout)
+    if stableGateOpen(master, context) then
+      local data = loadSection(mode.key, "trip")
+      local labels = {}
+      for _, page in ipairs(tripPages(data)) do table.insert(labels, page.label) end
+      if #labels > 0 then
+        local function again() rebuildTripPage(mode) end
+        addPageSelector(
+          path, mode, "tripView", "Select Trip & Push Feature",
+          "Choose whether you are editing Trip Emotions, Trip Animation, or Look-Triggered Trip behavior.",
+          labels, again, 2
+        )
+        rebuildTripPage(mode)
+      end
+    end
+    return index + 1
   end
 
   if topic.key == "tumble" then
     local master = tumbleSettleColumnsMaster(mode)
     local context = "mode/" .. mode.key .. "/tumbleSettle"
-    local function rebuildAllModeColumns()
-      showModeCategories(mode, tonumber(mode.enumIndex) or 1)
-    end
-    addStableShowSwitch(path, master, context, rebuildAllModeColumns)
-
-    local nextIndex = index + 1
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+    addStableShowSwitch(
+      path, master, context, rebuildLayout,
+      "Show Twitch, Settle & Tumble Settings",
+      "Shows controls for choosing Twitch, Settle, or Tumble without changing any saved movement values."
+    )
     if stableGateOpen(master, context) then
-      for _, spec in ipairs({
-        {key = "tumble", label = "Tumble Controls"},
-        {key = "settle", label = "Settle Controls"}
-      }) do
-        local columnPath = tumbleSettleColumnPath(mode, spec.key)
-        nativeSettings.addSubcategory(columnPath, spec.label, nextIndex)
-        dynamicRefs[columnPath] = {}
-        rebuildTumbleSettleColumn(mode, spec.key)
-        nextIndex = nextIndex + 1
-      end
+      local labels = {}
+      for _, spec in ipairs(MOTION_PAGE_SPECS) do table.insert(labels, spec.label) end
+      local function again() rebuildMotionPage(mode) end
+      addPageSelector(
+        path, mode, "motionView", "Select Post-Death Movement",
+        "Choose whether you are editing Twitch, Settle, or Tumble movement.",
+        labels, again, 2
+      )
+      rebuildMotionPage(mode)
     end
-    return nextIndex
-  end
-
-  if topic.key == "situational" then
-    situationalCategoryIndexes[mode.key] = index
+    return index + 1
   end
 
   if topic.key == "arcade" or topic.key == "explosions" then
     local data = loadSection(mode.key, topic.key)
     local master = data and firstUIOnlyBool(data.settings or {}) or nil
     local context = "mode/" .. mode.key .. "/" .. topic.key
-    local function again() rebuildTopic(mode, topic) end
+    local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
     local label = master and master.label or "Show Controls"
     local description = master and master.description or ""
 
@@ -1536,17 +2114,26 @@ local function addTopicCategory(mode, topic, index)
       description = "Shows or hides the Explosion Push sections without changing any saved physics values."
     end
 
-    addStableShowSwitch(path, master, context, again, label, description)
+    addStableShowSwitch(path, master, context, rebuildLayout, label, description)
+    if stableGateOpen(master, context) then
+      local pages = topic.key == "arcade" and arcadePushPages(mode) or explosionPushPages(mode)
+      local labels = {}
+      for _, page in ipairs(pages) do table.insert(labels, page.label) end
+      if #labels > 0 then
+        local stateKey = topic.key == "arcade" and "arcadePushView" or "explosionPushView"
+        local selectorLabel = topic.key == "arcade" and "Select Push Target & Attack Type" or "Select Explosion Push Target"
+        local selectorDescription = topic.key == "arcade"
+          and "Choose whether you are editing NPC Bullet Push, NPC Melee Push, Vehicle Bullet Push, or Vehicle Melee Push."
+          or "Choose whether you are editing explosion push on NPCs or vehicles."
+        local function again() rebuildArcadeTargetPage(mode, topic.key) end
+        addPageSelector(path, mode, stateKey, selectorLabel, selectorDescription, labels, again, 2)
+        rebuildArcadeTargetPage(mode, topic.key)
+      end
+    end
+    return index + 1
   end
 
   rebuildTopic(mode, topic)
-  if topic.key == "situational" then
-    local state = uiConfig.situationalGroups[mode.key]
-    local data = loadSection(mode.key, "situational")
-    if state and state.__master == true then
-      return index + 1 + #((data and data.groups) or {})
-    end
-  end
   return index + 1
 end
 
@@ -2078,8 +2665,10 @@ local function removeModeCategories(mode)
       end
     end
   end
-  for _, spec in ipairs(HEAD_COLUMN_SPECS) do
-    local path = headColumnPath(mode, spec.key)
+  -- Remove legacy column subcategories from the previous layout as well as the
+  -- two retained Head pages. Backward remains absent from the new selector.
+  for _, key in ipairs({"forward", "rebound", "backward"}) do
+    local path = headColumnPath(mode, key)
     if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
     dynamicRefs[path] = nil
   end
@@ -2088,7 +2677,7 @@ local function removeModeCategories(mode)
     if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
     dynamicRefs[path] = nil
   end
-  for _, key in ipairs({"tumble", "settle"}) do
+  for _, key in ipairs({"twitch", "tumble", "settle"}) do
     local path = tumbleSettleColumnPath(mode, key)
     if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
     dynamicRefs[path] = nil
@@ -2099,21 +2688,57 @@ local function removeModeCategories(mode)
   dynamicRefs[bikePath] = nil
 end
 
+local function addSharedCategoryAt(key, index)
+  local section = nil
+  for _, candidate in ipairs(schema.sharedSections or {}) do
+    if candidate.key == key then section = candidate; break end
+  end
+  if not section then return index end
+
+  local path = sharedPath(section)
+  if nativeSettings.pathExists(path) then nativeSettings.removeSubcategory(path) end
+  dynamicRefs[path] = {}
+
+  local label = section.label
+  if key == "globalImpulse" then label = "Global Impulse Rules" end
+  if key == "animation" then label = "Animation, Reaction & Shock Control" end
+  nativeSettings.addSubcategory(path, label, index)
+
+  if key == "animation" then
+    buildAnimationSection(section)
+  else
+    rebuildGlobalImpulseControls(section)
+  end
+  return index + 1
+end
+
 showModeCategories = function(mode, modeIndex)
   removeModeCategories(mode)
   if nativeSettings.pathExists(VANILLA_PATH) then nativeSettings.removeSubcategory(VANILLA_PATH) end
   dynamicRefs[VANILLA_PATH] = nil
-  if mode.key == "vanilla" then return end
-  local idx = 4
+  local idx = 2
+
+  if mode.key == "vanilla" then
+    idx = addSharedCategoryAt("globalImpulse", idx)
+    idx = addSharedCategoryAt("animation", idx)
+    return
+  end
+
   local topicByKey = {}
   for _, topic in ipairs(schema.topics) do topicByKey[topic.key] = topic end
-  for _, key in ipairs({"body", "head"}) do
+  for _, key in ipairs({"body", "head", "situational"}) do
     local topic = topicByKey[key]
     if topic and topicExists(mode, topic) then
       idx = addTopicCategory(mode, topic, idx)
     end
   end
-  local approvedOrder = {"situational", "arcade", "explosions", "bulletJolts", "trip", "twitch", "tumble"}
+
+  -- Shared controls follow the three foundational physics sections. This keeps
+  -- Gravity directly below the mode selector while retaining every global value.
+  idx = addSharedCategoryAt("globalImpulse", idx)
+  idx = addSharedCategoryAt("animation", idx)
+
+  local approvedOrder = {"arcade", "explosions", "bulletJolts", "trip", "tumble"}
   for _, key in ipairs(approvedOrder) do
     local topic = topicByKey[key]
     if topic.key ~= "randomization" and topic.key ~= "head" and topic.key ~= "body"
@@ -2236,17 +2861,17 @@ rebuildGlobalImpulseControls = function(section)
   local context = "shared/globalImpulse"
   local function again() rebuildGlobalImpulseControls(section) end
 
-  -- Standard global impulse controls always remain visible.
-  local idx = addSettings(IMPULSE_PATH, section.settings or {}, 1, context, again, true)
-  local mode = selectedMode()
+  -- Keep the category compact by default. This disclosure changes visibility
+  -- only; none of the underlying impulse values are reset or overwritten.
+  local idx = addImpulseSectionToggle(
+    "Show Global Impulse Rules Settings",
+    "Shows global chance, slow-motion suppression, vanilla impulse blocking, and Move NPC with Feet controls.",
+    "rules", 1, again
+  )
+  if not uiConfig.impulseSections.rules then return end
 
-  idx = addImpulseSectionToggle("Show Random Impulse Controls",
-    "Shows random strength and temporary impulse-group disable controls for the selected mode.",
-    "random", idx, again)
-  if uiConfig.impulseSections.random then
-    idx = addSettings(IMPULSE_PATH, globalRandomSettings(mode), idx,
-      "mode/" .. tostring(mode and mode.key or "realismCustom") .. "/randomization", again, true)
-  end
+  idx = addSettings(IMPULSE_PATH, section.settings or {}, idx, context, again, true)
+  local mode = selectedMode()
 
   idx = addImpulseSectionToggle("Show Move NPC with Feet Controls",
     "Shows Move NPC with Feet enable and tuning controls.",
@@ -2268,12 +2893,7 @@ local function buildMenu()
   end
   if not modeSetting then loge("Mode setting missing from schema"); return false end
   globalModeSetting = modeSetting
-  local globalImpulseSection = nil
-  for _, section in ipairs(schema.sharedSections or {}) do
-    if section.key == "globalImpulse" then globalImpulseSection = section; break end
-  end
   local function rebuildSelectedMenu()
-    if globalImpulseSection then rebuildGlobalImpulseControls(globalImpulseSection) end
     local active = selectedMode()
     applyBikeActiveMode(active)
     if getBikeDeathAnimationState and syncMotorcycleDeathAnimationControls then
@@ -2290,27 +2910,6 @@ local function buildMenu()
   globalModeRef = addSetting(GLOBAL_PATH, modeSetting, 1, "global", {}, rebuildSelectedMenu, false)
   globalStaticCount = 1
   dynamicRefs[GLOBAL_PATH] = {}
-
-  local subIndex = 2
-  local sharedByKey = {}
-  for _, section in ipairs(schema.sharedSections or {}) do sharedByKey[section.key] = section end
-  for _, key in ipairs({"animation", "globalImpulse"}) do
-    local section = sharedByKey[key]
-    if section then
-      local path = sharedPath(section)
-      local label = section.label
-      if section.key == "globalImpulse" then label = "More Impulse Control" end
-      if section.key == "animation" then label = "Animation Control" end
-      nativeSettings.addSubcategory(path, label, subIndex)
-      dynamicRefs[path] = {}
-      if section.key == "animation" then
-        buildAnimationSection(section)
-      else
-        rebuildShared(section)
-      end
-      subIndex = subIndex + 1
-    end
-  end
 
   showModeCategories(selectedMode(), tonumber(selectedMode().enumIndex) or 1)
 

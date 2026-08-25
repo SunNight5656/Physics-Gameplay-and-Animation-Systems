@@ -519,6 +519,58 @@
         "RFC_ApplyShoulderWaistFall"
       ],
       "orderedPatterns": []
+    },
+    {
+      "name": "REGULAR AND IMPACT GRAVITY",
+      "file": "src/r6/scripts/new Splat/Features/BodyGravityFalls.reds",
+      "requiredPatterns": [
+        "BFG_RegularTickEvent",
+        "BFG_ImpactTickEvent",
+        "BFG_IsBlocked",
+        "RFC_MasterDeathChanceBlocksImpulses",
+        "BFG_BeginRegular",
+        "BFG_BeginImpact",
+        "OnBFG_RegularTickEvent",
+        "OnBFG_ImpactTickEvent",
+        "CreateRagdollApplyImpulseEvent"
+      ],
+      "orderedPatterns": [
+        "BFG_BeginRegular",
+        "OnBFG_RegularTickEvent",
+        "OnBFG_ImpactTickEvent"
+      ]
+    },
+    {
+      "name": "SITUATIONAL BODY-PART GRAVITY",
+      "file": "src/r6/scripts/new Splat/Features/SituationalGravityFalls.reds",
+      "requiredPatterns": [
+        "SGF_TickEvent",
+        "SGF_IsBlocked",
+        "RFC_MasterDeathChanceBlocksImpulses",
+        "SGF_LivePartPosition",
+        "SGF_ScheduleDownRange",
+        "OnSGF_TickEvent",
+        "CreateRagdollApplyImpulseEvent"
+      ],
+      "orderedPatterns": [
+        "SGF_IsBlocked",
+        "SGF_ScheduleDownRange",
+        "OnSGF_TickEvent"
+      ]
+    },
+    {
+      "name": "LEGACY MOTORCYCLE INTEGRATION REMAINS INERT",
+      "file": "src/r6/scripts/new Splat/Features/ZZZ_BikeToppleInternal.reds",
+      "requiredPatterns": [
+        "module RealisticPush"
+      ],
+      "orderedPatterns": [],
+      "forbiddenPatterns": [
+        "RFC_VehArmArcadeRiderBikeTopple",
+        "RFC_VehConsumeArcadeRiderBikeTopple",
+        "CreateRagdollApplyImpulseEvent",
+        "PhysicalImpulseEvent"
+      ]
     }
   ]
 }

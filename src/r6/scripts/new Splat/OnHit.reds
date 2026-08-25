@@ -1237,6 +1237,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   let shhjmQueued: Bool;
   let shhjmRuntimeEnabled: Bool;
   let shhjmTargetWasAlreadyDead: Bool;
+  let shhjmFireDelay: Float;
   let injuryShockPart: Int32;
   let injuryShockAnchor: Vector4;
   let injuryShockQueued: Bool;
@@ -1465,21 +1466,37 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     }
 
     if this.shhjm_lastHitValid && (this.IsDead() || this.IsRagdolling()) {
-      SHHJM_QueueJolt(
-        this,
-        this.shhjm_lastBodyPart,
-        this.shhjm_lastBoneIndex,
-        shhjmTargetWasAlreadyDead,
-        this.shhjm_lastSrcPos,
-        this.shhjm_lastAnchorPos,
-        MaxF(0.001, SHHJM_GetHitDelay(this.shhjm_lastBodyPart, s) * MaxF(0.0, c.bulletJoltDelayScale)),
-        s
-      );
-      shhjmQueued = true;
-      LogChannel(
-        n"DEBUG",
-        s"[SPLAT_JOLT_TRACE] QUEUE_CALLED part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) queued=\(shhjmQueued)"
-      );
+      // A corpse jolt cannot even be called until its selected body-part timer
+      // has elapsed from the actual death. The lethal hit is not parked in the
+      // delay queue; the next qualifying hit after unlock fires immediately.
+      if !this.IsDead() || SHHJM_AfterDeathCallTimerExpired(this, this.shhjm_lastBodyPart, s) {
+        if this.IsDead() {
+          shhjmFireDelay = 0.001;
+        } else {
+          // Preserve the separate regular/live-ragdoll delay-scale behavior.
+          shhjmFireDelay = MaxF(
+            0.001,
+            SHHJM_GetHitDelay(this.shhjm_lastBodyPart, s)
+              * MaxF(0.0, c.bulletJoltDelayScale)
+          );
+        };
+
+        SHHJM_QueueJolt(
+          this,
+          this.shhjm_lastBodyPart,
+          this.shhjm_lastBoneIndex,
+          shhjmTargetWasAlreadyDead,
+          this.shhjm_lastSrcPos,
+          this.shhjm_lastAnchorPos,
+          shhjmFireDelay,
+          s
+        );
+        shhjmQueued = true;
+        LogChannel(
+          n"DEBUG",
+          s"[SPLAT_JOLT_TRACE] QUEUE_CALLED part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) queued=\(shhjmQueued)"
+        );
+      };
     }
   }
 
