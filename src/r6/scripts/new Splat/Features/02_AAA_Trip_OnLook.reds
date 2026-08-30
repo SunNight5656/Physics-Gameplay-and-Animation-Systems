@@ -6,7 +6,7 @@ module RealisticPush
 
 public class AAT_OnLookSettings {
 public let showOnLookSection: Bool = true;
-  public let enabled: Bool = false;
+  public let enabled: Bool = true;
   public let aggressiveOnly: Bool = true;
   public let requireCenterScreen: Bool = true;
   public let showAdvancedOnLook: Bool = false;
@@ -14,11 +14,11 @@ public let showOnLookSection: Bool = true;
   public let minSpeedMps: Float = 6.90;
   public let pushXY: Float = 28.00;
   public let downZ: Float = 11.00;
-  public let centerAimTightness: Float = 0.90;
-  public let centerLaneWidth: Float = 0.35;
+  public let centerAimTightness: Float = 0.99;
+  public let centerLaneWidth: Float = 0.20;
   public let sideXY: Float = 9.00;
   public let liftZ: Float = 1.00;
-  public let radius: Float = 1.20;
+  public let radius: Float = 1.05;
   public let zOffset: Float = 0.50;
   public let cooldownSec: Float = 0.80;
   public let intervalSec: Float = 0.05;
@@ -31,7 +31,8 @@ private func AAT_OnLookCfg() -> ref<AAT_OnLookSettings> {
   let settings: ref<AAT_OnLookSettings> = new AAT_OnLookSettings();
   let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
   let mode: Int32 = EnumInt(menu.splatPresetMode);
-  if mode == EnumInt(RFCSplatPresetMode.Realism) {
+  if mode == EnumInt(RFCSplatPresetMode.Realism)
+    || mode == EnumInt(RFCSplatPresetMode.Juggernaut) {
     settings.showOnLookSection = menu.customTripOnLook_showOnLookSection;
     settings.enabled = menu.customTripOnLook_enabled;
     settings.aggressiveOnly = menu.customTripOnLook_aggressiveOnly;
@@ -119,6 +120,9 @@ private func AAT_OnLookCfg() -> ref<AAT_OnLookSettings> {
     settings.impulseDelaySec = menu.arnoldTripOnLook_impulseDelaySec;
     settings.emotionDelayAfterRagdoll = menu.arnoldTripOnLook_emotionDelayAfterRagdoll;
   }
+  if mode == EnumInt(RFCSplatPresetMode.Juggernaut) {
+    settings.enabled = settings.enabled && menu.juggernautEnabled && menu.juggernautAffectNPCs;
+  };
   return settings;
 }
 
@@ -157,6 +161,38 @@ private func AAT_IsAggressiveNPC(p: wref<NPCPuppet>) -> Bool {
   if p.IsPuppetTargetingPlayer() { return true; }
   if NPCPuppet.IsInAlerted(p) { return true; }
   return false;
+}
+private func AAT_OnLookAllowsBossTarget(npc: wref<NPCPuppet>) -> Bool {
+  let menu: ref<RFCModSettings>;
+  let mode: Int32;
+  let allowBosses: Bool = true;
+
+  if !IsDefined(npc) {
+    return false;
+  };
+
+  menu = SPLATSettingsRuntime.Menu();
+  if !IsDefined(menu) {
+    return true;
+  };
+
+  mode = EnumInt(menu.splatPresetMode);
+  if mode == EnumInt(RFCSplatPresetMode.Realism)
+    || mode == EnumInt(RFCSplatPresetMode.Juggernaut) {
+    allowBosses = menu.customTrip_allowBosses;
+  } else if mode == EnumInt(RFCSplatPresetMode.RealismPlus) {
+    allowBosses = menu.realismPlusTrip_allowBosses;
+  } else if mode == EnumInt(RFCSplatPresetMode.DirtyHarry) {
+    allowBosses = menu.dirtyTrip_allowBosses;
+  } else if mode == EnumInt(RFCSplatPresetMode.Arnold) {
+    allowBosses = menu.arnoldTrip_allowBosses;
+  };
+
+  if allowBosses {
+    return true;
+  };
+
+  return !npc.IsBoss();
 }
 
 private func AAT_OnLookSched(go: wref<GameObject>, e: ref<Event>, t: Float) -> Void {
@@ -285,6 +321,11 @@ protected cb func OnAAT_OnLookTickEvt(e: ref<AAT_OnLookTickEvt>) -> Bool {
 
   npc = AAT_GetLookAtNPC(this);
   if !IsDefined(npc) || !ScriptedPuppet.CanRagdoll(npc) {
+    AAT_OnLookSched(this, new AAT_OnLookTickEvt(), AAT_OnLookDelay(s.intervalSec));
+    return true;
+  };
+
+  if !AAT_OnLookAllowsBossTarget(npc) {
     AAT_OnLookSched(this, new AAT_OnLookTickEvt(), AAT_OnLookDelay(s.intervalSec));
     return true;
   };

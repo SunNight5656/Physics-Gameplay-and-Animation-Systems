@@ -1,9 +1,11 @@
 module BikeVControlStandalone1600
 
+import RealisticPush.{RFC_SPLATRuntimeDisabledNow}
+
 // Standalone motorcycle mode, impact, rider, V-control, lean-fall,
 // and pickup-recovery system.
 //
-// No SPLAT dependency.
+// Bundled with SPLAT: Vanilla mode and Global Impulse Chance 0 are hard stops.
 //
 // Proven topple actuator:
 //   KnockOverBikeEvent(forceKnockdown=true, applyDirectionalForce=false)
@@ -175,6 +177,10 @@ public func BVCModeName(mode: Int32) -> String {
     return "ARNOLD / ARCADE";
   };
 
+  if mode == 5 {
+    return "JUGGERNAUT";
+  };
+
   return "VANILLA";
 }
 
@@ -329,6 +335,35 @@ public func BVCCreateMode(mode: Int32) -> ref<BVCModeConfig> {
     return config;
   };
 
+  if mode == 5 {
+    config.enabled = true;
+    config.bulletEnabled = true;
+    config.bulletPlayerOnly = false;
+    config.bulletHitsRequired = 3.00;
+    config.bulletChance = 100.00;
+    config.bulletStrength = 6.50;
+    config.vehicleImpactEnabled = true;
+    config.vehicleImpactThreshold = 0.75;
+    config.vehicleImpactChance = 100.00;
+    config.vehicleImpactStrength = 7.00;
+    config.worldImpactEnabled = true;
+    config.worldImpactThreshold = 2.00;
+    config.worldImpactChance = 100.00;
+    config.worldImpactStrength = 7.00;
+    config.riderKnockoffEnabled = true;
+    config.killMotorcycleDeathAnimation = false;
+    config.impactDirectionFlip = false;
+    config.toppleCooldown = 0.20;
+    config.leanFallEnabled = true;
+    config.leanFallAngle = 24.00;
+    config.leanFallMinSpeed = 0.00;
+    config.leanFallMaxSpeed = 100.00;
+    config.leanFallBikeStrength = 6.50;
+    config.playerGravityFallStrength = 9.00;
+    config.pickupRecoveryEnabled = true;
+    return config;
+  };
+
   config.enabled = false;
 
   config.bulletEnabled = false;
@@ -379,7 +414,7 @@ public final func BVCEnsureState() -> ref<BVCState> {
   state.manualControllerEnabled = false;
 
   mode = 0;
-  while mode < 5 {
+  while mode < 6 {
     ArrayPush(state.modes, BVCCreateMode(mode));
     mode += 1;
   };
@@ -401,8 +436,8 @@ public final func BVCSetActiveMode(mode: Int32) -> Bool {
     mode = 0;
   };
 
-  if mode > 4 {
-    mode = 4;
+  if mode > 5 {
+    mode = 5;
   };
 
   state.activeMode = mode;
@@ -628,6 +663,11 @@ public func BVCGetActiveConfig(
   let player: wref<PlayerPuppet> = BVCGetPlayer(owner);
   let state: ref<BVCState>;
 
+  if RFC_SPLATRuntimeDisabledNow() {
+    mode = 4;
+    return null;
+  };
+
   if !IsDefined(player) {
     mode = 4;
     return null;
@@ -637,24 +677,6 @@ public func BVCGetActiveConfig(
   mode = state.activeMode;
 
   return player.BVCGetModeConfig(mode);
-}
-
-public func BVCLog(
-  owner: wref<GameObject>,
-  text: String
-) -> Void {
-  let activityLog: ref<ActivityLogSystem>;
-
-  if !IsDefined(owner) {
-    return;
-  };
-
-  activityLog =
-    GameInstance.GetActivityLogSystem(owner.GetGame());
-
-  if IsDefined(activityLog) {
-    activityLog.AddLog("[BVC1600] " + text);
-  };
 }
 
 public func BVCNotify(
@@ -668,8 +690,6 @@ public func BVCNotify(
   if !IsDefined(owner) {
     return;
   };
-
-  BVCLog(owner, text);
 
   player = BVCGetPlayer(owner);
 
@@ -904,7 +924,9 @@ public func BVCScheduleDownwardRagdollImpulse(
   let delaySystem: ref<DelaySystem>;
   let impulse: Vector4;
 
-  if !IsDefined(rider) || strength <= 0.00 {
+  if RFC_SPLATRuntimeDisabledNow()
+    || !IsDefined(rider)
+    || strength <= 0.00 {
     return;
   };
 
@@ -1226,6 +1248,15 @@ public func BVCStartSelfRightingSuppression(
 protected cb func OnBVCSuppressEvent(
   evt: ref<BVCSuppressEvent>
 ) -> Bool {
+  if RFC_SPLATRuntimeDisabledNow() {
+    this.bvc_controlGeneration += 1;
+    this.bvc_suppressAfterReceiver = false;
+    this.bvc_recoveryActive = false;
+    this.EnableAirControl(true);
+    this.EnableTiltControl(true);
+    return true;
+  };
+
   if evt.generation != this.bvc_controlGeneration {
     return true;
   };
@@ -1376,6 +1407,15 @@ public func BVCStartPickupRecovery(
 protected cb func OnBVCRecoveryEvent(
   evt: ref<BVCRecoveryEvent>
 ) -> Bool {
+  if RFC_SPLATRuntimeDisabledNow() {
+    this.bvc_controlGeneration += 1;
+    this.bvc_recoveryActive = false;
+    this.bvc_suppressAfterReceiver = false;
+    this.EnableAirControl(true);
+    this.EnableTiltControl(true);
+    return true;
+  };
+
   if evt.generation != this.bvc_controlGeneration {
     return true;
   };
@@ -1413,7 +1453,7 @@ public func BVCApplyTopple(
   let direction: Vector4;
   let rider: wref<GameObject>;
 
-  if !IsDefined(bike) {
+  if RFC_SPLATRuntimeDisabledNow() || !IsDefined(bike) {
     return false;
   };
 
@@ -1643,11 +1683,6 @@ public func BVCTryVehicleHitFallback(
     sourcePosition
   );
 
-  BVCLog(
-    bike,
-    "VEHICLE HIT FALLBACK SEEN | THRESHOLD 0"
-  );
-
   BVCApplyTopple(
     bike,
     side,
@@ -1691,14 +1726,6 @@ public func BVCTryImpactTopple(
   if !IsDefined(bike) || !IsDefined(evt) {
     return;
   };
-
-  BVCLog(
-    bike,
-    "BUMP SEEN | DELTA "
-      + FloatToString(evt.impactVelocityChange)
-      + " | HIT VEHICLE "
-      + BoolToString(IsDefined(evt.hitVehicle))
-  );
 
   config = BVCGetActiveConfig(bike, mode);
 
@@ -1898,6 +1925,22 @@ protected cb func OnBVCPlayerMonitorEvent(
   let nextDelay: Float;
 
   this.bvc_monitorScheduled = false;
+
+  // Keep the lightweight monitor alive so re-enabling SPLAT is immediate, but
+  // never run lean, recovery, rider or physics work while globally disabled.
+  if RFC_SPLATRuntimeDisabledNow() {
+    if IsDefined(this.bvc_lastMountedBike) {
+      this.bvc_lastMountedBike.bvc_controlGeneration += 1;
+      this.bvc_lastMountedBike.bvc_recoveryActive = false;
+      this.bvc_lastMountedBike.bvc_suppressAfterReceiver = false;
+      this.bvc_lastMountedBike.EnableAirControl(true);
+      this.bvc_lastMountedBike.EnableTiltControl(true);
+      this.bvc_lastMountedBike = null;
+    };
+    BVCSchedulePlayerMonitor(this, 0.20);
+    return true;
+  };
+
   state = this.BVCEnsureState();
   config = this.BVCGetModeConfig(
     state.activeMode
@@ -1957,10 +2000,6 @@ protected cb func OnBVCPlayerMonitorEvent(
       && this.bvc_lastMountedBike.bvc_riderMountedAtTopple {
       this.bvc_lastMountedBike.bvc_seenUnmountAfterTopple = true;
 
-      BVCLog(
-        this,
-        "V DISMOUNT OBSERVED | RECOVERY ARMED FOR NEXT MOUNT"
-      );
     };
 
     this.bvc_lastMountedBike = null;
@@ -1995,6 +2034,15 @@ protected cb func OnKnockOverBikeEvent(
   };
 
   result = wrappedMethod(evt);
+
+  if RFC_SPLATRuntimeDisabledNow() {
+    if IsDefined(bike) {
+      bike.bvc_controlGeneration += 1;
+      bike.bvc_suppressAfterReceiver = false;
+      bike.bvc_recoveryActive = false;
+    };
+    return result;
+  };
 
   if suppressAfter
     && IsDefined(bike)
@@ -2054,11 +2102,6 @@ protected cb func OnVehicleBumpEvent(
 
     // Route A: the motorcycle itself owns the bump event.
     if IsDefined(ownerBike) {
-      BVCLog(
-        ownerBike,
-        "SYMMETRIC BUMP | OWNER BIKE"
-      );
-
       BVCTryImpactTopple(
         ownerBike,
         evt,
@@ -2077,11 +2120,6 @@ protected cb func OnVehicleBumpEvent(
         || ownerBike.GetEntityID()
           != hitBike.GetEntityID()
       ) {
-      BVCLog(
-        hitBike,
-        "SYMMETRIC BUMP | HIT BIKE TARGET"
-      );
-
       BVCTryImpactTopple(
         hitBike,
         evt,
@@ -2195,8 +2233,6 @@ private final func BVCRegisterInputs() -> Void {
 @wrapMethod(PlayerPuppet)
 protected cb func OnGameAttached() -> Bool {
   let result: Bool;
-  let activityLog: ref<ActivityLogSystem>;
-
   result = wrappedMethod();
 
   this.BVCEnsureState();
@@ -2206,21 +2242,6 @@ protected cb func OnGameAttached() -> Bool {
     this,
     0.25
   );
-
-  if !this.bvc_markerShown {
-    this.bvc_markerShown = true;
-
-    activityLog =
-      GameInstance.GetActivityLogSystem(
-        this.GetGame()
-      );
-
-    if IsDefined(activityLog) {
-      activityLog.AddLog(
-        "BVC1606_DEBUG_MODE_VANILLA_WEAPON_FIX loaded"
-      );
-    };
-  };
 
   return result;
 }
@@ -2261,6 +2282,10 @@ protected cb func OnAction(
     action,
     consumer
   );
+
+  if RFC_SPLATRuntimeDisabledNow() {
+    return result;
+  };
 
   if NotEquals(
     ListenerAction.GetType(action),

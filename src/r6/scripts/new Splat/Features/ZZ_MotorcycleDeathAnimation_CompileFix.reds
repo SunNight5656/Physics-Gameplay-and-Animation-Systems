@@ -1,5 +1,7 @@
 module BikeVControlStandalone1600
 
+import RealisticPush.{RFC_SPLATRuntimeDisabledNow}
+
 // The menu's canonical motorcycle-animation switch lives in BVCModeConfig.
 // Capture the mounted bike before vanilla death processing clears the mount,
 // then perform the same single unmount/ragdoll handoff used by BVC itself.
@@ -13,7 +15,9 @@ private func BVCCutMountedRiderDeathAnimation(
 ) -> Void {
   let workspotSystem: ref<WorkspotGameSystem>;
 
-  if !IsDefined(rider) || !IsDefined(bike) {
+  if RFC_SPLATRuntimeDisabledNow()
+    || !IsDefined(rider)
+    || !IsDefined(bike) {
     return;
   }
 
@@ -34,7 +38,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   let shouldCut: Bool = false;
   let result: Bool;
 
-  if IsDefined(bike) {
+  if !RFC_SPLATRuntimeDisabledNow() && IsDefined(bike) {
     config = BVCGetActiveConfig(bike, mode);
     shouldCut = IsDefined(config)
       && config.killMotorcycleDeathAnimation

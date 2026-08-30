@@ -200,8 +200,7 @@
         "vehicleBulletPlayerOnly",
         "vehicleExplosionPlayerOnly",
         "vehicleImpulsePlayerOnly",
-        "RFC_VehApplyExplosionRadialImpulse",
-        "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyExplosionStagedImpulse",
         "RFC_VehApplyPhysicalImpulse",
         "RFC_GrenadeExceptionMatches"
       ],
@@ -210,8 +209,7 @@
         "vehicleBulletPlayerOnly",
         "vehicleExplosionPlayerOnly",
         "vehicleImpulsePlayerOnly",
-        "RFC_VehApplyExplosionRadialImpulse",
-        "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyExplosionStagedImpulse",
         "RFC_VehApplyPhysicalImpulse"
       ]
     },
@@ -571,6 +569,24 @@
         "CreateRagdollApplyImpulseEvent",
         "PhysicalImpulseEvent"
       ]
+    },
+    {
+      "name": "JUGGERNAUT MODE - PLAYER SMASH ROUTE",
+      "file": "src/r6/scripts/new Splat/Features/JuggernautMode.reds",
+      "requiredPatterns": [
+        "OnSPLAT_JuggernautTickEvt",
+        "RFCSplatPresetMode.Juggernaut",
+        "SPLAT_JuggernautVehicleImpulse",
+        "SPLAT_JuggernautObjectImpulse",
+        "RFC_VehScheduleSelfRightingKill"
+      ],
+      "orderedPatterns": []
+    },
+    {
+      "name": "HEAD FALLS - LEGACY COMPATIBILITY STUB",
+      "file": "src/r6/scripts/new Splat/HeadFallsLogicImpulse.reds",
+      "requiredPatterns": [],
+      "orderedPatterns": []
     }
   ]
 }

@@ -262,16 +262,21 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   // HitReactionComponent / death reactions inspect these values while choosing
   // Death versus ForcedRagdoll, so doing this after wrappedMethod was ineffective.
   if vanillaWeaponDeathAnim || useDeathAnim {
+    // The final selected SPLAT mode explicitly allows a native death animation
+    // (or a per-weapon Vanilla exception owns this death). Restore the native
+    // gates before vanilla OnDeath chooses its death path.
     this.SetSkipDeathAnimation(false);
     NPCPuppet.ChangeForceRagdollOnDeath(this, false);
 
-    let deathAnimGateLog: ref<ActivityLogSystem> =
-      GameInstance.GetActivityLogSystem(this.GetGame());
-    if IsDefined(deathAnimGateLog) {
-      deathAnimGateLog.AddLog(
-        "[SPLAT1710] PER-WEAPON/GLOBAL SHARED DEATH ENABLER BEFORE ONDEATH"
-      );
-    };
+  } else {
+    // IMPORTANT: the no-death-animation choice must be applied BEFORE
+    // wrappedMethod(evt). Cutting after vanilla OnDeath is too late because the
+    // native death reaction may already have started. This uses the FINAL
+    // RFC.Cfg() result, so Realism Custom / named modes keep their own routing,
+    // while Vanilla mode never reaches this block (it returns at function entry).
+    this.SetSkipDeathAnimation(true);
+    NPCPuppet.ChangeForceRagdollOnDeath(this, true);
+
   }
 
   let res: Bool = wrappedMethod(evt);
@@ -285,11 +290,9 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     }
 
     if useDeathAnim {
-      // Preserve the chosen death animation. A positive compatibility delay
-      // hands off to ragdoll later; 0.0 means let the native animation finish.
-      if c.animCompatDelay > 0.0 {
-        RFC_ScheduleCut(ds, this, c.animCompatDelay);
-      };
+      // The cutoff slider is literal in every mode: 0.00 is immediate, any
+      // positive value is the exact animation-to-ragdoll handoff delay.
+      RFC_ScheduleCut(ds, this, c.animCompatDelay);
     } else {
       RFC_ScheduleCut(ds, this, 0.0);
     };
@@ -315,21 +318,14 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     return res;
   }
 
-  // Selected weapon death now uses the SAME restored death-animation enabler
-  // that the normal Death Animation toggle uses. Do not add SPLAT death
-  // impulses or a SPLAT compatibility cut for this weapon-specific exception.
+  // A selected weapon still owns the vanilla death animation, but it is no
+  // longer exempt from this mode's Death Animation Cutoff slider.
   if vanillaWeaponDeathAnim {
     this.SetSkipDeathAnimation(false);
     NPCPuppet.ChangeForceRagdollOnDeath(this, false);
     RFC_BlockAllDeathImpulseLanes(this);
+    RFC_ScheduleVanillaWeaponCut(ds, this, c.animCompatDelay);
 
-    let vanillaReactionLog: ref<ActivityLogSystem> =
-      GameInstance.GetActivityLogSystem(this.GetGame());
-    if IsDefined(vanillaReactionLog) {
-      vanillaReactionLog.AddLog(
-        "[SPLAT1710] PER-WEAPON KILL USED WORKING GLOBAL DEATH-ANIMATION STATE"
-      );
-    };
 
     return res;
   }
@@ -347,9 +343,7 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   // Reuse that exact choice here so the toggle, chance roll and native gates
   // cannot disagree within the same death.
   if useDeathAnim {
-    if c.animCompatDelay > 0.0 {
-      RFC_ScheduleCut(ds, this, c.animCompatDelay);
-    }
+    RFC_ScheduleCut(ds, this, c.animCompatDelay);
   } else {
     // Restored from the known-good r6(15) route. When no death animation is
     // selected, cut immediately after vanilla OnDeath instead of leaving the
@@ -380,9 +374,6 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 
   // NEW: walk gate (keeps routing consistent)
   let gWalkActive: Bool = !gVanilla && c.walkEnabled;
-
-  // (you were forcing this off anyway)
-  gSettleActive = false;
 
   // If engine cannot ragdoll, stop here after we’ve issued any cuts
   if c.skipDeathAnim && !ScriptedPuppet.CanRagdoll(this) {
@@ -468,6 +459,12 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   if isStairLike {
 
     if !gStairsActive {
+      RFC_ScheduleIndependentStairsTumble(
+        ds, this, pelvisPos, chestPos, headPos,
+        downhill.X, downhill.Y,
+        didGroundHit, heightToGround,
+        c
+      );
       return res;
     }
 
@@ -564,6 +561,9 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
           c.tumbleStairs_side,
           c.tumbleStairs_down,
           c.tumbleStairs_fwd,
+          RFC_ClampT(c.tumbleStairs_sideDelay),
+          RFC_ClampT(c.tumbleStairs_downDelay),
+          RFC_ClampT(c.tumbleStairs_fwdDelay),
           c.tumbleStairs_radius,
           c
         );
@@ -583,6 +583,9 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
           9.25,
           -2.80,
           0.04,
+          0.00,
+          0.00,
+          0.00,
           1.35,
           c
         );
@@ -598,6 +601,10 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   // ─────────────────────────
   if isWS {
     if !gWSActive {
+      RFC_ScheduleIndependentDirectionalTumble(
+        ds, this, pelvisPos, chestPos, headPos,
+        dirX, dirY, false, c
+      );
       return res;
     }
 
@@ -684,6 +691,12 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 
           c.tumbleDir_fwd,
 
+          RFC_ClampT(c.tumbleDir_sideDelay),
+
+          RFC_ClampT(c.tumbleDir_downDelay),
+
+          RFC_ClampT(c.tumbleDir_fwdDelay),
+
           c.tumbleDir_radius,
 
           c
@@ -718,6 +731,10 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
   // ─────────────────────────
   if isCow {
     if !gCowerActive {
+      RFC_ScheduleIndependentDirectionalTumble(
+        ds, this, pelvisPos, chestPos, headPos,
+        dirX, dirY, false, c
+      );
       return res;
     }
 
@@ -771,6 +788,9 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
           c.tumbleDir_side,
           c.tumbleDir_down,
           c.tumbleDir_fwd,
+          RFC_ClampT(c.tumbleDir_sideDelay),
+          RFC_ClampT(c.tumbleDir_downDelay),
+          RFC_ClampT(c.tumbleDir_fwdDelay),
           c.tumbleDir_radius,
           c
         );
@@ -858,6 +878,12 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
     d_pelvisFall = c.st_d_pelvisFall;
 
   } else {
+    RFC_ScheduleIndependentDirectionalTumble(
+      ds, this, pelvisPos, chestPos, headPos,
+      dirX, dirY,
+      isRun || isWalk || walkRecent,
+      c
+    );
     if gSettleActive {
       RFC_ApplyGlobalSettle(ds, this, headPos, chestPos, pelvisPos, dirX, dirY, c);
     }
@@ -993,6 +1019,12 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
 
           c.tumbleDir_fwd,
 
+          RFC_ClampT(c.tumbleDir_sideDelay),
+
+          RFC_ClampT(c.tumbleDir_downDelay),
+
+          RFC_ClampT(c.tumbleDir_fwdDelay),
+
           c.tumbleDir_radius,
 
           c
@@ -1121,6 +1153,9 @@ protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
           c.tumbleDir_side,
           c.tumbleDir_down,
           c.tumbleDir_fwd,
+          RFC_ClampT(c.tumbleDir_sideDelay),
+          RFC_ClampT(c.tumbleDir_downDelay),
+          RFC_ClampT(c.tumbleDir_fwdDelay),
           c.tumbleDir_radius,
           c
         );

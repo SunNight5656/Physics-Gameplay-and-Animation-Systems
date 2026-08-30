@@ -21,7 +21,7 @@ protected cb func OnSetNewHitReactionBehaviorData(evt: ref<NewHitDataEvent>) -> 
     return wrappedMethod(evt);
   }
 
-  if c.killImpulsesVehiclesOnly && IsDefined(this.m_ownerNPC) && RFC_IsVehicleContext(this.m_ownerNPC) {
+  if (c.killImpulsesVehiclesOnly || c.vehicleOccupantShieldEnabled) && IsDefined(this.m_ownerNPC) && RFC_IsVehicleContext(this.m_ownerNPC) {
     // Clear accumulated physical push, but keep the vanilla reaction callback.
     // Swallowing this entire callback also swallowed the seated death animation.
     this.m_cumulatedPhysicalImpulse = 0.0;

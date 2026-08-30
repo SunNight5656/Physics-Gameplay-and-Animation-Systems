@@ -188,6 +188,9 @@ private func RFC_ScheduleSideTumble_Torque(
   sideStrength: Float,
   downStrength: Float,
   fwdStrength: Float,
+  sideDelay: Float,
+  downDelay: Float,
+  fwdDelay: Float,
   radius: Float,
   c: RFCConfig
 ) -> Void {
@@ -263,32 +266,43 @@ private func RFC_ScheduleSideTumble_Torque(
     // ─────────────────────────
     // Torque couple (pelvis vs chest/head)
     // ─────────────────────────
-    let pv: Vector4 = Vector4(
-      (sx * side * sign + fx * fwd),
-      (sy * side * sign + fy * fwd),
-      down,
-      1.0
-    );
+    // Keep the three forces independent so each menu delay controls only its
+    // matching component. When their delays match, these vectors sum to the
+    // exact torque vector used by the previous combined scheduler.
+    let pvSide: Vector4 = Vector4(sx * side * sign, sy * side * sign, 0.0, 1.0);
+    let cvSide: Vector4 = Vector4(-sx * side * sign, -sy * side * sign, 0.0, 1.0);
+    let hvSide: Vector4 = Vector4(-sx * (side * 0.55) * sign, -sy * (side * 0.55) * sign, 0.0, 1.0);
 
-    let cv: Vector4 = Vector4(
-      (-sx * side * sign + fx * (fwd * 0.55)),
-      (-sy * side * sign + fy * (fwd * 0.55)),
-      down * 0.85,
-      1.0
-    );
+    let pvDown: Vector4 = Vector4(0.0, 0.0, down, 1.0);
+    let cvDown: Vector4 = Vector4(0.0, 0.0, down * 0.85, 1.0);
+    let hvDown: Vector4 = Vector4(0.0, 0.0, down * 0.55, 1.0);
 
-    let hv: Vector4 = Vector4(
-      (-sx * (side * 0.55) * sign + fx * (fwd * 0.35)),
-      (-sy * (side * 0.55) * sign + fy * (fwd * 0.35)),
-      down * 0.55,
-      3.0
-    );
+    let pvFwd: Vector4 = Vector4(fx * fwd, fy * fwd, 0.0, 1.0);
+    let cvFwd: Vector4 = Vector4(fx * (fwd * 0.55), fy * (fwd * 0.55), 0.0, 1.0);
+    let hvFwd: Vector4 = Vector4(fx * (fwd * 0.35), fy * (fwd * 0.35), 0.0, 1.0);
 
-    let t: Float = RFC_ClampT(startDelay + (Cast<Float>(i) * stepDelay));
+    let tBase: Float = RFC_ClampT(startDelay + (Cast<Float>(i) * stepDelay));
+    let tSide: Float = RFC_ClampT(tBase + sideDelay);
+    let tDown: Float = RFC_ClampT(tBase + downDelay);
+    let tFwd: Float = RFC_ClampT(tBase + fwdDelay);
 
-RFC_ApplyGravityBurst(ds, p, pelvisPos, pv, radius, t,                 1, 0.0, false, false);
-RFC_ApplyGravityBurst(ds, p, chestPos,  cv, radius, RFC_ClampT(t+0.06), 1, 0.0, false, false);
-RFC_ApplyGravityBurst(ds, p, headPos,   hv, radius, RFC_ClampT(t+0.12), 1, 0.0, false, false);
+    if AbsF(side) > 0.0001 {
+      RFC_ApplyGravityBurst(ds, p, pelvisPos, pvSide, radius, tSide, 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, chestPos, cvSide, radius, RFC_ClampT(tSide + 0.06), 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, headPos, hvSide, radius, RFC_ClampT(tSide + 0.12), 1, 0.0, false, false);
+    }
+
+    if AbsF(down) > 0.0001 {
+      RFC_ApplyGravityBurst(ds, p, pelvisPos, pvDown, radius, tDown, 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, chestPos, cvDown, radius, RFC_ClampT(tDown + 0.06), 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, headPos, hvDown, radius, RFC_ClampT(tDown + 0.12), 1, 0.0, false, false);
+    }
+
+    if AbsF(fwd) > 0.0001 {
+      RFC_ApplyGravityBurst(ds, p, pelvisPos, pvFwd, radius, tFwd, 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, chestPos, cvFwd, radius, RFC_ClampT(tFwd + 0.06), 1, 0.0, false, false);
+      RFC_ApplyGravityBurst(ds, p, headPos, hvFwd, radius, RFC_ClampT(tFwd + 0.12), 1, 0.0, false, false);
+    }
 
     i += 1;
   }
@@ -372,4 +386,133 @@ let decay: Float = LerpF(0.10, 1.0, ramp); // starts gentle, ends strong
 
     i += 1;
   }
+}
+
+// Tumble is an independent post-death feature. Situational Override switches
+// decide whether their own body-part impulses run; they must not decide whether
+// Tumble is allowed to schedule. The routers call these helpers only when the
+// corresponding Situational branch is closed, avoiding duplicate schedules
+// when that branch is active.
+private func RFC_ScheduleIndependentDirectionalTumble(
+  ds: ref<DelaySystem>,
+  p: ref<NPCPuppet>,
+  pelvisPos: Vector4,
+  chestPos: Vector4,
+  headPos: Vector4,
+  dirX: Float,
+  dirY: Float,
+  movingLike: Bool,
+  c: RFCConfig
+) -> Void {
+  let moveX: Float;
+  let moveY: Float;
+
+  if !c.directionalTumbleEnabled || !IsDefined(ds) || !IsDefined(p) {
+    return;
+  }
+
+  moveX = dirX;
+  moveY = dirY;
+  if movingLike {
+    RFC_GetMoveDirXY(p, dirX, dirY, moveX, moveY);
+  }
+
+  if c.overrideTumbleDirectional {
+    RFC_ScheduleSideTumble_Torque(
+      ds, p, pelvisPos, chestPos, headPos,
+      moveX, moveY,
+      RFC_ClampT(c.tumbleDir_startDelay),
+      RFC_ClampT(c.tumbleDir_stepDelay),
+      c.tumbleDir_steps,
+      c.tumbleDir_side,
+      c.tumbleDir_down,
+      c.tumbleDir_fwd,
+      RFC_ClampT(c.tumbleDir_sideDelay),
+      RFC_ClampT(c.tumbleDir_downDelay),
+      RFC_ClampT(c.tumbleDir_fwdDelay),
+      c.tumbleDir_radius,
+      c
+    );
+    return;
+  }
+
+  RFC_ScheduleGravityRollResolve_Directional(
+    ds, p,
+    pelvisPos, chestPos, headPos,
+    moveX, moveY,
+    movingLike ? 0.90 : 1.20,
+    movingLike ? 0.10 : 0.16,
+    movingLike ? 6 : 14,
+    movingLike ? 0.30 : 0.50,
+    movingLike ? -0.60 : -0.20,
+    movingLike ? 1.55 : 1.85,
+    c
+  );
+}
+
+private func RFC_ScheduleIndependentStairsTumble(
+  ds: ref<DelaySystem>,
+  p: ref<NPCPuppet>,
+  pelvisPos: Vector4,
+  chestPos: Vector4,
+  headPos: Vector4,
+  downhillX: Float,
+  downhillY: Float,
+  didGroundHit: Bool,
+  heightToGround: Float,
+  c: RFCConfig
+) -> Void {
+  let startDelay: Float;
+
+  if !c.tumbleEnabled || !IsDefined(ds) || !IsDefined(p) {
+    return;
+  }
+
+  if c.overrideTumbleStairs {
+    startDelay = c.tumbleStairs_delay + c.tumbleStairs_startBase;
+    if didGroundHit {
+      startDelay += MinF(
+        c.tumbleStairs_startCap,
+        heightToGround * c.tumbleStairs_startScale
+      );
+    }
+
+    RFC_ScheduleSideTumble_Torque(
+      ds, p, pelvisPos, chestPos, headPos,
+      downhillX, downhillY,
+      RFC_ClampT(startDelay),
+      RFC_ClampT(c.tumbleStairs_stepDelay),
+      c.tumbleStairs_steps,
+      c.tumbleStairs_side,
+      c.tumbleStairs_down,
+      c.tumbleStairs_fwd,
+      RFC_ClampT(c.tumbleStairs_sideDelay),
+      RFC_ClampT(c.tumbleStairs_downDelay),
+      RFC_ClampT(c.tumbleStairs_fwdDelay),
+      c.tumbleStairs_radius,
+      c
+    );
+    return;
+  }
+
+  startDelay = 0.18;
+  if didGroundHit {
+    startDelay += MinF(0.22, heightToGround * 0.10);
+  }
+
+  RFC_ScheduleSideTumble_Torque(
+    ds, p, pelvisPos, chestPos, headPos,
+    downhillX, downhillY,
+    RFC_ClampT(startDelay),
+    0.08,
+    16,
+    9.25,
+    -2.80,
+    0.04,
+    0.00,
+    0.00,
+    0.00,
+    1.35,
+    c
+  );
 }

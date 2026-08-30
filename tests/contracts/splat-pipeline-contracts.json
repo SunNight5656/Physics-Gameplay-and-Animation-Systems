@@ -241,8 +241,7 @@
             "cfg.vehicleExplosionPlayerOnly",
             "cfg.vehicleImpulsePlayerOnly",
             "RFC_GrenadeExceptionMatches(ad, cfg)",
-            "RFC_VehApplyExplosionRadialImpulse",
-            "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyExplosionStagedImpulse",
             "RFC_VehApplyPhysicalImpulse"
           ],
           "ordered": [
@@ -251,8 +250,7 @@
             "cfg.vehicleExplosionPlayerOnly",
             "cfg.vehicleImpulsePlayerOnly",
             "RFC_GrenadeExceptionMatches(ad, cfg)",
-            "RFC_VehApplyExplosionRadialImpulse",
-            "RFC_VehApplyExplosionMultiPointImpulse",
+        "RFC_VehApplyExplosionStagedImpulse",
             "RFC_VehApplyPhysicalImpulse"
           ]
         }

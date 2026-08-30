@@ -120,7 +120,7 @@
       "mode": "dirtyHarry",
       "topic": "explosions",
       "type": "Float",
-      "default": 1.2,
+      "default": 22.75,
       "label": "Explosion Push on NPCs — Up",
       "description": "Base upward blast impulse.",
       "dependencyName": "clean2",

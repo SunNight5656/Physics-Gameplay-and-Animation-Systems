@@ -5,6 +5,7 @@ module RealisticPush
 // It does not replace NPC arcade impulses. It only runs when a VehicleObject receives a valid hit.
 
 @addField(VehicleObject) public let rfc_vehicleImpulseLastT: Float;
+@addField(VehicleObject) public let rfc_vehiclePanicPromotionRequested: Bool;
 @addField(BikeObject) public let rfc_arcadeLeanToppleLatched: Bool;
 @addField(PlayerPuppet) private let rfc_arcadeBikeLeanCheckScheduled: Bool;
 @addField(NPCPuppet) public let rfc_arcadeRiderBikeToppleArmed: Bool;
@@ -15,6 +16,26 @@ module RealisticPush
 // stabilization after OnHit, so one immediate EnableAirControl(false) is not enough.
 public class RFC_VehKillSelfRightingEvent extends Event {}
 public class RFC_ArcadeBikeLeanCheckEvent extends Event {}
+public class RFC_VehPanicPromotionProbeEvent extends Event {}
+
+// V15 explosion consistency test. Vehicle physics can still be sleeping or
+// transitioning when OnHit arrives, so do not spend the entire explosion in one
+// simulation frame. Carry a precomputed share of the configured blast into the
+// next physics frames and wake/release the vehicle again before each pulse.
+public class RFC_VehExplosionPulseEvent extends Event {
+  public let impulse: Vector4;
+  public let position: Vector4;
+  public let radius: Float;
+}
+
+// V16 crowd-traffic promotion test. Civilian traffic vehicles can remain under
+// crowd/kinematic movement even after PhysicsWakeUp(). Carry a precomputed
+// bullet/melee impulse until the traffic controller has had a frame to release.
+public class RFC_VehDeferredPhysicalImpulseEvent extends Event {
+  public let impulse: Vector4;
+  public let position: Vector4;
+  public let radius: Float;
+}
 
 @addMethod(VehicleObject)
 protected cb func OnRFC_VehKillSelfRightingEvent(evt: ref<RFC_VehKillSelfRightingEvent>) -> Bool {
@@ -43,6 +64,10 @@ private func RFC_VehKillSelfRightingControls(vehicle: ref<VehicleObject>) -> Voi
 
 private func RFC_VehScheduleSelfRightingKill(vehicle: ref<VehicleObject>) -> Void {
   if !IsDefined(vehicle) { return; }
+  // BVC owns bike tilt / self-righting control. SPLAT still pushes BikeObject
+  // chassis through the normal vehicle impulse helpers, but does not fight BVC.
+  let bvcBike: ref<BikeObject> = vehicle as BikeObject;
+  if IsDefined(bvcBike) { return; }
   RFC_VehKillSelfRightingControls(vehicle);
 
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(vehicle.GetGame());
@@ -341,8 +366,7 @@ private enum RFCVehicleHitSource {
   Explosion = 0,
   Bullet = 1,
   Melee = 2,
-  PlayerImpact = 3,
-  Ignore = 4
+  Ignore = 3
 }
 
 private enum RFCVehicleWeaponGroup {
@@ -385,46 +409,22 @@ private func RFC_VehIsMelee(ad: ref<AttackData>) -> Bool {
 }
 
 private func RFC_VehClassifySource(ad: ref<AttackData>) -> RFCVehicleHitSource {
-  let at: gamedataAttackType;
-  let instigator: ref<GameObject>;
-  let sourceVehicle: ref<VehicleObject>;
-
   if !IsDefined(ad) { return RFCVehicleHitSource.Ignore; }
   if RFC_VehIsExplosion(ad) { return RFCVehicleHitSource.Explosion; }
   if RFC_VehIsMelee(ad) { return RFCVehicleHitSource.Melee; }
 
-  at = ad.GetAttackType();
+  // Some vehicle bullet hits do not expose a normal WeaponObject on AttackData.
+  // Treat non-explosion, non-melee weapon damage as bullet fallback so bullets
+  // still get a chance to move cars instead of silently doing nothing.
+  if IsDefined(ad.GetWeapon() as WeaponObject) { return RFCVehicleHitSource.Bullet; }
+  if !ad.HasFlag(hitFlag.VehicleImpact) { return RFCVehicleHitSource.Bullet; }
 
-  // Preserve legitimate ranged/direct bullet hits even if WeaponObject has
-  // already been released by the time VehicleObject.OnHit receives them.
-  if AttackData.IsRangedOrDirect(at) {
-    return RFCVehicleHitSource.Bullet;
-  };
-
-  if IsDefined(ad.GetWeapon() as WeaponObject) {
-    return RFCVehicleHitSource.Bullet;
-  };
-
-  if ad.HasFlag(hitFlag.VehicleImpact) {
-    instigator = ad.GetInstigator();
-
-    // V physically landing/jumping on a vehicle is not a bullet.
-    if IsDefined(instigator)
-      && instigator.IsPlayer() {
-      return RFCVehicleHitSource.PlayerImpact;
-    };
-
-    sourceVehicle = instigator as VehicleObject;
-    if IsDefined(sourceVehicle) {
-      return RFCVehicleHitSource.Ignore;
-    };
-  };
-
-  if !ad.HasFlag(hitFlag.VehicleImpact) {
-    return RFCVehicleHitSource.Bullet;
-  };
-
-  return RFCVehicleHitSource.Ignore;
+  // VehicleImpact is also present on a subset of legitimate bullet hits after
+  // their WeaponObject has already been released. Only suppress this lane when
+  // the actual attacker is a vehicle; otherwise keep the unknown-bullet fallback.
+  let sourceVehicle: ref<VehicleObject> = ad.GetInstigator() as VehicleObject;
+  if IsDefined(sourceVehicle) { return RFCVehicleHitSource.Ignore; }
+  return RFCVehicleHitSource.Bullet;
 }
 
 private func RFC_VehIsBadPos(v: Vector4) -> Bool {
@@ -453,16 +453,41 @@ private func RFC_VehChooseExplosionSource(vehicle: ref<VehicleObject>, ad: ref<A
 private func RFC_VehPassesPlayerOnly(vehicle: ref<VehicleObject>, ad: ref<AttackData>, source: RFCVehicleHitSource) -> Bool {
   if !IsDefined(vehicle) || !IsDefined(ad) { return false; }
 
-  // V Only is a strict attack-source gate. Missing or non-player ownership does
-  // not enter the custom vehicle push lane.
-  return RFC_IsPlayerAttack(vehicle, ad);
+  let player: ref<PlayerPuppet> = GameInstance.GetPlayerSystem(vehicle.GetGame()).GetLocalPlayerMainGameObject() as PlayerPuppet;
+  if !IsDefined(player) { return false; }
+
+  // V-only means V must be positively identified as the attack owner.
+  // Do not treat a surviving WeaponObject, projectile, grenade, or unknown
+  // source as proof of V ownership; hostile mounted weapons can arrive that way.
+  let instigator: ref<GameObject> = ad.GetInstigator();
+  if IsDefined(instigator) {
+    if instigator == player { return true; }
+
+    let instigatorVehicle: ref<VehicleObject> = instigator as VehicleObject;
+    if IsDefined(instigatorVehicle) { return instigatorVehicle.IsPlayerDriver(); }
+
+    let instigatorNPC: ref<NPCPuppet> = instigator as NPCPuppet;
+    if IsDefined(instigatorNPC) { return false; }
+    // Unknown/projectile instigators are not authoritative. Continue to GetSource().
+  }
+
+  let sourcePlayer: ref<PlayerPuppet> = ad.GetSource() as PlayerPuppet;
+  if IsDefined(sourcePlayer) { return sourcePlayer == player; }
+
+  let sourceNPC: ref<NPCPuppet> = ad.GetSource() as NPCPuppet;
+  if IsDefined(sourceNPC) { return false; }
+
+  let sourceVehicle: ref<VehicleObject> = ad.GetSource() as VehicleObject;
+  if IsDefined(sourceVehicle) { return sourceVehicle.IsPlayerDriver(); }
+
+  // Ownership was lost. With V-only enabled, fail closed instead of guessing.
+  return false;
 }
 
 private func RFC_VehSourceUsesInstigator(source: RFCVehicleHitSource) -> Bool {
   switch source {
     case RFCVehicleHitSource.Bullet: return true;
     case RFCVehicleHitSource.Melee: return true;
-    case RFCVehicleHitSource.PlayerImpact: return true;
   }
   return false;
 }
@@ -613,6 +638,152 @@ private func RFC_VehMassScale(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Fl
   return RFC_VehClampF(mass / MaxF(1.0, cfg.vehicleImpulseReferenceMass), cfg.vehicleImpulseMinMassScale, cfg.vehicleImpulseMaxMassScale);
 }
 
+// V26: keep the V25 vanilla panic-promotion route, but do not let
+// CanStartPanicDriving() veto ordinary occupied civilian traffic. V25 proved
+// that every successfully queued panic transition moved the vehicle out of the
+// crowd/traffic physics state; the remaining stubborn vehicles were repeatedly
+// blocked only by canAfter=false. We still exclude prevention/police, quest,
+// scene-animation, player-mounted, unoccupied, and already-promoted vehicles.
+// TriggerPanicDrivingEvent routes into vanilla PanicDrivingBehavior(), whose own
+// handler still performs its internal abandoned/player-mounted safety checks.
+private func RFC_VehPrimeCrowdPhysics(vehicle: ref<VehicleObject>) -> Bool {
+  if !IsDefined(vehicle) { return false; }
+
+  let isCrowd: Bool = vehicle.IsCrowdVehicle();
+  let inTrafficPhysics: Bool = vehicle.IsInTrafficPhysicsState();
+  let trafficControlled: Bool = isCrowd || inTrafficPhysics;
+
+  if trafficControlled {
+    let driver: ref<GameObject> = VehicleComponent.GetDriverMounted(
+      vehicle.GetGame(),
+      vehicle.GetEntityID()
+    );
+    let puppet: ref<ScriptedPuppet> = driver as ScriptedPuppet;
+    let prevention: Bool = IsDefined(puppet) && puppet.IsPrevention();
+    let questVehicle: Bool = vehicle.IsQuest();
+    let sceneAnimation: Bool = vehicle.IsPerformingSceneAnimation();
+    let playerMounted: Bool = vehicle.IsPlayerMounted();
+
+    // Preserve V16's safe driver-side stop request. Never touch the vehicle's
+    // private crowd component directly (the V17 freeze path).
+    if IsDefined(puppet) && IsDefined(puppet.GetCrowdMemberComponent()) {
+      let crowd: ref<CrowdMemberBaseComponent> = puppet.GetCrowdMemberComponent();
+      crowd.TryStopTrafficMovement();
+    }
+
+    let performingBefore: Bool = vehicle.IsPerformingPanicDriving();
+    let canBefore: Bool = vehicle.CanStartPanicDriving();
+    let canAfter: Bool = canBefore;
+    let queued: Bool = false;
+    let bypassedCanStart: Bool = false;
+
+    // V26 controlled test: for an ordinary occupied civilian traffic vehicle,
+    // enable the same high-priority panic path vanilla uses, then queue the
+    // vanilla TriggerPanicDrivingEvent even when CanStartPanicDriving() remains
+    // false. That gate was the dominant remaining V25 failure signature.
+    if IsDefined(puppet)
+      && !prevention
+      && !questVehicle
+      && !sceneAnimation
+      && !playerMounted
+      && !performingBefore
+      && !vehicle.rfc_vehiclePanicPromotionRequested {
+      vehicle.EnableHighPriorityPanicDriving();
+      canAfter = vehicle.CanStartPanicDriving();
+      bypassedCanStart = !canAfter;
+
+      vehicle.rfc_vehiclePanicPromotionRequested = true;
+      queued = true;
+      vehicle.QueueEvent(new TriggerPanicDrivingEvent());
+
+      let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(vehicle.GetGame());
+      if IsDefined(ds) {
+        ds.DelayEvent(vehicle, new RFC_VehPanicPromotionProbeEvent(), 0.050, false);
+        ds.DelayEvent(vehicle, new RFC_VehPanicPromotionProbeEvent(), 0.150, false);
+      }
+    }
+
+
+    vehicle.ActivateTemporaryLossOfControl();
+  }
+
+  vehicle.PhysicsWakeUp();
+  return trafficControlled;
+}
+
+@addMethod(VehicleObject)
+protected cb func OnRFC_VehPanicPromotionProbeEvent(evt: ref<RFC_VehPanicPromotionProbeEvent>) -> Bool {
+  let stillTraffic: Bool = this.IsCrowdVehicle() || this.IsInTrafficPhysicsState();
+  let performing: Bool = this.IsPerformingPanicDriving();
+
+  // If vanilla itself refused the queued event, allow a later qualifying hit to
+  // retry instead of permanently latching a failed promotion.
+  if stillTraffic && !performing {
+    this.rfc_vehiclePanicPromotionRequested = false;
+  }
+
+  return true;
+}
+
+private func RFC_VehSendDeferredPhysicalImpulse(
+  vehicle: ref<VehicleObject>,
+  impulse4: Vector4,
+  position4: Vector4,
+  radius: Float
+) -> Void {
+  if !IsDefined(vehicle) { return; }
+
+  let cfg: RFCConfig = RFC.Cfg();
+  if cfg.vanillaMode || !cfg.vehicleImpulseEnabled { return; }
+
+  RFC_VehPrimeCrowdPhysics(vehicle);
+
+  let impulse3: Vector3;
+  impulse3.X = impulse4.X;
+  impulse3.Y = impulse4.Y;
+  impulse3.Z = impulse4.Z;
+
+  let position3: Vector3;
+  position3.X = position4.X;
+  position3.Y = position4.Y;
+  position3.Z = position4.Z;
+
+  let e: ref<PhysicalImpulseEvent> = new PhysicalImpulseEvent();
+  e.worldImpulse = impulse3;
+  e.worldPosition = position3;
+  e.radius = MaxF(0.05, radius);
+  vehicle.QueueEvent(e);
+}
+
+@addMethod(VehicleObject)
+protected cb func OnRFC_VehDeferredPhysicalImpulseEvent(evt: ref<RFC_VehDeferredPhysicalImpulseEvent>) -> Bool {
+  if !IsDefined(evt) { return true; }
+  RFC_VehSendDeferredPhysicalImpulse(this, evt.impulse, evt.position, evt.radius);
+  return true;
+}
+
+private func RFC_VehQueueDeferredPhysicalImpulse(
+  vehicle: ref<VehicleObject>,
+  impulse: Vector4,
+  position: Vector4,
+  radius: Float,
+  delay: Float
+) -> Void {
+  if !IsDefined(vehicle) { return; }
+
+  let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(vehicle.GetGame());
+  if !IsDefined(ds) || delay <= 0.0 {
+    RFC_VehSendDeferredPhysicalImpulse(vehicle, impulse, position, radius);
+    return;
+  }
+
+  let evt: ref<RFC_VehDeferredPhysicalImpulseEvent> = new RFC_VehDeferredPhysicalImpulseEvent();
+  evt.impulse = impulse;
+  evt.position = position;
+  evt.radius = radius;
+  ds.DelayEvent(vehicle, evt, delay, false);
+}
+
 private func RFC_VehApplyPhysicalImpulse(
   vehicle: ref<VehicleObject>,
   hitPos: Vector4,
@@ -667,6 +838,25 @@ private func RFC_VehApplyPhysicalImpulse(
 
   RFC_VehScheduleSelfRightingKill(vehicle);
 
+  // Civilian crowd traffic needs its movement controller released before the
+  // rigid-body impulse. Enemy/police/active vehicles keep the immediate path.
+  if RFC_VehPrimeCrowdPhysics(vehicle) {
+    let deferredImpulse: Vector4;
+    deferredImpulse.X = impulse.X;
+    deferredImpulse.Y = impulse.Y;
+    deferredImpulse.Z = impulse.Z;
+    deferredImpulse.W = 0.0;
+
+    let deferredPos: Vector4;
+    deferredPos.X = pos.X;
+    deferredPos.Y = pos.Y;
+    deferredPos.Z = pos.Z;
+    deferredPos.W = 1.0;
+
+    RFC_VehQueueDeferredPhysicalImpulse(vehicle, deferredImpulse, deferredPos, radius, 0.060);
+    return;
+  }
+
   let e: ref<PhysicalImpulseEvent> = new PhysicalImpulseEvent();
   e.worldImpulse = impulse;
   e.worldPosition = pos;
@@ -716,6 +906,7 @@ private func RFC_VehApplyPhysicalImpulseVector(
 
   RFC_VehScheduleSelfRightingKill(vehicle);
 
+  vehicle.PhysicsWakeUp();
   let e: ref<PhysicalImpulseEvent> = new PhysicalImpulseEvent();
   e.worldImpulse = impulse;
   e.worldPosition = pos;
@@ -802,6 +993,152 @@ private func RFC_VehExplosionFlipBite(
   RFC_VehApplyPhysicalImpulseVector(vehicle, edge, nx * biteH * 0.35, ny * biteH * 0.35, biteZ * 0.55, MaxF(radius, 2.5), cfg);
 }
 
+// Low-level V15 vehicle explosion actuator. This deliberately uses only public
+// VehicleObject APIs seen in the decompiled game: wake, traffic-physics state,
+// temporary loss of control, and PhysicalImpulseEvent.
+private func RFC_VehSendExplosionPulse(
+  vehicle: ref<VehicleObject>,
+  impulse4: Vector4,
+  position4: Vector4,
+  radius: Float
+) -> Void {
+  if !IsDefined(vehicle) { return; }
+
+  let cfg: RFCConfig = RFC.Cfg();
+  if cfg.vanillaMode || !cfg.vehicleImpulseEnabled || !cfg.vehicleExplosionEnabled { return; }
+
+  // V16: release civilian crowd/traffic movement before each pulse, not just
+  // traffic-physics control. Enemy/police vehicles pass through immediately.
+  RFC_VehPrimeCrowdPhysics(vehicle);
+
+  let impulse3: Vector3;
+  impulse3.X = impulse4.X;
+  impulse3.Y = impulse4.Y;
+  impulse3.Z = impulse4.Z;
+
+  let position3: Vector3;
+  position3.X = position4.X;
+  position3.Y = position4.Y;
+  position3.Z = position4.Z;
+
+  let e: ref<PhysicalImpulseEvent> = new PhysicalImpulseEvent();
+  e.worldImpulse = impulse3;
+  e.worldPosition = position3;
+  e.radius = MaxF(0.05, radius);
+  vehicle.QueueEvent(e);
+}
+
+@addMethod(VehicleObject)
+protected cb func OnRFC_VehExplosionPulseEvent(evt: ref<RFC_VehExplosionPulseEvent>) -> Bool {
+  if !IsDefined(evt) { return true; }
+  RFC_VehSendExplosionPulse(this, evt.impulse, evt.position, evt.radius);
+  return true;
+}
+
+private func RFC_VehQueueExplosionPulse(
+  vehicle: ref<VehicleObject>,
+  impulse: Vector4,
+  position: Vector4,
+  radius: Float,
+  delay: Float
+) -> Void {
+  if !IsDefined(vehicle) { return; }
+
+  if delay <= 0.0 {
+    RFC_VehSendExplosionPulse(vehicle, impulse, position, radius);
+    return;
+  }
+
+  let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(vehicle.GetGame());
+  if !IsDefined(ds) {
+    RFC_VehSendExplosionPulse(vehicle, impulse, position, radius);
+    return;
+  }
+
+  let evt: ref<RFC_VehExplosionPulseEvent> = new RFC_VehExplosionPulseEvent();
+  evt.impulse = impulse;
+  evt.position = position;
+  evt.radius = radius;
+  ds.DelayEvent(vehicle, evt, delay, false);
+}
+
+// State-aware, multi-frame grenade/explosion shove. The total configured force
+// is preserved: 45% now + 35% after 0.04 s + 20% after 0.12 s = 100%.
+// Center-of-chassis application favors reliable translation/pop over torque; the
+// old same-frame multipoint path remains below for comparison but is not used by
+// the V15 explosion branch.
+private func RFC_VehApplyExplosionStagedImpulse(
+  vehicle: ref<VehicleObject>,
+  srcPos: Vector4,
+  strength: Float,
+  lift: Float,
+  radius: Float,
+  cfg: RFCConfig
+) -> Void {
+  if !IsDefined(vehicle) { return; }
+  if RFC_TimeDilationBlocksImpulses(vehicle, cfg) { return; }
+  if strength == 0.0 && lift == 0.0 { return; }
+
+  let center: Vector4 = vehicle.GetWorldPosition();
+  let rx: Float = center.X - srcPos.X;
+  let ry: Float = center.Y - srcPos.Y;
+  let planarLen: Float = RFC_VehLen2(rx, ry);
+
+  if planarLen < 0.001 {
+    let fwd: Vector4 = vehicle.GetWorldForward();
+    rx = fwd.X;
+    ry = fwd.Y;
+    planarLen = RFC_VehLen2(rx, ry);
+  }
+
+  if planarLen < 0.001 {
+    rx = 0.0;
+    ry = 1.0;
+    planarLen = 1.0;
+  }
+
+  rx /= planarLen;
+  ry /= planarLen;
+
+  let massScale: Float = RFC_VehMassScale(vehicle, cfg);
+  let finalX: Float = rx * strength * massScale;
+  let finalY: Float = ry * strength * massScale;
+  let finalZ: Float = lift * massScale;
+  let horizontal: Float = SqrtF(finalX * finalX + finalY * finalY);
+
+  // V27 explosion-only cap bypass. The legacy global vehicle impulse clamp is
+  // intentionally NOT applied here so the configured explosion force and its
+  // source multiplier can reach the staged PhysicalImpulseEvent path intact.
+  // Bullet/melee paths still retain the existing safety clamp.
+
+  let full: Vector4;
+  full.X = finalX;
+  full.Y = finalY;
+  full.Z = finalZ;
+  full.W = 0.0;
+
+  let p0: Vector4 = full;
+  p0 *= 0.45;
+  let p1: Vector4 = full;
+  p1 *= 0.35;
+  let p2: Vector4 = full;
+  p2 *= 0.20;
+
+  RFC_VehScheduleSelfRightingKill(vehicle);
+
+  // Give civilian crowd/traffic one short transition window after the vanilla
+  // traffic-stop call. Already-active enemy/police vehicles keep V15 timing.
+  if RFC_VehPrimeCrowdPhysics(vehicle) {
+    RFC_VehQueueExplosionPulse(vehicle, p0, center, radius, 0.060);
+    RFC_VehQueueExplosionPulse(vehicle, p1, center, radius, 0.110);
+    RFC_VehQueueExplosionPulse(vehicle, p2, center, radius, 0.190);
+  } else {
+    RFC_VehQueueExplosionPulse(vehicle, p0, center, radius, 0.0);
+    RFC_VehQueueExplosionPulse(vehicle, p1, center, radius, 0.04);
+    RFC_VehQueueExplosionPulse(vehicle, p2, center, radius, 0.12);
+  }
+}
+
 private func RFC_VehApplyExplosionRadialImpulse(
   vehicle: ref<VehicleObject>,
   targetPos: Vector4,
@@ -875,6 +1212,7 @@ private func RFC_VehApplyExplosionRadialImpulse(
 
   RFC_VehScheduleSelfRightingKill(vehicle);
 
+  vehicle.PhysicsWakeUp();
   let e: ref<PhysicalImpulseEvent> = new PhysicalImpulseEvent();
   e.worldImpulse = impulse;
   e.worldPosition = pos;
@@ -988,24 +1326,19 @@ private func RFC_VehCanFire(vehicle: ref<VehicleObject>, cfg: RFCConfig) -> Bool
 private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>, cfg: RFCConfig) -> Void {
   if !IsDefined(vehicle) || !IsDefined(evt) || !IsDefined(evt.attackData) { return; }
 
-  let ad: ref<AttackData> = evt.attackData;
-  let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
-
-  // HARD BYPASS: V jumping/landing on a vehicle is not a SPLAT impulse source.
-  // No custom shove, no self-righting suppression, no weapon-source fallback,
-  // and no occupant impulse marking from this contact.
-  if Equals(source, RFCVehicleHitSource.PlayerImpact) {
-    return;
-  };
-
+  // Runtime kill for built-in air/tilt self-righting. This does not affect normal NPC bullet damage.
   RFC_VehScheduleSelfRightingKill(vehicle);
 
-  // Keep occupant protection for actual SPLAT attack paths.
-  if cfg.killImpulsesVehiclesOnly {
+  // This is independent from whether vehicle impulses are enabled: even if the
+  // car shove is off, SPLAT NPC impulse lanes must not launch mounted occupants.
+  if cfg.killImpulsesVehiclesOnly || cfg.vehicleOccupantShieldEnabled {
     RFC_VehMarkAllOccupants(vehicle, 4.0);
   }
 
   if !cfg.vehicleImpulseEnabled { return; }
+
+  let ad: ref<AttackData> = evt.attackData;
+  let source: RFCVehicleHitSource = RFC_VehClassifySource(ad);
 
   switch source {
     case RFCVehicleHitSource.Bullet:
@@ -1025,28 +1358,11 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
         return;
       }
       break;
-
-    case RFCVehicleHitSource.PlayerImpact:
-      break;
   }
 
-  // Restore the proven standalone button actuator as the first bullet action.
-  // Weapon filters, push multipliers and the general vehicle cooldown control
-  // translation; they must not prevent an enabled motorcycle from toppling.
-  switch source {
-    case RFCVehicleHitSource.Bullet:
-      if cfg.vehicleBulletEnabled && cfg.vehicleMotorcycleToppleOnBullet {
-        let earlySourcePos: Vector4 = ad.GetAttackPosition();
-        let earlyInstigator: ref<GameObject> = ad.GetInstigator();
-        if IsDefined(earlyInstigator) {
-          earlySourcePos = earlyInstigator.GetWorldPosition();
-        }
-        RFC_VehTryArcadeBulletBikeTopple(
-          vehicle, evt.hitPosition, earlySourcePos, cfg);
-      }
-      break;
-  }
-  if !RFC_VehCanFire(vehicle, cfg) { return; }
+  // BVC owns motorcycle topple / rider-control behavior. SPLAT's vehicle
+  // lane below still applies the configured bullet / explosion impulse to the
+  // motorcycle chassis itself.
 
   let srcPos: Vector4 = ad.GetAttackPosition();
   let hitPos: Vector4 = evt.hitPosition;
@@ -1073,6 +1389,7 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       if cfg.vehicleExplosionRadius <= 0.0 { return; }
       let eMul: Float = RFC_VehExplosionMul(ad, cfg);
       if eMul <= 0.0 { return; }
+      if !RFC_VehCanFire(vehicle, cfg) { return; }
 
       // Explosions were too centered: upright cars moved, but upside-down cars
       // often failed to flip because the impulse hit the center of mass instead
@@ -1088,35 +1405,17 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       // actual blast and failed often on upside-down cars.
       srcPos = RFC_VehExplosionFallbackSource(vehicle, hitPos, srcPos);
 
-      // Restore the true radial blast as the main vehicle explosion response.
-      // Sixty percent catches and throws the whole vehicle away from the blast
-      // center; forty percent stays in the existing off-center multipoint lane
-      // to preserve wheel/door/roof torque. The two shares total 100 percent of
-      // the configured force and lift, so the sliders remain predictable.
-      RFC_VehApplyExplosionRadialImpulse(
+      // V15 consistency path: preserve the configured total force but deliver it
+      // over multiple physics frames. A single same-frame PhysicalImpulseEvent is
+      // unreliable across sleeping, traffic-controlled, and just-woken vehicles.
+      RFC_VehApplyExplosionStagedImpulse(
         vehicle,
-        centerPos,
         srcPos,
-        cfg.vehicleExplosionStrength * eMul * 0.60,
-        cfg.vehicleExplosionLift * eMul * 0.60,
+        cfg.vehicleExplosionStrength * eMul,
+        cfg.vehicleExplosionLift * eMul,
         cfg.vehicleExplosionRadius,
         cfg
       );
-      RFC_VehApplyExplosionMultiPointImpulse(
-        vehicle,
-        hitPos,
-        srcPos,
-        cfg.vehicleExplosionStrength * eMul * 0.40,
-        cfg.vehicleExplosionLift * eMul * 0.40,
-        cfg.vehicleExplosionRadius,
-        cfg
-      );
-
-      // Extra off-center bite only when the car is actually flipped/sideways.
-      // Uses the same strength/lift sliders; no hidden lift is added.
-      if RFC_VehIsUpsideDown(vehicle) {
-        RFC_VehExplosionFlipBite(vehicle, hitPos, srcPos, cfg.vehicleExplosionStrength * eMul, cfg.vehicleExplosionLift * eMul, cfg.vehicleExplosionRadius, cfg);
-      }
 
       return;
 
@@ -1140,15 +1439,8 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       }
 
       if bMul <= 0.0 { return; }
+      if !RFC_VehCanFire(vehicle, cfg) { return; }
       let bulletLift: Float = cfg.vehicleBulletLift;
-      let bulletBike: ref<BikeObject> = vehicle as BikeObject;
-      if IsDefined(bulletBike)
-        && cfg.vehicleMotorcycleToppleOnBullet
-        && bulletLift > 0.0 {
-        // The side-topple lane owns motorcycle rotation. Positive vehicle lift
-        // here makes the bike and mounted rider hop before the ragdoll handoff.
-        bulletLift = 0.0;
-      }
       RFC_VehApplyPhysicalImpulse(vehicle, hitPos, srcPos, cfg.vehicleBulletStrength * bMul, bulletLift * bMul, cfg.vehicleBulletRadius, cfg);
       return;
 
@@ -1161,9 +1453,9 @@ private func RFC_VehTryApply(vehicle: ref<VehicleObject>, evt: ref<gameHitEvent>
       let mMul: Float = RFC_VehGroupMul(gM, cfg);
       if cfg.vehicleUseArcadeWeaponMultipliers { mMul *= RFC_VehArcadeGroupMul(gM, cfg); }
       if mMul <= 0.0 { return; }
+      if !RFC_VehCanFire(vehicle, cfg) { return; }
       RFC_VehApplyPhysicalImpulse(vehicle, hitPos, srcPos, cfg.vehicleMeleeStrength * mMul, cfg.vehicleMeleeLift * mMul, cfg.vehicleMeleeRadius, cfg);
       return;
-
   }
 }
 
@@ -1175,43 +1467,25 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     return wrappedMethod(evt);
   }
 
-  // SPLAT_BVC_COMBINED_20260818
-  // BikeObject hits bypass SPLAT vehicle impulse/topple logic completely.
-  // wrappedMethod continues the chain into exact BVC1604.
-  let bvcOwnedBike: ref<BikeObject> = this as BikeObject;
-  if IsDefined(bvcOwnedBike) {
-    return wrappedMethod(evt);
-  }
+  // BVC owns motorcycle topple / lean control only.
+  // SPLAT still owns the normal vehicle bullet / melee / explosion impulse lane
+  // for both cars and motorcycles. Do not globally bypass BikeObject hits here.
 
-  // Cars/general vehicles retain SPLAT self-righting suppression for normal
-  // attack hits, but not for V simply jumping/landing on them.
-  let preSource: RFCVehicleHitSource =
-    RFC_VehClassifySource(evt.attackData);
+  // Kill built-in air/tilt correction before and after vanilla vehicle hit handling.
+  // Some native bike/car paths re-enable these during collision handling.
+  RFC_VehScheduleSelfRightingKill(this);
 
-  switch preSource {
-    case RFCVehicleHitSource.PlayerImpact:
-      break;
-    default:
-      RFC_VehScheduleSelfRightingKill(this);
-      break;
-  }
-
-  // Mark occupants both before and after vanilla processing.
-  if cfg.killImpulsesVehiclesOnly {
+  // Mark current occupants before and after vanilla vehicle hit processing. This
+  // catches delayed NPC impulse events that may fire after the vehicle hit frame.
+  if cfg.killImpulsesVehiclesOnly || cfg.vehicleOccupantShieldEnabled {
     RFC_VehMarkAllOccupants(this, 4.0);
   }
 
   let res: Bool = wrappedMethod(evt);
 
-  switch preSource {
-    case RFCVehicleHitSource.PlayerImpact:
-      break;
-    default:
-      RFC_VehScheduleSelfRightingKill(this);
-      break;
-  }
+  RFC_VehScheduleSelfRightingKill(this);
 
-  if cfg.killImpulsesVehiclesOnly {
+  if cfg.killImpulsesVehiclesOnly || cfg.vehicleOccupantShieldEnabled {
     RFC_VehMarkAllOccupants(this, 4.0);
   }
 
