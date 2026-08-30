@@ -37,7 +37,8 @@ public enum RFCSplatPresetMode {
   RealismPlus = 4,
   DirtyHarry = 2,
   Arnold = 3,
-  Vanilla = 5
+  Vanilla = 5,
+  Juggernaut = 6
 }
 
 // CONFIG STRUCTS
@@ -754,7 +755,8 @@ public class RFC {
       && c.splatPresetMode != EnumInt(RFCSplatPresetMode.RealismPlus)
       && c.splatPresetMode != EnumInt(RFCSplatPresetMode.DirtyHarry)
       && c.splatPresetMode != EnumInt(RFCSplatPresetMode.Arnold)
-      && c.splatPresetMode != EnumInt(RFCSplatPresetMode.Vanilla) {
+      && c.splatPresetMode != EnumInt(RFCSplatPresetMode.Vanilla)
+      && c.splatPresetMode != EnumInt(RFCSplatPresetMode.Juggernaut) {
       c.splatPresetMode = EnumInt(RFCSplatPresetMode.Realism);
     }
 
@@ -1167,14 +1169,14 @@ public class RFC {
     c.tumbleStairs_startScale = 1.0;
     c.tumbleStairs_startCap = 2.0;
     c.tumbleStairs_startDelay = c.tumbleStairs_delay;
-    c.tumbleStairs_stepDelay = c.tumbleStairs_fwdDelay;
+    c.tumbleStairs_stepDelay = 0.08;
     c.tumbleStairs_steps = 6;
 
     c.tumbleDir_startBase = 0.0;
     c.tumbleDir_startScale = 1.0;
     c.tumbleDir_startCap = 2.0;
-    c.tumbleDir_startDelay = c.tumbleDir_downDelay;
-    c.tumbleDir_stepDelay = c.tumbleDir_fwdDelay;
+    c.tumbleDir_startDelay = 0.0;
+    c.tumbleDir_stepDelay = 0.04;
     c.tumbleDir_steps = 6;
 
 
@@ -2002,7 +2004,8 @@ if c.overrideWsStand {
   c.wsStand.body_vSlamRadius = menu.wsStand_body_vSlamRadius;
 }
 
-if c.splatPresetMode == EnumInt(RFCSplatPresetMode.Realism) {
+if c.splatPresetMode == EnumInt(RFCSplatPresetMode.Realism)
+  || c.splatPresetMode == EnumInt(RFCSplatPresetMode.Juggernaut) {
   // Realism Custom uses the exact same final-config assignment pattern as the
   // working named modes. Reapply the active Realism Custom object here so none
   // of the old base/override ordering can leave NPC or vehicle explosions on
@@ -2658,10 +2661,14 @@ if !c.arcadeMeleeEnabled {
 // V1712: ordinary live hit-reaction timing is owned by OnHitAnimation.
 // Do not force the user's activation-delay/cutoff settings off here.
 
-// VANILLA = RAGDOLL RIG ONLY.
-// This runs after every named-mode branch so Vanilla always wins over saved
-// SPLAT settings. Every script-side feature is disabled. Installed ragdoll rig
-// assets are intentionally untouched and are the sole SPLAT exception.
+// Global Impulse Chance is an impulse gate only. A value of zero must not
+// switch SPLAT into Vanilla mode or alter death-animation/mode ownership.
+// Individual impulse lanes read RFC_MasterDeathChanceBlocksImpulses().
+
+// VANILLA = BASE-GAME RUNTIME ONLY.
+// This runs after every named-mode branch so the shutdown always wins over
+// saved SPLAT settings. Every script-side feature is disabled. Installed
+// ragdoll rig assets are external and intentionally untouched by SPLAT.
 if c.vanillaMode {
   // Feature values remain OFF as a redundant safety net. OnHit/OnDeath and all
   // major wrappers still hard-pass directly to the base game before using them.
@@ -2683,6 +2690,11 @@ if c.vanillaMode {
   c.shoulderHipFallsEnabled = false;
   c.shoulderHipEarlyFallEnabled = false;
   c.shoulderHipImpactFallEnabled = false;
+  c.shoulderHipEarlyShoulderEnabled = false;
+  c.shoulderHipEarlyButtEnabled = false;
+  c.shoulderHipImpactShoulderEnabled = false;
+  c.shoulderHipImpactButtEnabled = false;
+  c.stair_plankEnabled = false;
 
   c.settleEnabled = false;
   c.tumbleEnabled = false;
@@ -2690,8 +2702,12 @@ if c.vanillaMode {
   c.twitchEnabled = false;
   c.bulletJoltsEnabled = false;
   c.grenadeEnabled = false;
+  // c.panicTripEnabled = false; // field removed from RFCConfig
+  c.randomImpulsesEnabled = false;
+  c.randomDisableGroupsEnabled = false;
 
   c.arcadeBulletsEnabled = false;
+  c.arcadeMeleeEnabled = false;
   c.arcadeOnHitEnabled = false;
   c.arcadeOnDeathEnabled = false;
   c.arcadeIncapRagdollEnabled = false;
@@ -2712,6 +2728,8 @@ if c.vanillaMode {
   c.playerMotorcycleLeanToppleEnabled = false;
   c.vehicleExplosionEnabled = false;
   c.vehicleMeleeEnabled = false;
+  c.killBikeDeathAnim = false;
+  c.killVehicleDeathAnim = false;
 
   c.vehicleOccupantShieldEnabled = false;
   c.vehicleMountedHitImmunity = false;
@@ -2728,6 +2746,8 @@ if c.vanillaMode {
   c.popFix_workspotPreemptExit = false;
   c.popFix_vehicleKillExitAnim = false;
   c.popFix_bikeKillExitAnim = false;
+  c.mitigateStaggerPop = false;
+  c.mitigateWorkspotExitPop = false;
 
   c.killImpulsesVehiclesOnly = false;
   c.killImpulsesEverywhere = false;

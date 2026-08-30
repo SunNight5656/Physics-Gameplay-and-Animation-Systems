@@ -32,6 +32,12 @@
       "label": "Vanilla (Ragdoll Rig Only)",
       "enumIndex": 5,
       "enumValue": 5
+    },
+    {
+      "key": "juggernaut",
+      "label": "Juggernaut (COMING SOON)",
+      "enumIndex": 6,
+      "enumValue": 6
     }
   ],
   "topics": [
@@ -74,6 +80,10 @@
     {
       "key": "tumble",
       "label": "Twitch, Tumble & Settle"
+    },
+    {
+      "key": "juggernautSmash",
+      "label": "Juggernaut Smash — COMING SOON"
     }
   ],
   "globalSettings": [
@@ -87,7 +97,7 @@
       "type": "RFCSplatPresetMode",
       "default": 1,
       "label": "SPLAT Mode",
-      "description": "Selects the active SPLAT preset. Vanilla (Ragdoll Rig Only) disables all SPLAT script behavior and leaves only the installed SPLAT ragdoll rig active.",
+      "description": "Selects the active SPLAT mode. Juggernaut is experimental and marked COMING SOON while vehicle and world-object collision support is tested.",
       "dependencyName": "",
       "dependency": null,
       "sourceFile": "SPLATSettingsData.reds",
@@ -98,7 +108,8 @@
         "Realism Plus",
         "Clint Eastwood Old West",
         "Arnold / Arcade",
-        "Vanilla (Ragdoll Rig Only)"
+        "Vanilla (Ragdoll Rig Only)",
+        "Juggernaut"
       ]
     }
   ],
@@ -117,7 +128,7 @@
           "type": "Bool",
           "default": true,
           "label": "Enable Global Impulse Chance",
-          "description": "One global chance roll for custom death impulses. Body falls, head falls, and regular situation impulses only try when this passes. Their own chance sliders still work after that.",
+          "description": "One global chance roll for custom death impulses. Special rule: when enabled at 0%, it becomes a complete SPLAT runtime master-off, identical to Vanilla/base-game behavior.",
           "dependencyName": "showGlobal",
           "dependency": null,
           "sourceFile": "SPLATSettingsData.reds",
@@ -132,9 +143,9 @@
           "mode": "global",
           "topic": "global",
           "type": "Float",
-          "default": 94.0,
+          "default": 100,
           "label": "Global Impulse Chance",
-          "description": "Global chance gate for SPLAT custom death impulses. Individual impulse chance sliders still apply afterward.",
+          "description": "Global chance gate for SPLAT custom death impulses. Individual chance sliders still apply afterward. At 0%, every SPLAT runtime feature is bypassed.",
           "dependencyName": "",
           "dependency": null,
           "sourceFile": "SPLATSettingsData.reds",
@@ -346,7 +357,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": true,
+          "default": false,
           "label": "Enable Standard Death Animations",
           "description": "ON allows standard death animations before ragdoll. OFF uses ragdoll-only deaths.",
           "dependencyName": "showDeathAnimControls",
@@ -383,7 +394,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Float",
-          "default": 5.0,
+          "default": 0.61000001430511,
           "label": "Death animation cancellation delay (s)",
           "description": "Seconds before an enabled standard death animation is cut over to ragdoll.",
           "dependencyName": "showDeathAnimControls",
@@ -420,7 +431,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": true,
+          "default": false,
           "label": "Enable Stealth Ragdoll",
           "description": "When ON, SPLAT schedules the stealth/finisher ragdoll handoff after the configured delay.",
           "dependencyName": "showDeathAnimControls",
@@ -437,7 +448,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Float",
-          "default": 4.15,
+          "default": 5,
           "label": "Stealth ragdoll delay (s)",
           "description": "Seconds after the stealth/finisher starts before Splat forces ragdoll (wake taps).",
           "dependencyName": "showDeathAnimControls",
@@ -457,7 +468,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": false,
+          "default": true,
           "label": "Enable Finisher Animations",
           "description": "ON preserves vanilla weapon-finisher animations.",
           "dependencyName": "showDeathAnimControls",
@@ -474,7 +485,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": false,
+          "default": true,
           "label": "Enable Blackwall Animations",
           "description": "ON preserves vanilla Blackwall kill animations.",
           "dependencyName": "showDeathAnimControls",
@@ -598,7 +609,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Float",
-          "default": 0.0,
+          "default": 0.5,
           "label": "Hit Animation Cutoff (s)",
           "description": "0.00 = off. The normal bullet hit animation starts immediately; values above 0 end that animation after this many seconds.",
           "dependencyName": "showHitReactionAnimationControls",
@@ -636,7 +647,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": false,
+          "default": true,
           "label": "Enable injury shock ragdoll",
           "description": "Gives eligible surviving NPCs a random chance to collapse after an allowed bullet injury, then returns recovery ownership to the game's normal live-ragdoll AI flow.",
           "dependencyName": "showInjuryShockControls",
@@ -804,7 +815,7 @@
           "mode": "global",
           "topic": "global",
           "type": "Bool",
-          "default": true,
+          "default": false,
           "label": "Injury shock from limbs only",
           "description": "ON limits shock collapses to arm and leg hits. OFF also allows torso hits. Head hits remain excluded.",
           "dependencyName": "showInjuryShockControls",
@@ -1196,7 +1207,22 @@
       "tumble": "sections/arnoldArcade__tumble.json",
       "randomization": "sections/arnoldArcade__randomization.json"
     },
-    "vanilla": {}
+    "vanilla": {},
+    "juggernaut": {
+      "head": "sections/juggernaut__head.json",
+      "body": "sections/juggernaut__body.json",
+      "situational": "sections/juggernaut__situational.json",
+      "arcade": "sections/juggernaut__arcade.json",
+      "bulletJolts": "sections/juggernaut__bulletJolts.json",
+      "vehicles": "sections/juggernaut__vehicles.json",
+      "explosions": "sections/juggernaut__explosions.json",
+      "settle": "sections/juggernaut__settle.json",
+      "twitch": "sections/juggernaut__twitch.json",
+      "trip": "sections/juggernaut__trip.json",
+      "tumble": "sections/juggernaut__tumble.json",
+      "randomization": "sections/juggernaut__randomization.json",
+      "juggernautSmash": "sections/juggernaut__juggernautSmash.json"
+    }
   },
   "backend": "Audited direct REDscript PlayerPuppet carrier",
   "bridgeSystem": "PlayerPuppet.SPLATGetSettingsState",

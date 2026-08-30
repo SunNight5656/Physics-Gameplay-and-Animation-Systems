@@ -16,6 +16,8 @@ private func RFC_Length3(v: Vector4) -> Float {
 @addField(NPCPuppet) public let rfc_mv_vy: Float;
 
 @addField(NPCPuppet) public let rfc_lastAttack: ref<AttackData>;
+@addField(NPCPuppet) public let rfc_lastArcadeHitPos: Vector4;
+@addField(NPCPuppet) public let rfc_lastArcadeHitValid: Bool;
 
 @addField(NPCPuppet) public let m_RFC_ArcadeKickDone: Bool;
 @addField(NPCPuppet) public let m_RFC_ArcadeDeathT: Float;
@@ -264,14 +266,16 @@ private func OnHitAnimation(hitEvent: ref<gameHitEvent>) -> Void {
     && RFC_IsPlayerAttack(this, hitEvent.attackData)
     && RFC_IsBulletReactionCutSource(hitEvent.attackData);
 
-  // Existing complete-disable control remains authoritative.
-  if ordinaryPlayerBullet && cfg.hitReactionsDisabled {
+  // Complete-disable and a zero cutoff both mean no visible ordinary hit
+  // animation. Do not start vanilla OnHitAnimation and then stop it a frame
+  // later; that can still flash the reaction before Arcade applies force.
+  if ordinaryPlayerBullet && (cfg.hitReactionsDisabled || cfg.hitReactionCutoffDelay <= 0.001) {
     return;
   }
 
   if ordinaryPlayerBullet {
-    // V1714: never delay the game's hit animation. Let it start at the original
-    // frame, then use the single cutoff slider to end it early when requested.
+    // Positive cutoff values start the game's hit animation immediately, then
+    // end it after the user-selected duration.
     this.m_RFC_HitAnimSerial += 1;
     let serial: Int32 = this.m_RFC_HitAnimSerial;
     wrappedMethod(hitEvent);
@@ -397,7 +401,7 @@ public func RFC_ArcadeChannelEnabled(ad: ref<AttackData>, cfg: RFCConfig) -> Boo
   return cfg.arcadeBulletsEnabled;
 }
 
-private func RFC_ArcadeApplicationPoint(
+public func RFC_ArcadeApplicationPoint(
   npc: ref<NPCPuppet>,
   hitPos: Vector4,
   lowerOffset: Float
@@ -429,6 +433,44 @@ private func RFC_ArcadeNamedModeAllowsUnknownBullet(cfg: RFCConfig) -> Bool {
     || cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.Arnold);
 }
 
+// NPC melee weapon groups are true per-mode settings. Keep these outside
+// RFCConfig so adding melee parity does not change the shared runtime struct.
+private func RFC_ArcadeMeleeAllowFists(cfg: RFCConfig) -> Bool {
+  let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
+  if !IsDefined(menu) { return true; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.RealismPlus) { return menu.realismPlusMode_arcadeAllowFists; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.DirtyHarry) { return menu.dirty_arcadeAllowFists; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.Arnold) { return menu.arnold_arcadeAllowFists; }
+  return menu.arcadeAllowFists;
+}
+
+private func RFC_ArcadeMeleeAllowStrongArms(cfg: RFCConfig) -> Bool {
+  let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
+  if !IsDefined(menu) { return true; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.RealismPlus) { return menu.realismPlusMode_arcadeAllowStrongArms; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.DirtyHarry) { return menu.dirty_arcadeAllowStrongArms; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.Arnold) { return menu.arnold_arcadeAllowStrongArms; }
+  return menu.arcadeAllowStrongArms;
+}
+
+private func RFC_ArcadeMeleeMulFists(cfg: RFCConfig) -> Float {
+  let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
+  if !IsDefined(menu) { return 1.0; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.RealismPlus) { return RFC_ClampF(menu.realismPlusMode_arcadeMulFists, 0.0, 5.0); }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.DirtyHarry) { return RFC_ClampF(menu.dirty_arcadeMulFists, 0.0, 5.0); }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.Arnold) { return RFC_ClampF(menu.arnold_arcadeMulFists, 0.0, 5.0); }
+  return RFC_ClampF(menu.arcadeMulFists, 0.0, 5.0);
+}
+
+private func RFC_ArcadeMeleeMulStrongArms(cfg: RFCConfig) -> Float {
+  let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
+  if !IsDefined(menu) { return 1.0; }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.RealismPlus) { return RFC_ClampF(menu.realismPlusMode_arcadeMulStrongArms, 0.0, 5.0); }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.DirtyHarry) { return RFC_ClampF(menu.dirty_arcadeMulStrongArms, 0.0, 5.0); }
+  if cfg.splatPresetMode == EnumInt(RFCSplatPresetMode.Arnold) { return RFC_ClampF(menu.arnold_arcadeMulStrongArms, 0.0, 5.0); }
+  return RFC_ClampF(menu.arcadeMulStrongArms, 0.0, 5.0);
+}
+
 public func RFC_ArcadeAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfig) -> Bool {
   if !IsDefined(ad) {
     return false;
@@ -452,11 +494,11 @@ public func RFC_ArcadeAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfig) -> Bo
 
   let w: ref<WeaponObject> = ad.GetWeapon() as WeaponObject;
 
-  // No-weapon melee includes fists and some Gorilla Arms/incap hits.
+  // No-weapon melee is treated as bare-hand/fists.
   // Keep grenade/throwable no-weapon hits blocked, but allow true melee.
   if !IsDefined(w) {
     if RFC_ArcadeIsMeleeAttack(ad) {
-      return !cfg.arcadeUseWeaponAllowList || cfg.arcadeAllowBlunt || cfg.arcadeAllowBlade;
+      return !cfg.arcadeUseWeaponAllowList || RFC_ArcadeMeleeAllowFists(cfg);
     }
     // Several valid ranged attacks (including some modded/iconic weapons) lose
     // their WeaponObject before this callback. Named Arcade modes must not turn
@@ -465,6 +507,17 @@ public func RFC_ArcadeAllowedByWeapon(ad: ref<AttackData>, cfg: RFCConfig) -> Bo
   }
 
   let iid: ItemID = w.GetItemID();
+
+  // Keep fists and Gorilla Arms separate from ordinary Blunt/Blade in every mode.
+  if RFC_ArcadeIsMeleeAttack(ad) {
+    if WeaponObject.IsOfType(iid, gamedataItemType.Cyb_StrongArms) {
+      return !cfg.arcadeUseWeaponAllowList || RFC_ArcadeMeleeAllowStrongArms(cfg);
+    }
+    if WeaponObject.IsFists(iid) {
+      return !cfg.arcadeUseWeaponAllowList || RFC_ArcadeMeleeAllowFists(cfg);
+    }
+  }
+
   let id: TweakDBID = iid.GetTDBID();
 
   if !TDBID.IsValid(id) {
@@ -510,15 +563,26 @@ private func RFC_ArcadeWeaponMul(ad: ref<AttackData>, cfg: RFCConfig) -> Float {
 
   let w: ref<WeaponObject> = ad.GetWeapon() as WeaponObject;
 
-  // No WeaponObject includes thrown items, but true melee here is fists/Gorilla.
+  // No WeaponObject melee is bare-hand/fists.
   if !IsDefined(w) {
     if RFC_ArcadeIsMeleeAttack(ad) {
-      return cfg.arcadeMulBlunt;
+      return RFC_ArcadeMeleeMulFists(cfg);
     }
     return 0.0;
   }
 
-  let id: TweakDBID = w.GetItemID().GetTDBID();
+  let iid: ItemID = w.GetItemID();
+
+  if RFC_ArcadeIsMeleeAttack(ad) {
+    if WeaponObject.IsOfType(iid, gamedataItemType.Cyb_StrongArms) {
+      return RFC_ArcadeMeleeMulStrongArms(cfg);
+    }
+    if WeaponObject.IsFists(iid) {
+      return RFC_ArcadeMeleeMulFists(cfg);
+    }
+  }
+
+  let id: TweakDBID = iid.GetTDBID();
   if !TDBID.IsValid(id) {
     if RFC_ArcadeIsMeleeAttack(ad) {
       return cfg.arcadeMulBlade;
@@ -676,6 +740,10 @@ private func RFC_ArcadeApplyOnHit(
     CreateRagdollApplyImpulseEvent(applyPos, impulse, r),
     // The impulse must arrive after the ragdoll bodies exist. Scheduling both
     // events for the same frame made Arcade OnHit look completely disabled.
+    // V28: do not race the confirmation ragdoll wake at +0.025. A
+    // single-projectile weapon could lose its first impulse while shotgun
+    // pellets appeared reliable because later pellet hits supplied another
+    // wake/impulse. Give the second wake one short physics step to commit.
     MaxF(RFC_ClampT(cfg.arcadeImpulseDelay), rfcForceDelay + 0.040),
     false
   );
@@ -1034,6 +1102,13 @@ protected cb func OnRFC_TryGrenadeKickEvent(evt: ref<RFC_TryGrenadeKickEvent>) -
     return true;
   }
 
+  // V29: the delayed/death explosion callback must respect the same V-only
+  // source gate as the immediate OnHit explosion path. Without this check,
+  // NPC-caused explosions could still reach SPLAT through the deferred kick.
+  if cfg.explPlayerOnly && !RFC_IsPlayerAttack(this, this.rfc_lastAttack) {
+    return true;
+  }
+
   // Only run for explosion or vehicle impact
   let isExpl: Bool = RFC_IsGrenadeExplosion(this.rfc_lastAttack);
   let isVeh: Bool = this.rfc_lastAttack.HasFlag(hitFlag.VehicleImpact);
@@ -1292,6 +1367,8 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // Head/Body/Situation/Arcade/Jolt death lanes run on an explosion.
   if IsDefined(evt.attackData) {
     this.rfc_lastAttack = evt.attackData;
+    this.rfc_lastArcadeHitPos = evt.hitPosition;
+    this.rfc_lastArcadeHitValid = true;
     RFC_CaptureSpecialAnimationContext(this, evt.attackData);
     if RFC_IsGrenadeExplosion(evt.attackData) {
       RFC_Explode_MarkAt(this, evt.hitPosition, 2.00);
@@ -1302,6 +1379,7 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
       RFC_Explode_Clear(this);
     }
   } else {
+    this.rfc_lastArcadeHitValid = false;
     RFC_Explode_Clear(this);
   }
 
@@ -1336,13 +1414,6 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
       this.rfc_vanillaWeaponLane = vanillaWeaponLane;
       this.rfc_vanillaDeathAnimArmed = true;
 
-      let vanillaWeaponArmLog: ref<ActivityLogSystem> =
-        GameInstance.GetActivityLogSystem(this.GetGame());
-      if IsDefined(vanillaWeaponArmLog) {
-        vanillaWeaponArmLog.AddLog(
-          "[SPLAT1711] PER-WEAPON VANILLA LANE ARMED"
-        );
-      };
     };
 
     savedSkipDeathAnimation = this.ShouldSkipDeathAnimation();
@@ -1358,21 +1429,20 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
   // Restore the normal SPLAT pre-wrap hit capture removed by the earlier
   // per-weapon rewrite.
   s = SPLATSettingsRuntime.Jolts();
+  // V28: the Arcade "V Only — Bullet Push on NPCs" source gate also owns
+  // SHHJM bullet jolts. Previously Arcade respected the toggle but this
+  // parallel bullet-impulse path did not, so NPC-vs-NPC gunfire could still
+  // launch targets while V Only was enabled.
   shhjmRuntimeEnabled =
     !c.vanillaMode
     && c.bulletJoltsEnabled
+    && RFC_ArcadeAttackSourceAllowed(this, evt.attackData, c)
     && RFC_EnemyAllowsBulletJolts(this, c);
 
   shhjmHardBlock =
     !shhjmRuntimeEnabled
     || RFC_SHHJM_HardBlockHit(this, evt.attackData);
 
-  if shhjmTargetWasAlreadyDead || this.IsRagdolling() {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] PRE runtime=\(shhjmRuntimeEnabled) hardBlock=\(shhjmHardBlock) dead=\(this.IsDead()) ragdoll=\(this.IsRagdolling()) shapes=\(ArraySize(evt.hitRepresentationResult.hitShapes))"
-    );
-  };
 
   this.shhjm_lastHitValid = false;
   this.shhjm_lastBodyPart = 99;
@@ -1407,12 +1477,6 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     this.shhjm_lastBoneIndex = boneIndex;
   };
 
-  if shhjmTargetWasAlreadyDead || this.IsRagdolling() {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] CAPTURE valid=\(this.shhjm_lastHitValid) part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) torsoEnabled=\(s.torsoEnabled) torsoFwd=\(s.torsoForwardStrength) torsoUp=\(s.torsoUpStrength) torsoDown=\(s.torsoDownStrength) torsoRadius=\(s.torsoRadius)"
-    );
-  };
 
   // CRITICAL v1711 FIX:
   // Native OnHit must execute for BOTH toggle states.
@@ -1492,10 +1556,6 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
           s
         );
         shhjmQueued = true;
-        LogChannel(
-          n"DEBUG",
-          s"[SPLAT_JOLT_TRACE] QUEUE_CALLED part=\(this.shhjm_lastBodyPart) bone=\(this.shhjm_lastBoneIndex) queued=\(shhjmQueued)"
-        );
       };
     }
   }
@@ -1608,7 +1668,8 @@ protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
     arcadeGuardEvt.allowAnimationCut = allowAnimationCut;
     arcadeGuardEvt.allowArcadeImpulse = allowArcadeImpulse;
     if IsDefined(arcadeGuardDS) {
-      arcadeGuardDS.DelayEvent(this, arcadeGuardEvt, 0.050, false);
+      let arcadeGuardDelay: Float = allowArcadeImpulse ? 0.000 : 0.050;
+      arcadeGuardDS.DelayEvent(this, arcadeGuardEvt, arcadeGuardDelay, false);
     } else {
       this.QueueEvent(arcadeGuardEvt);
     }

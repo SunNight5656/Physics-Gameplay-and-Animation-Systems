@@ -26,6 +26,10 @@ public class SPLATSettingsState {
   private let m_arnoldArcade_head: ref<HIS_Settings>;
   private let m_arnoldArcade_body: ref<GS_Settings>;
   private let m_arnoldArcade_jolts: ref<SHHJM_Settings>;
+  private let m_juggernaut_menu: ref<RFCModSettings>;
+  private let m_juggernaut_head: ref<HIS_Settings>;
+  private let m_juggernaut_body: ref<GS_Settings>;
+  private let m_juggernaut_jolts: ref<SHHJM_Settings>;
 
   private func Ensure() -> Void {
     if !IsDefined(this.m_global_menu) { this.m_global_menu = new RFCModSettings(); };
@@ -48,10 +52,33 @@ public class SPLATSettingsState {
     if !IsDefined(this.m_arnoldArcade_head) { this.m_arnoldArcade_head = new HIS_Settings(); };
     if !IsDefined(this.m_arnoldArcade_body) { this.m_arnoldArcade_body = new GS_Settings(); };
     if !IsDefined(this.m_arnoldArcade_jolts) { this.m_arnoldArcade_jolts = new SHHJM_Settings(); };
+    if !IsDefined(this.m_juggernaut_menu) {
+      this.m_juggernaut_menu = new RFCModSettings();
+      // Juggernaut NPC smash uses the proven Custom Trip OnLook actuator.
+      this.m_juggernaut_menu.juggernautMaxTestSensitivity = true;
+      this.m_juggernaut_menu.customTripOnLook_enabled = true;
+      this.m_juggernaut_menu.customTripOnLook_aggressiveOnly = false;
+      this.m_juggernaut_menu.customTripOnLook_requireCenterScreen = false;
+      this.m_juggernaut_menu.customTripOnLook_contactDistM = 4.00;
+      this.m_juggernaut_menu.customTripOnLook_minSpeedMps = 0.10;
+      this.m_juggernaut_menu.customTripOnLook_pushXY = 80.00;
+      this.m_juggernaut_menu.customTripOnLook_downZ = 4.00;
+      this.m_juggernaut_menu.customTripOnLook_sideXY = 8.00;
+      this.m_juggernaut_menu.customTripOnLook_liftZ = 4.00;
+      this.m_juggernaut_menu.customTripOnLook_radius = 1.25;
+      this.m_juggernaut_menu.customTripOnLook_cooldownSec = 0.00;
+      this.m_juggernaut_menu.customTripOnLook_intervalSec = 0.02;
+      this.m_juggernaut_menu.customTripOnLook_impactPauseSec = 0.01;
+      this.m_juggernaut_menu.customTripOnLook_impulseDelaySec = 0.01;
+    };
+    if !IsDefined(this.m_juggernaut_head) { this.m_juggernaut_head = new HIS_Settings(); };
+    if !IsDefined(this.m_juggernaut_body) { this.m_juggernaut_body = new GS_Settings(); };
+    if !IsDefined(this.m_juggernaut_jolts) { this.m_juggernaut_jolts = new SHHJM_Settings(); };
     this.m_realismCustom_menu.splatPresetMode = RFCSplatPresetMode.Realism;
     this.m_realismPlus_menu.splatPresetMode = RFCSplatPresetMode.RealismPlus;
     this.m_dirtyHarry_menu.splatPresetMode = RFCSplatPresetMode.DirtyHarry;
     this.m_arnoldArcade_menu.splatPresetMode = RFCSplatPresetMode.Arnold;
+    this.m_juggernaut_menu.splatPresetMode = RFCSplatPresetMode.Juggernaut;
   }
 
   public func GetBridgeVersion() -> Int32 { return 141; }
@@ -78,6 +105,10 @@ public class SPLATSettingsState {
     this.m_arnoldArcade_head = new HIS_Settings();
     this.m_arnoldArcade_body = new GS_Settings();
     this.m_arnoldArcade_jolts = new SHHJM_Settings();
+    this.m_juggernaut_menu = null;
+    this.m_juggernaut_head = null;
+    this.m_juggernaut_body = null;
+    this.m_juggernaut_jolts = null;
     this.Ensure();
   }
 
@@ -88,6 +119,7 @@ public class SPLATSettingsState {
     if Equals(scopeName, n"realismPlus") { return this.m_realismPlus_menu; };
     if Equals(scopeName, n"dirtyHarry") { return this.m_dirtyHarry_menu; };
     if Equals(scopeName, n"arnoldArcade") { return this.m_arnoldArcade_menu; };
+    if Equals(scopeName, n"juggernaut") { return this.m_juggernaut_menu; };
     return this.m_realismCustom_menu;
   }
 
@@ -98,6 +130,7 @@ public class SPLATSettingsState {
     if Equals(scopeName, n"realismPlus") { return this.m_realismPlus_head; };
     if Equals(scopeName, n"dirtyHarry") { return this.m_dirtyHarry_head; };
     if Equals(scopeName, n"arnoldArcade") { return this.m_arnoldArcade_head; };
+    if Equals(scopeName, n"juggernaut") { return this.m_juggernaut_head; };
     return this.m_realismCustom_head;
   }
 
@@ -108,6 +141,7 @@ public class SPLATSettingsState {
     if Equals(scopeName, n"realismPlus") { return this.m_realismPlus_body; };
     if Equals(scopeName, n"dirtyHarry") { return this.m_dirtyHarry_body; };
     if Equals(scopeName, n"arnoldArcade") { return this.m_arnoldArcade_body; };
+    if Equals(scopeName, n"juggernaut") { return this.m_juggernaut_body; };
     return this.m_realismCustom_body;
   }
 
@@ -118,6 +152,7 @@ public class SPLATSettingsState {
     if Equals(scopeName, n"realismPlus") { return this.m_realismPlus_jolts; };
     if Equals(scopeName, n"dirtyHarry") { return this.m_dirtyHarry_jolts; };
     if Equals(scopeName, n"arnoldArcade") { return this.m_arnoldArcade_jolts; };
+    if Equals(scopeName, n"juggernaut") { return this.m_juggernaut_jolts; };
     return this.m_realismCustom_jolts;
   }
 
@@ -128,6 +163,7 @@ public class SPLATSettingsState {
     if value == EnumInt(RFCSplatPresetMode.RealismPlus) { return 2; };
     if value == EnumInt(RFCSplatPresetMode.DirtyHarry) { return 3; };
     if value == EnumInt(RFCSplatPresetMode.Arnold) { return 4; };
+    if value == EnumInt(RFCSplatPresetMode.Juggernaut) { return 6; };
     return 1;
   }
 
@@ -136,7 +172,9 @@ public class SPLATSettingsState {
     if index == 1 { return this.m_realismCustom_menu; };
     if index == 2 { return this.m_realismPlus_menu; };
     if index == 3 { return this.m_dirtyHarry_menu; };
-    return this.m_arnoldArcade_menu;
+    if index == 4 { return this.m_arnoldArcade_menu; };
+    if index == 6 { return this.m_juggernaut_menu; };
+    return this.m_realismCustom_menu;
   }
 
   private func ActiveHIS() -> ref<HIS_Settings> {
@@ -144,7 +182,9 @@ public class SPLATSettingsState {
     if index == 1 { return this.m_realismCustom_head; };
     if index == 2 { return this.m_realismPlus_head; };
     if index == 3 { return this.m_dirtyHarry_head; };
-    return this.m_arnoldArcade_head;
+    if index == 4 { return this.m_arnoldArcade_head; };
+    if index == 6 { return this.m_juggernaut_head; };
+    return this.m_realismCustom_head;
   }
 
   private func ActiveGS() -> ref<GS_Settings> {
@@ -152,7 +192,9 @@ public class SPLATSettingsState {
     if index == 1 { return this.m_realismCustom_body; };
     if index == 2 { return this.m_realismPlus_body; };
     if index == 3 { return this.m_dirtyHarry_body; };
-    return this.m_arnoldArcade_body;
+    if index == 4 { return this.m_arnoldArcade_body; };
+    if index == 6 { return this.m_juggernaut_body; };
+    return this.m_realismCustom_body;
   }
 
   private func ActiveSHHJM() -> ref<SHHJM_Settings> {
@@ -160,7 +202,9 @@ public class SPLATSettingsState {
     if index == 1 { return this.m_realismCustom_jolts; };
     if index == 2 { return this.m_realismPlus_jolts; };
     if index == 3 { return this.m_dirtyHarry_jolts; };
-    return this.m_arnoldArcade_jolts;
+    if index == 4 { return this.m_arnoldArcade_jolts; };
+    if index == 6 { return this.m_juggernaut_jolts; };
+    return this.m_realismCustom_jolts;
   }
 
   private func MarkRuntimeRead() -> Void {
@@ -179,15 +223,12 @@ public class SPLATSettingsState {
     out.masterDeathChancePct = this.m_global_menu.masterDeathChancePct;
     out.disableAllImpulsesDuringTimeDilation = this.m_global_menu.disableAllImpulsesDuringTimeDilation;
     out.killImpulsesEverywhere = this.m_global_menu.killImpulsesEverywhere;
-    out.skipDeathAnim = this.m_global_menu.skipDeathAnim;
     out.killMotorcycleDeathAnim = this.m_global_menu.killMotorcycleDeathAnim;
     out.arnold_vehicleMotorcycleToppleOnBullet = this.m_global_menu.arnold_vehicleMotorcycleToppleOnBullet;
     out.arnold_vehicleMotorcycleToppleStrength = this.m_global_menu.arnold_vehicleMotorcycleToppleStrength;
     out.arnold_playerMotorcycleLeanToppleEnabled = this.m_global_menu.arnold_playerMotorcycleLeanToppleEnabled;
     out.arnold_playerMotorcycleLeanToppleAngle = this.m_global_menu.arnold_playerMotorcycleLeanToppleAngle;
     out.arnold_playerMotorcycleLeanToppleMaxSpeed = this.m_global_menu.arnold_playerMotorcycleLeanToppleMaxSpeed;
-    out.deathAnimChancePct = this.m_global_menu.deathAnimChancePct;
-    out.animCompatDelay = this.m_global_menu.animCompatDelay;
     out.respectCinematics = this.m_global_menu.respectCinematics;
     out.restoreStealthKillAnimations = this.m_global_menu.restoreStealthKillAnimations;
     out.restoreFinisherAnimations = this.m_global_menu.restoreFinisherAnimations;
@@ -724,6 +765,13 @@ public class SPLATSettingsState {
   }
 
   private func Set_RFC_Bool_0(target: ref<RFCModSettings>, name: CName, value: Bool) -> Bool {
+    if Equals(name, n"juggernautEnabled") { target.juggernautEnabled = value; return true; };
+    if Equals(name, n"juggernautMaxTestSensitivity") { target.juggernautMaxTestSensitivity = value; return true; };
+    if Equals(name, n"juggernautAffectNPCs") { target.juggernautAffectNPCs = value; return true; };
+    if Equals(name, n"juggernautAffectVehicles") { target.juggernautAffectVehicles = value; return true; };
+    if Equals(name, n"juggernautAffectObjects") { target.juggernautAffectObjects = value; return true; };
+    if Equals(name, n"juggernautRequireCenterScreen") { target.juggernautRequireCenterScreen = value; return true; };
+    if Equals(name, n"juggernautVehicleMassCompensation") { target.juggernautVehicleMassCompensation = value; return true; };
     if Equals(name, n"randomImpulsesEnabled") { target.randomImpulsesEnabled = value; return true; };
     if Equals(name, n"randomDisableGroupsEnabled") { target.randomDisableGroupsEnabled = value; return true; };
     if Equals(name, n"randomPoolHead") { target.randomPoolHead = value; return true; };
@@ -737,6 +785,8 @@ public class SPLATSettingsState {
 
     if Equals(name, n"arcadeAllowAR") { target.arcadeAllowAR = value; return true; };
     if Equals(name, n"arcadeAllowBlade") { target.arcadeAllowBlade = value; return true; };
+    if Equals(name, n"arcadeAllowFists") { target.arcadeAllowFists = value; return true; };
+    if Equals(name, n"arcadeAllowStrongArms") { target.arcadeAllowStrongArms = value; return true; };
     if Equals(name, n"arcadeAllowBlunt") { target.arcadeAllowBlunt = value; return true; };
     if Equals(name, n"arcadeAllowHandgun") { target.arcadeAllowHandgun = value; return true; };
     if Equals(name, n"arcadeAllowLMG") { target.arcadeAllowLMG = value; return true; };
@@ -751,6 +801,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeOnHitEnabled") { target.arcadeOnHitEnabled = value; return true; };
     if Equals(name, n"arcadePlayerOnly") { target.arcadePlayerOnly = value; return true; };
     if Equals(name, n"arnoldTripAnimation_enabled") { target.arnoldTripAnimation_enabled = value; return true; };
+    if Equals(name, n"arnoldTrip_allowBosses") { target.arnoldTrip_allowBosses = value; return true; };
     if Equals(name, n"arnoldTripAnimation_showTripAnimationAdvanced") { target.arnoldTripAnimation_showTripAnimationAdvanced = value; return true; };
     if Equals(name, n"arnoldTripEmotion_aggressionFirst") { target.arnoldTripEmotion_aggressionFirst = value; return true; };
     if Equals(name, n"arnoldTripEmotion_allowAggressionCombat") { target.arnoldTripEmotion_allowAggressionCombat = value; return true; };
@@ -766,6 +817,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripOnLook_showAdvancedOnLook") { target.arnoldTripOnLook_showAdvancedOnLook = value; return true; };
     if Equals(name, n"arnold_arcadeAllowAR") { target.arnold_arcadeAllowAR = value; return true; };
     if Equals(name, n"arnold_arcadeAllowBlade") { target.arnold_arcadeAllowBlade = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowFists") { target.arnold_arcadeAllowFists = value; return true; };
+    if Equals(name, n"arnold_arcadeAllowStrongArms") { target.arnold_arcadeAllowStrongArms = value; return true; };
     if Equals(name, n"arnold_arcadeAllowBlunt") { target.arnold_arcadeAllowBlunt = value; return true; };
     if Equals(name, n"arnold_arcadeAllowHandgun") { target.arnold_arcadeAllowHandgun = value; return true; };
     if Equals(name, n"arnold_arcadeAllowLMG") { target.arnold_arcadeAllowLMG = value; return true; };
@@ -820,6 +873,7 @@ public class SPLATSettingsState {
     if Equals(name, n"cow_overrideGlobalKnees") { target.cow_overrideGlobalKnees = value; return true; };
     if Equals(name, n"cowerEnabled") { target.cowerEnabled = value; return true; };
     if Equals(name, n"customTripAnimation_enabled") { target.customTripAnimation_enabled = value; return true; };
+    if Equals(name, n"customTrip_allowBosses") { target.customTrip_allowBosses = value; return true; };
     if Equals(name, n"customTripAnimation_showTripAnimationAdvanced") { target.customTripAnimation_showTripAnimationAdvanced = value; return true; };
     if Equals(name, n"customTripEmotion_aggressionFirst") { target.customTripEmotion_aggressionFirst = value; return true; };
     if Equals(name, n"customTripEmotion_allowAggressionCombat") { target.customTripEmotion_allowAggressionCombat = value; return true; };
@@ -835,6 +889,13 @@ public class SPLATSettingsState {
     return false;
   }
   private func Get_RFC_Bool_0(target: ref<RFCModSettings>, name: CName) -> Bool {
+    if Equals(name, n"juggernautEnabled") { return target.juggernautEnabled; };
+    if Equals(name, n"juggernautMaxTestSensitivity") { return target.juggernautMaxTestSensitivity; };
+    if Equals(name, n"juggernautAffectNPCs") { return target.juggernautAffectNPCs; };
+    if Equals(name, n"juggernautAffectVehicles") { return target.juggernautAffectVehicles; };
+    if Equals(name, n"juggernautAffectObjects") { return target.juggernautAffectObjects; };
+    if Equals(name, n"juggernautRequireCenterScreen") { return target.juggernautRequireCenterScreen; };
+    if Equals(name, n"juggernautVehicleMassCompensation") { return target.juggernautVehicleMassCompensation; };
     if Equals(name, n"randomImpulsesEnabled") { return target.randomImpulsesEnabled; };
     if Equals(name, n"randomDisableGroupsEnabled") { return target.randomDisableGroupsEnabled; };
     if Equals(name, n"randomPoolHead") { return target.randomPoolHead; };
@@ -848,6 +909,8 @@ public class SPLATSettingsState {
 
     if Equals(name, n"arcadeAllowAR") { return target.arcadeAllowAR; };
     if Equals(name, n"arcadeAllowBlade") { return target.arcadeAllowBlade; };
+    if Equals(name, n"arcadeAllowFists") { return target.arcadeAllowFists; };
+    if Equals(name, n"arcadeAllowStrongArms") { return target.arcadeAllowStrongArms; };
     if Equals(name, n"arcadeAllowBlunt") { return target.arcadeAllowBlunt; };
     if Equals(name, n"arcadeAllowHandgun") { return target.arcadeAllowHandgun; };
     if Equals(name, n"arcadeAllowLMG") { return target.arcadeAllowLMG; };
@@ -862,6 +925,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeOnHitEnabled") { return target.arcadeOnHitEnabled; };
     if Equals(name, n"arcadePlayerOnly") { return target.arcadePlayerOnly; };
     if Equals(name, n"arnoldTripAnimation_enabled") { return target.arnoldTripAnimation_enabled; };
+    if Equals(name, n"arnoldTrip_allowBosses") { return target.arnoldTrip_allowBosses; };
     if Equals(name, n"arnoldTripAnimation_showTripAnimationAdvanced") { return target.arnoldTripAnimation_showTripAnimationAdvanced; };
     if Equals(name, n"arnoldTripEmotion_aggressionFirst") { return target.arnoldTripEmotion_aggressionFirst; };
     if Equals(name, n"arnoldTripEmotion_allowAggressionCombat") { return target.arnoldTripEmotion_allowAggressionCombat; };
@@ -877,6 +941,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripOnLook_showAdvancedOnLook") { return target.arnoldTripOnLook_showAdvancedOnLook; };
     if Equals(name, n"arnold_arcadeAllowAR") { return target.arnold_arcadeAllowAR; };
     if Equals(name, n"arnold_arcadeAllowBlade") { return target.arnold_arcadeAllowBlade; };
+    if Equals(name, n"arnold_arcadeAllowFists") { return target.arnold_arcadeAllowFists; };
+    if Equals(name, n"arnold_arcadeAllowStrongArms") { return target.arnold_arcadeAllowStrongArms; };
     if Equals(name, n"arnold_arcadeAllowBlunt") { return target.arnold_arcadeAllowBlunt; };
     if Equals(name, n"arnold_arcadeAllowHandgun") { return target.arnold_arcadeAllowHandgun; };
     if Equals(name, n"arnold_arcadeAllowLMG") { return target.arnold_arcadeAllowLMG; };
@@ -931,6 +997,7 @@ public class SPLATSettingsState {
     if Equals(name, n"cow_overrideGlobalKnees") { return target.cow_overrideGlobalKnees; };
     if Equals(name, n"cowerEnabled") { return target.cowerEnabled; };
     if Equals(name, n"customTripAnimation_enabled") { return target.customTripAnimation_enabled; };
+    if Equals(name, n"customTrip_allowBosses") { return target.customTrip_allowBosses; };
     if Equals(name, n"customTripAnimation_showTripAnimationAdvanced") { return target.customTripAnimation_showTripAnimationAdvanced; };
     if Equals(name, n"customTripEmotion_aggressionFirst") { return target.customTripEmotion_aggressionFirst; };
     if Equals(name, n"customTripEmotion_allowAggressionCombat") { return target.customTripEmotion_allowAggressionCombat; };
@@ -946,6 +1013,13 @@ public class SPLATSettingsState {
     return false;
   }
   private func Has_RFC_Bool_0(name: CName) -> Bool {
+    if Equals(name, n"juggernautEnabled") { return true; };
+    if Equals(name, n"juggernautMaxTestSensitivity") { return true; };
+    if Equals(name, n"juggernautAffectNPCs") { return true; };
+    if Equals(name, n"juggernautAffectVehicles") { return true; };
+    if Equals(name, n"juggernautAffectObjects") { return true; };
+    if Equals(name, n"juggernautRequireCenterScreen") { return true; };
+    if Equals(name, n"juggernautVehicleMassCompensation") { return true; };
     if Equals(name, n"randomImpulsesEnabled") { return true; };
     if Equals(name, n"randomDisableGroupsEnabled") { return true; };
     if Equals(name, n"randomPoolHead") { return true; };
@@ -959,6 +1033,8 @@ public class SPLATSettingsState {
 
     if Equals(name, n"arcadeAllowAR") { return true; };
     if Equals(name, n"arcadeAllowBlade") { return true; };
+    if Equals(name, n"arcadeAllowFists") { return true; };
+    if Equals(name, n"arcadeAllowStrongArms") { return true; };
     if Equals(name, n"arcadeAllowBlunt") { return true; };
     if Equals(name, n"arcadeAllowHandgun") { return true; };
     if Equals(name, n"arcadeAllowLMG") { return true; };
@@ -973,6 +1049,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeOnHitEnabled") { return true; };
     if Equals(name, n"arcadePlayerOnly") { return true; };
     if Equals(name, n"arnoldTripAnimation_enabled") { return true; };
+    if Equals(name, n"arnoldTrip_allowBosses") { return true; };
     if Equals(name, n"arnoldTripAnimation_showTripAnimationAdvanced") { return true; };
     if Equals(name, n"arnoldTripEmotion_aggressionFirst") { return true; };
     if Equals(name, n"arnoldTripEmotion_allowAggressionCombat") { return true; };
@@ -988,6 +1065,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripOnLook_showAdvancedOnLook") { return true; };
     if Equals(name, n"arnold_arcadeAllowAR") { return true; };
     if Equals(name, n"arnold_arcadeAllowBlade") { return true; };
+    if Equals(name, n"arnold_arcadeAllowFists") { return true; };
+    if Equals(name, n"arnold_arcadeAllowStrongArms") { return true; };
     if Equals(name, n"arnold_arcadeAllowBlunt") { return true; };
     if Equals(name, n"arnold_arcadeAllowHandgun") { return true; };
     if Equals(name, n"arnold_arcadeAllowLMG") { return true; };
@@ -1042,6 +1121,7 @@ public class SPLATSettingsState {
     if Equals(name, n"cow_overrideGlobalKnees") { return true; };
     if Equals(name, n"cowerEnabled") { return true; };
     if Equals(name, n"customTripAnimation_enabled") { return true; };
+    if Equals(name, n"customTrip_allowBosses") { return true; };
     if Equals(name, n"customTripAnimation_showTripAnimationAdvanced") { return true; };
     if Equals(name, n"customTripEmotion_aggressionFirst") { return true; };
     if Equals(name, n"customTripEmotion_allowAggressionCombat") { return true; };
@@ -1061,6 +1141,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripOnLook_showAdvancedOnLook") { target.customTripOnLook_showAdvancedOnLook = value; return true; };
     if Equals(name, n"directionalTumbleEnabled") { target.directionalTumbleEnabled = value; return true; };
     if Equals(name, n"dirtyTripAnimation_enabled") { target.dirtyTripAnimation_enabled = value; return true; };
+    if Equals(name, n"dirtyTrip_allowBosses") { target.dirtyTrip_allowBosses = value; return true; };
     if Equals(name, n"dirtyTripAnimation_showTripAnimationAdvanced") { target.dirtyTripAnimation_showTripAnimationAdvanced = value; return true; };
     if Equals(name, n"dirtyTripEmotion_aggressionFirst") { target.dirtyTripEmotion_aggressionFirst = value; return true; };
     if Equals(name, n"dirtyTripEmotion_allowAggressionCombat") { target.dirtyTripEmotion_allowAggressionCombat = value; return true; };
@@ -1076,6 +1157,8 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripOnLook_showAdvancedOnLook") { target.dirtyTripOnLook_showAdvancedOnLook = value; return true; };
     if Equals(name, n"dirty_arcadeAllowAR") { target.dirty_arcadeAllowAR = value; return true; };
     if Equals(name, n"dirty_arcadeAllowBlade") { target.dirty_arcadeAllowBlade = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowFists") { target.dirty_arcadeAllowFists = value; return true; };
+    if Equals(name, n"dirty_arcadeAllowStrongArms") { target.dirty_arcadeAllowStrongArms = value; return true; };
     if Equals(name, n"dirty_arcadeAllowBlunt") { target.dirty_arcadeAllowBlunt = value; return true; };
     if Equals(name, n"dirty_arcadeAllowHandgun") { target.dirty_arcadeAllowHandgun = value; return true; };
     if Equals(name, n"dirty_arcadeAllowLMG") { target.dirty_arcadeAllowLMG = value; return true; };
@@ -1167,6 +1250,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripOnLook_showAdvancedOnLook") { return target.customTripOnLook_showAdvancedOnLook; };
     if Equals(name, n"directionalTumbleEnabled") { return target.directionalTumbleEnabled; };
     if Equals(name, n"dirtyTripAnimation_enabled") { return target.dirtyTripAnimation_enabled; };
+    if Equals(name, n"dirtyTrip_allowBosses") { return target.dirtyTrip_allowBosses; };
     if Equals(name, n"dirtyTripAnimation_showTripAnimationAdvanced") { return target.dirtyTripAnimation_showTripAnimationAdvanced; };
     if Equals(name, n"dirtyTripEmotion_aggressionFirst") { return target.dirtyTripEmotion_aggressionFirst; };
     if Equals(name, n"dirtyTripEmotion_allowAggressionCombat") { return target.dirtyTripEmotion_allowAggressionCombat; };
@@ -1182,6 +1266,8 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripOnLook_showAdvancedOnLook") { return target.dirtyTripOnLook_showAdvancedOnLook; };
     if Equals(name, n"dirty_arcadeAllowAR") { return target.dirty_arcadeAllowAR; };
     if Equals(name, n"dirty_arcadeAllowBlade") { return target.dirty_arcadeAllowBlade; };
+    if Equals(name, n"dirty_arcadeAllowFists") { return target.dirty_arcadeAllowFists; };
+    if Equals(name, n"dirty_arcadeAllowStrongArms") { return target.dirty_arcadeAllowStrongArms; };
     if Equals(name, n"dirty_arcadeAllowBlunt") { return target.dirty_arcadeAllowBlunt; };
     if Equals(name, n"dirty_arcadeAllowHandgun") { return target.dirty_arcadeAllowHandgun; };
     if Equals(name, n"dirty_arcadeAllowLMG") { return target.dirty_arcadeAllowLMG; };
@@ -1273,6 +1359,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripOnLook_showAdvancedOnLook") { return true; };
     if Equals(name, n"directionalTumbleEnabled") { return true; };
     if Equals(name, n"dirtyTripAnimation_enabled") { return true; };
+    if Equals(name, n"dirtyTrip_allowBosses") { return true; };
     if Equals(name, n"dirtyTripAnimation_showTripAnimationAdvanced") { return true; };
     if Equals(name, n"dirtyTripEmotion_aggressionFirst") { return true; };
     if Equals(name, n"dirtyTripEmotion_allowAggressionCombat") { return true; };
@@ -1288,6 +1375,8 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripOnLook_showAdvancedOnLook") { return true; };
     if Equals(name, n"dirty_arcadeAllowAR") { return true; };
     if Equals(name, n"dirty_arcadeAllowBlade") { return true; };
+    if Equals(name, n"dirty_arcadeAllowFists") { return true; };
+    if Equals(name, n"dirty_arcadeAllowStrongArms") { return true; };
     if Equals(name, n"dirty_arcadeAllowBlunt") { return true; };
     if Equals(name, n"dirty_arcadeAllowHandgun") { return true; };
     if Equals(name, n"dirty_arcadeAllowLMG") { return true; };
@@ -1386,6 +1475,8 @@ public class SPLATSettingsState {
     if Equals(name, n"overrideWorkSpots") { target.overrideWorkSpots = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowAR") { target.realismPlusMode_arcadeAllowAR = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlade") { target.realismPlusMode_arcadeAllowBlade = value; return true; };
+    if Equals(name, n"realismPlusMode_arcadeAllowFists") { target.realismPlusMode_arcadeAllowFists = value; return true; };
+    if Equals(name, n"realismPlusMode_arcadeAllowStrongArms") { target.realismPlusMode_arcadeAllowStrongArms = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlunt") { target.realismPlusMode_arcadeAllowBlunt = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowHandgun") { target.realismPlusMode_arcadeAllowHandgun = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowLMG") { target.realismPlusMode_arcadeAllowLMG = value; return true; };
@@ -1428,6 +1519,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_vehicleImpulseEnabled") { target.realismPlusMode_vehicleImpulseEnabled = value; return true; };
     if Equals(name, n"realismPlusMode_vehicleMeleeEnabled") { target.realismPlusMode_vehicleMeleeEnabled = value; return true; };
     if Equals(name, n"realismPlusTripAnimation_enabled") { target.realismPlusTripAnimation_enabled = value; return true; };
+    if Equals(name, n"realismPlusTrip_allowBosses") { target.realismPlusTrip_allowBosses = value; return true; };
     if Equals(name, n"realismPlusTripAnimation_showTripAnimationAdvanced") { target.realismPlusTripAnimation_showTripAnimationAdvanced = value; return true; };
     if Equals(name, n"realismPlusTripEmotion_aggressionFirst") { target.realismPlusTripEmotion_aggressionFirst = value; return true; };
     if Equals(name, n"realismPlusTripEmotion_allowAggressionCombat") { target.realismPlusTripEmotion_allowAggressionCombat = value; return true; };
@@ -1491,6 +1583,8 @@ public class SPLATSettingsState {
     if Equals(name, n"overrideWorkSpots") { return target.overrideWorkSpots; };
     if Equals(name, n"realismPlusMode_arcadeAllowAR") { return target.realismPlusMode_arcadeAllowAR; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlade") { return target.realismPlusMode_arcadeAllowBlade; };
+    if Equals(name, n"realismPlusMode_arcadeAllowFists") { return target.realismPlusMode_arcadeAllowFists; };
+    if Equals(name, n"realismPlusMode_arcadeAllowStrongArms") { return target.realismPlusMode_arcadeAllowStrongArms; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlunt") { return target.realismPlusMode_arcadeAllowBlunt; };
     if Equals(name, n"realismPlusMode_arcadeAllowHandgun") { return target.realismPlusMode_arcadeAllowHandgun; };
     if Equals(name, n"realismPlusMode_arcadeAllowLMG") { return target.realismPlusMode_arcadeAllowLMG; };
@@ -1533,6 +1627,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_vehicleImpulseEnabled") { return target.realismPlusMode_vehicleImpulseEnabled; };
     if Equals(name, n"realismPlusMode_vehicleMeleeEnabled") { return target.realismPlusMode_vehicleMeleeEnabled; };
     if Equals(name, n"realismPlusTripAnimation_enabled") { return target.realismPlusTripAnimation_enabled; };
+    if Equals(name, n"realismPlusTrip_allowBosses") { return target.realismPlusTrip_allowBosses; };
     if Equals(name, n"realismPlusTripAnimation_showTripAnimationAdvanced") { return target.realismPlusTripAnimation_showTripAnimationAdvanced; };
     if Equals(name, n"realismPlusTripEmotion_aggressionFirst") { return target.realismPlusTripEmotion_aggressionFirst; };
     if Equals(name, n"realismPlusTripEmotion_allowAggressionCombat") { return target.realismPlusTripEmotion_allowAggressionCombat; };
@@ -1596,6 +1691,8 @@ public class SPLATSettingsState {
     if Equals(name, n"overrideWorkSpots") { return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowAR") { return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlade") { return true; };
+    if Equals(name, n"realismPlusMode_arcadeAllowFists") { return true; };
+    if Equals(name, n"realismPlusMode_arcadeAllowStrongArms") { return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowBlunt") { return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowHandgun") { return true; };
     if Equals(name, n"realismPlusMode_arcadeAllowLMG") { return true; };
@@ -1638,6 +1735,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_vehicleImpulseEnabled") { return true; };
     if Equals(name, n"realismPlusMode_vehicleMeleeEnabled") { return true; };
     if Equals(name, n"realismPlusTripAnimation_enabled") { return true; };
+    if Equals(name, n"realismPlusTrip_allowBosses") { return true; };
     if Equals(name, n"realismPlusTripAnimation_showTripAnimationAdvanced") { return true; };
     if Equals(name, n"realismPlusTripEmotion_aggressionFirst") { return true; };
     if Equals(name, n"realismPlusTripEmotion_allowAggressionCombat") { return true; };
@@ -1853,6 +1951,21 @@ public class SPLATSettingsState {
   }
 
   private func Set_RFC_Float_0(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
+    if Equals(name, n"juggernautMinSpeedMps") { target.juggernautMinSpeedMps = value; return true; };
+    if Equals(name, n"juggernautNPCContactDistM") { target.juggernautNPCContactDistM = value; return true; };
+    if Equals(name, n"juggernautVehicleContactDistM") { target.juggernautVehicleContactDistM = value; return true; };
+    if Equals(name, n"juggernautObjectContactDistM") { target.juggernautObjectContactDistM = value; return true; };
+    if Equals(name, n"juggernautNPCPush") { target.juggernautNPCPush = value; return true; };
+    if Equals(name, n"juggernautNPCVertical") { target.juggernautNPCVertical = value; return true; };
+    if Equals(name, n"juggernautNPCRadius") { target.juggernautNPCRadius = value; return true; };
+    if Equals(name, n"juggernautVehiclePush") { target.juggernautVehiclePush = value; return true; };
+    if Equals(name, n"juggernautVehicleVertical") { target.juggernautVehicleVertical = value; return true; };
+    if Equals(name, n"juggernautVehicleRadius") { target.juggernautVehicleRadius = value; return true; };
+    if Equals(name, n"juggernautObjectPush") { target.juggernautObjectPush = value; return true; };
+    if Equals(name, n"juggernautObjectVertical") { target.juggernautObjectVertical = value; return true; };
+    if Equals(name, n"juggernautObjectRadius") { target.juggernautObjectRadius = value; return true; };
+    if Equals(name, n"juggernautCooldownSec") { target.juggernautCooldownSec = value; return true; };
+    if Equals(name, n"juggernautIntervalSec") { target.juggernautIntervalSec = value; return true; };
     if Equals(name, n"randomImpulseChancePct") { target.randomImpulseChancePct = value; return true; };
     if Equals(name, n"randomDisableChancePct") { target.randomDisableChancePct = value; return true; };
     if Equals(name, n"st_forwardMin") { target.st_forwardMin = value; return true; };
@@ -1909,6 +2022,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeMeleeUp") { target.arcadeMeleeUp = value; return true; };
     if Equals(name, n"arcadeMulAR") { target.arcadeMulAR = value; return true; };
     if Equals(name, n"arcadeMulBlade") { target.arcadeMulBlade = value; return true; };
+    if Equals(name, n"arcadeMulFists") { target.arcadeMulFists = value; return true; };
+    if Equals(name, n"arcadeMulStrongArms") { target.arcadeMulStrongArms = value; return true; };
     if Equals(name, n"arcadeMulBlunt") { target.arcadeMulBlunt = value; return true; };
     if Equals(name, n"arcadeMulHandgun") { target.arcadeMulHandgun = value; return true; };
     if Equals(name, n"arcadeMulLMG") { target.arcadeMulLMG = value; return true; };
@@ -1922,6 +2037,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripAnimation_forwardPush") { target.arnoldTripAnimation_forwardPush = value; return true; };
     if Equals(name, n"arnoldTripAnimation_hitHeight") { target.arnoldTripAnimation_hitHeight = value; return true; };
     if Equals(name, n"arnoldTripAnimation_lockoutSec") { target.arnoldTripAnimation_lockoutSec = value; return true; };
+    if Equals(name, n"arnoldTripAnimation_minBumpSpeed") { target.arnoldTripAnimation_minBumpSpeed = value; return true; };
     if Equals(name, n"arnoldTripAnimation_ragdollDelaySec") { target.arnoldTripAnimation_ragdollDelaySec = value; return true; };
     if Equals(name, n"arnoldTripEmotion_workspotBackOffFallbackDelaySec") { target.arnoldTripEmotion_workspotBackOffFallbackDelaySec = value; return true; };
     if Equals(name, n"arnoldTripOnLook_centerAimTightness") { target.arnoldTripOnLook_centerAimTightness = value; return true; };
@@ -1953,6 +2069,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeMeleeUp") { target.arnold_arcadeMeleeUp = value; return true; };
     if Equals(name, n"arnold_arcadeMulAR") { target.arnold_arcadeMulAR = value; return true; };
     if Equals(name, n"arnold_arcadeMulBlade") { target.arnold_arcadeMulBlade = value; return true; };
+    if Equals(name, n"arnold_arcadeMulFists") { target.arnold_arcadeMulFists = value; return true; };
+    if Equals(name, n"arnold_arcadeMulStrongArms") { target.arnold_arcadeMulStrongArms = value; return true; };
     if Equals(name, n"arnold_arcadeMulBlunt") { target.arnold_arcadeMulBlunt = value; return true; };
     if Equals(name, n"arnold_arcadeMulHandgun") { target.arnold_arcadeMulHandgun = value; return true; };
     if Equals(name, n"arnold_arcadeMulLMG") { target.arnold_arcadeMulLMG = value; return true; };
@@ -1988,6 +2106,21 @@ public class SPLATSettingsState {
     return false;
   }
   private func Get_RFC_Float_0(target: ref<RFCModSettings>, name: CName) -> Float {
+    if Equals(name, n"juggernautMinSpeedMps") { return target.juggernautMinSpeedMps; };
+    if Equals(name, n"juggernautNPCContactDistM") { return target.juggernautNPCContactDistM; };
+    if Equals(name, n"juggernautVehicleContactDistM") { return target.juggernautVehicleContactDistM; };
+    if Equals(name, n"juggernautObjectContactDistM") { return target.juggernautObjectContactDistM; };
+    if Equals(name, n"juggernautNPCPush") { return target.juggernautNPCPush; };
+    if Equals(name, n"juggernautNPCVertical") { return target.juggernautNPCVertical; };
+    if Equals(name, n"juggernautNPCRadius") { return target.juggernautNPCRadius; };
+    if Equals(name, n"juggernautVehiclePush") { return target.juggernautVehiclePush; };
+    if Equals(name, n"juggernautVehicleVertical") { return target.juggernautVehicleVertical; };
+    if Equals(name, n"juggernautVehicleRadius") { return target.juggernautVehicleRadius; };
+    if Equals(name, n"juggernautObjectPush") { return target.juggernautObjectPush; };
+    if Equals(name, n"juggernautObjectVertical") { return target.juggernautObjectVertical; };
+    if Equals(name, n"juggernautObjectRadius") { return target.juggernautObjectRadius; };
+    if Equals(name, n"juggernautCooldownSec") { return target.juggernautCooldownSec; };
+    if Equals(name, n"juggernautIntervalSec") { return target.juggernautIntervalSec; };
     if Equals(name, n"randomImpulseChancePct") { return target.randomImpulseChancePct; };
     if Equals(name, n"randomDisableChancePct") { return target.randomDisableChancePct; };
     if Equals(name, n"st_forwardMin") { return target.st_forwardMin; };
@@ -2044,6 +2177,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeMeleeUp") { return target.arcadeMeleeUp; };
     if Equals(name, n"arcadeMulAR") { return target.arcadeMulAR; };
     if Equals(name, n"arcadeMulBlade") { return target.arcadeMulBlade; };
+    if Equals(name, n"arcadeMulFists") { return target.arcadeMulFists; };
+    if Equals(name, n"arcadeMulStrongArms") { return target.arcadeMulStrongArms; };
     if Equals(name, n"arcadeMulBlunt") { return target.arcadeMulBlunt; };
     if Equals(name, n"arcadeMulHandgun") { return target.arcadeMulHandgun; };
     if Equals(name, n"arcadeMulLMG") { return target.arcadeMulLMG; };
@@ -2057,6 +2192,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripAnimation_forwardPush") { return target.arnoldTripAnimation_forwardPush; };
     if Equals(name, n"arnoldTripAnimation_hitHeight") { return target.arnoldTripAnimation_hitHeight; };
     if Equals(name, n"arnoldTripAnimation_lockoutSec") { return target.arnoldTripAnimation_lockoutSec; };
+    if Equals(name, n"arnoldTripAnimation_minBumpSpeed") { return target.arnoldTripAnimation_minBumpSpeed; };
     if Equals(name, n"arnoldTripAnimation_ragdollDelaySec") { return target.arnoldTripAnimation_ragdollDelaySec; };
     if Equals(name, n"arnoldTripEmotion_workspotBackOffFallbackDelaySec") { return target.arnoldTripEmotion_workspotBackOffFallbackDelaySec; };
     if Equals(name, n"arnoldTripOnLook_centerAimTightness") { return target.arnoldTripOnLook_centerAimTightness; };
@@ -2088,6 +2224,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeMeleeUp") { return target.arnold_arcadeMeleeUp; };
     if Equals(name, n"arnold_arcadeMulAR") { return target.arnold_arcadeMulAR; };
     if Equals(name, n"arnold_arcadeMulBlade") { return target.arnold_arcadeMulBlade; };
+    if Equals(name, n"arnold_arcadeMulFists") { return target.arnold_arcadeMulFists; };
+    if Equals(name, n"arnold_arcadeMulStrongArms") { return target.arnold_arcadeMulStrongArms; };
     if Equals(name, n"arnold_arcadeMulBlunt") { return target.arnold_arcadeMulBlunt; };
     if Equals(name, n"arnold_arcadeMulHandgun") { return target.arnold_arcadeMulHandgun; };
     if Equals(name, n"arnold_arcadeMulLMG") { return target.arnold_arcadeMulLMG; };
@@ -2123,6 +2261,21 @@ public class SPLATSettingsState {
     return 0.0;
   }
   private func Has_RFC_Float_0(name: CName) -> Bool {
+    if Equals(name, n"juggernautMinSpeedMps") { return true; };
+    if Equals(name, n"juggernautNPCContactDistM") { return true; };
+    if Equals(name, n"juggernautVehicleContactDistM") { return true; };
+    if Equals(name, n"juggernautObjectContactDistM") { return true; };
+    if Equals(name, n"juggernautNPCPush") { return true; };
+    if Equals(name, n"juggernautNPCVertical") { return true; };
+    if Equals(name, n"juggernautNPCRadius") { return true; };
+    if Equals(name, n"juggernautVehiclePush") { return true; };
+    if Equals(name, n"juggernautVehicleVertical") { return true; };
+    if Equals(name, n"juggernautVehicleRadius") { return true; };
+    if Equals(name, n"juggernautObjectPush") { return true; };
+    if Equals(name, n"juggernautObjectVertical") { return true; };
+    if Equals(name, n"juggernautObjectRadius") { return true; };
+    if Equals(name, n"juggernautCooldownSec") { return true; };
+    if Equals(name, n"juggernautIntervalSec") { return true; };
     if Equals(name, n"randomImpulseChancePct") { return true; };
     if Equals(name, n"randomDisableChancePct") { return true; };
     if Equals(name, n"st_forwardMin") { return true; };
@@ -2179,6 +2332,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arcadeMeleeUp") { return true; };
     if Equals(name, n"arcadeMulAR") { return true; };
     if Equals(name, n"arcadeMulBlade") { return true; };
+    if Equals(name, n"arcadeMulFists") { return true; };
+    if Equals(name, n"arcadeMulStrongArms") { return true; };
     if Equals(name, n"arcadeMulBlunt") { return true; };
     if Equals(name, n"arcadeMulHandgun") { return true; };
     if Equals(name, n"arcadeMulLMG") { return true; };
@@ -2192,6 +2347,7 @@ public class SPLATSettingsState {
     if Equals(name, n"arnoldTripAnimation_forwardPush") { return true; };
     if Equals(name, n"arnoldTripAnimation_hitHeight") { return true; };
     if Equals(name, n"arnoldTripAnimation_lockoutSec") { return true; };
+    if Equals(name, n"arnoldTripAnimation_minBumpSpeed") { return true; };
     if Equals(name, n"arnoldTripAnimation_ragdollDelaySec") { return true; };
     if Equals(name, n"arnoldTripEmotion_workspotBackOffFallbackDelaySec") { return true; };
     if Equals(name, n"arnoldTripOnLook_centerAimTightness") { return true; };
@@ -2223,6 +2379,8 @@ public class SPLATSettingsState {
     if Equals(name, n"arnold_arcadeMeleeUp") { return true; };
     if Equals(name, n"arnold_arcadeMulAR") { return true; };
     if Equals(name, n"arnold_arcadeMulBlade") { return true; };
+    if Equals(name, n"arnold_arcadeMulFists") { return true; };
+    if Equals(name, n"arnold_arcadeMulStrongArms") { return true; };
     if Equals(name, n"arnold_arcadeMulBlunt") { return true; };
     if Equals(name, n"arnold_arcadeMulHandgun") { return true; };
     if Equals(name, n"arnold_arcadeMulLMG") { return true; };
@@ -2309,6 +2467,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripAnimation_forwardPush") { target.customTripAnimation_forwardPush = value; return true; };
     if Equals(name, n"customTripAnimation_hitHeight") { target.customTripAnimation_hitHeight = value; return true; };
     if Equals(name, n"customTripAnimation_lockoutSec") { target.customTripAnimation_lockoutSec = value; return true; };
+    if Equals(name, n"customTripAnimation_minBumpSpeed") { target.customTripAnimation_minBumpSpeed = value; return true; };
     if Equals(name, n"customTripAnimation_ragdollDelaySec") { target.customTripAnimation_ragdollDelaySec = value; return true; };
     if Equals(name, n"customTripEmotion_workspotBackOffFallbackDelaySec") { target.customTripEmotion_workspotBackOffFallbackDelaySec = value; return true; };
     if Equals(name, n"customTripOnLook_centerAimTightness") { target.customTripOnLook_centerAimTightness = value; return true; };
@@ -2333,6 +2492,7 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripAnimation_forwardPush") { target.dirtyTripAnimation_forwardPush = value; return true; };
     if Equals(name, n"dirtyTripAnimation_hitHeight") { target.dirtyTripAnimation_hitHeight = value; return true; };
     if Equals(name, n"dirtyTripAnimation_lockoutSec") { target.dirtyTripAnimation_lockoutSec = value; return true; };
+    if Equals(name, n"dirtyTripAnimation_minBumpSpeed") { target.dirtyTripAnimation_minBumpSpeed = value; return true; };
     if Equals(name, n"dirtyTripAnimation_ragdollDelaySec") { target.dirtyTripAnimation_ragdollDelaySec = value; return true; };
     if Equals(name, n"dirtyTripEmotion_workspotBackOffFallbackDelaySec") { target.dirtyTripEmotion_workspotBackOffFallbackDelaySec = value; return true; };
     if Equals(name, n"dirtyTripOnLook_centerAimTightness") { target.dirtyTripOnLook_centerAimTightness = value; return true; };
@@ -2415,6 +2575,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripAnimation_forwardPush") { return target.customTripAnimation_forwardPush; };
     if Equals(name, n"customTripAnimation_hitHeight") { return target.customTripAnimation_hitHeight; };
     if Equals(name, n"customTripAnimation_lockoutSec") { return target.customTripAnimation_lockoutSec; };
+    if Equals(name, n"customTripAnimation_minBumpSpeed") { return target.customTripAnimation_minBumpSpeed; };
     if Equals(name, n"customTripAnimation_ragdollDelaySec") { return target.customTripAnimation_ragdollDelaySec; };
     if Equals(name, n"customTripEmotion_workspotBackOffFallbackDelaySec") { return target.customTripEmotion_workspotBackOffFallbackDelaySec; };
     if Equals(name, n"customTripOnLook_centerAimTightness") { return target.customTripOnLook_centerAimTightness; };
@@ -2439,6 +2600,7 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripAnimation_forwardPush") { return target.dirtyTripAnimation_forwardPush; };
     if Equals(name, n"dirtyTripAnimation_hitHeight") { return target.dirtyTripAnimation_hitHeight; };
     if Equals(name, n"dirtyTripAnimation_lockoutSec") { return target.dirtyTripAnimation_lockoutSec; };
+    if Equals(name, n"dirtyTripAnimation_minBumpSpeed") { return target.dirtyTripAnimation_minBumpSpeed; };
     if Equals(name, n"dirtyTripAnimation_ragdollDelaySec") { return target.dirtyTripAnimation_ragdollDelaySec; };
     if Equals(name, n"dirtyTripEmotion_workspotBackOffFallbackDelaySec") { return target.dirtyTripEmotion_workspotBackOffFallbackDelaySec; };
     if Equals(name, n"dirtyTripOnLook_centerAimTightness") { return target.dirtyTripOnLook_centerAimTightness; };
@@ -2521,6 +2683,7 @@ public class SPLATSettingsState {
     if Equals(name, n"customTripAnimation_forwardPush") { return true; };
     if Equals(name, n"customTripAnimation_hitHeight") { return true; };
     if Equals(name, n"customTripAnimation_lockoutSec") { return true; };
+    if Equals(name, n"customTripAnimation_minBumpSpeed") { return true; };
     if Equals(name, n"customTripAnimation_ragdollDelaySec") { return true; };
     if Equals(name, n"customTripEmotion_workspotBackOffFallbackDelaySec") { return true; };
     if Equals(name, n"customTripOnLook_centerAimTightness") { return true; };
@@ -2545,6 +2708,7 @@ public class SPLATSettingsState {
     if Equals(name, n"dirtyTripAnimation_forwardPush") { return true; };
     if Equals(name, n"dirtyTripAnimation_hitHeight") { return true; };
     if Equals(name, n"dirtyTripAnimation_lockoutSec") { return true; };
+    if Equals(name, n"dirtyTripAnimation_minBumpSpeed") { return true; };
     if Equals(name, n"dirtyTripAnimation_ragdollDelaySec") { return true; };
     if Equals(name, n"dirtyTripEmotion_workspotBackOffFallbackDelaySec") { return true; };
     if Equals(name, n"dirtyTripOnLook_centerAimTightness") { return true; };
@@ -2580,6 +2744,8 @@ public class SPLATSettingsState {
   private func Set_RFC_Float_2(target: ref<RFCModSettings>, name: CName, value: Float) -> Bool {
     if Equals(name, n"dirty_arcadeMulAR") { target.dirty_arcadeMulAR = value; return true; };
     if Equals(name, n"dirty_arcadeMulBlade") { target.dirty_arcadeMulBlade = value; return true; };
+    if Equals(name, n"dirty_arcadeMulFists") { target.dirty_arcadeMulFists = value; return true; };
+    if Equals(name, n"dirty_arcadeMulStrongArms") { target.dirty_arcadeMulStrongArms = value; return true; };
     if Equals(name, n"dirty_arcadeMulBlunt") { target.dirty_arcadeMulBlunt = value; return true; };
     if Equals(name, n"dirty_arcadeMulHandgun") { target.dirty_arcadeMulHandgun = value; return true; };
     if Equals(name, n"dirty_arcadeMulLMG") { target.dirty_arcadeMulLMG = value; return true; };
@@ -2683,6 +2849,8 @@ public class SPLATSettingsState {
   private func Get_RFC_Float_2(target: ref<RFCModSettings>, name: CName) -> Float {
     if Equals(name, n"dirty_arcadeMulAR") { return target.dirty_arcadeMulAR; };
     if Equals(name, n"dirty_arcadeMulBlade") { return target.dirty_arcadeMulBlade; };
+    if Equals(name, n"dirty_arcadeMulFists") { return target.dirty_arcadeMulFists; };
+    if Equals(name, n"dirty_arcadeMulStrongArms") { return target.dirty_arcadeMulStrongArms; };
     if Equals(name, n"dirty_arcadeMulBlunt") { return target.dirty_arcadeMulBlunt; };
     if Equals(name, n"dirty_arcadeMulHandgun") { return target.dirty_arcadeMulHandgun; };
     if Equals(name, n"dirty_arcadeMulLMG") { return target.dirty_arcadeMulLMG; };
@@ -2786,6 +2954,8 @@ public class SPLATSettingsState {
   private func Has_RFC_Float_2(name: CName) -> Bool {
     if Equals(name, n"dirty_arcadeMulAR") { return true; };
     if Equals(name, n"dirty_arcadeMulBlade") { return true; };
+    if Equals(name, n"dirty_arcadeMulFists") { return true; };
+    if Equals(name, n"dirty_arcadeMulStrongArms") { return true; };
     if Equals(name, n"dirty_arcadeMulBlunt") { return true; };
     if Equals(name, n"dirty_arcadeMulHandgun") { return true; };
     if Equals(name, n"dirty_arcadeMulLMG") { return true; };
@@ -2891,6 +3061,8 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_arcadeMeleeUp") { target.realismPlusMode_arcadeMeleeUp = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeMulAR") { target.realismPlusMode_arcadeMulAR = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeMulBlade") { target.realismPlusMode_arcadeMulBlade = value; return true; };
+    if Equals(name, n"realismPlusMode_arcadeMulFists") { target.realismPlusMode_arcadeMulFists = value; return true; };
+    if Equals(name, n"realismPlusMode_arcadeMulStrongArms") { target.realismPlusMode_arcadeMulStrongArms = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeMulBlunt") { target.realismPlusMode_arcadeMulBlunt = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeMulHandgun") { target.realismPlusMode_arcadeMulHandgun = value; return true; };
     if Equals(name, n"realismPlusMode_arcadeMulLMG") { target.realismPlusMode_arcadeMulLMG = value; return true; };
@@ -2951,6 +3123,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusTripAnimation_forwardPush") { target.realismPlusTripAnimation_forwardPush = value; return true; };
     if Equals(name, n"realismPlusTripAnimation_hitHeight") { target.realismPlusTripAnimation_hitHeight = value; return true; };
     if Equals(name, n"realismPlusTripAnimation_lockoutSec") { target.realismPlusTripAnimation_lockoutSec = value; return true; };
+    if Equals(name, n"realismPlusTripAnimation_minBumpSpeed") { target.realismPlusTripAnimation_minBumpSpeed = value; return true; };
     if Equals(name, n"realismPlusTripAnimation_ragdollDelaySec") { target.realismPlusTripAnimation_ragdollDelaySec = value; return true; };
     if Equals(name, n"realismPlusTripEmotion_workspotBackOffFallbackDelaySec") { target.realismPlusTripEmotion_workspotBackOffFallbackDelaySec = value; return true; };
     if Equals(name, n"realismPlusTripOnLook_centerAimTightness") { target.realismPlusTripOnLook_centerAimTightness = value; return true; };
@@ -2994,6 +3167,8 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_arcadeMeleeUp") { return target.realismPlusMode_arcadeMeleeUp; };
     if Equals(name, n"realismPlusMode_arcadeMulAR") { return target.realismPlusMode_arcadeMulAR; };
     if Equals(name, n"realismPlusMode_arcadeMulBlade") { return target.realismPlusMode_arcadeMulBlade; };
+    if Equals(name, n"realismPlusMode_arcadeMulFists") { return target.realismPlusMode_arcadeMulFists; };
+    if Equals(name, n"realismPlusMode_arcadeMulStrongArms") { return target.realismPlusMode_arcadeMulStrongArms; };
     if Equals(name, n"realismPlusMode_arcadeMulBlunt") { return target.realismPlusMode_arcadeMulBlunt; };
     if Equals(name, n"realismPlusMode_arcadeMulHandgun") { return target.realismPlusMode_arcadeMulHandgun; };
     if Equals(name, n"realismPlusMode_arcadeMulLMG") { return target.realismPlusMode_arcadeMulLMG; };
@@ -3054,6 +3229,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusTripAnimation_forwardPush") { return target.realismPlusTripAnimation_forwardPush; };
     if Equals(name, n"realismPlusTripAnimation_hitHeight") { return target.realismPlusTripAnimation_hitHeight; };
     if Equals(name, n"realismPlusTripAnimation_lockoutSec") { return target.realismPlusTripAnimation_lockoutSec; };
+    if Equals(name, n"realismPlusTripAnimation_minBumpSpeed") { return target.realismPlusTripAnimation_minBumpSpeed; };
     if Equals(name, n"realismPlusTripAnimation_ragdollDelaySec") { return target.realismPlusTripAnimation_ragdollDelaySec; };
     if Equals(name, n"realismPlusTripEmotion_workspotBackOffFallbackDelaySec") { return target.realismPlusTripEmotion_workspotBackOffFallbackDelaySec; };
     if Equals(name, n"realismPlusTripOnLook_centerAimTightness") { return target.realismPlusTripOnLook_centerAimTightness; };
@@ -3097,6 +3273,8 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusMode_arcadeMeleeUp") { return true; };
     if Equals(name, n"realismPlusMode_arcadeMulAR") { return true; };
     if Equals(name, n"realismPlusMode_arcadeMulBlade") { return true; };
+    if Equals(name, n"realismPlusMode_arcadeMulFists") { return true; };
+    if Equals(name, n"realismPlusMode_arcadeMulStrongArms") { return true; };
     if Equals(name, n"realismPlusMode_arcadeMulBlunt") { return true; };
     if Equals(name, n"realismPlusMode_arcadeMulHandgun") { return true; };
     if Equals(name, n"realismPlusMode_arcadeMulLMG") { return true; };
@@ -3157,6 +3335,7 @@ public class SPLATSettingsState {
     if Equals(name, n"realismPlusTripAnimation_forwardPush") { return true; };
     if Equals(name, n"realismPlusTripAnimation_hitHeight") { return true; };
     if Equals(name, n"realismPlusTripAnimation_lockoutSec") { return true; };
+    if Equals(name, n"realismPlusTripAnimation_minBumpSpeed") { return true; };
     if Equals(name, n"realismPlusTripAnimation_ragdollDelaySec") { return true; };
     if Equals(name, n"realismPlusTripEmotion_workspotBackOffFallbackDelaySec") { return true; };
     if Equals(name, n"realismPlusTripOnLook_centerAimTightness") { return true; };
@@ -4291,6 +4470,7 @@ public class SPLATSettingsState {
     if index == 3 { this.m_global_menu.splatPresetMode = RFCSplatPresetMode.DirtyHarry; return true; };
     if index == 4 { this.m_global_menu.splatPresetMode = RFCSplatPresetMode.Arnold; return true; };
     if index == 5 { this.m_global_menu.splatPresetMode = RFCSplatPresetMode.Vanilla; return true; };
+    if index == 6 { this.m_global_menu.splatPresetMode = RFCSplatPresetMode.Juggernaut; return true; };
     return false;
   }
   public func GetMode() -> Int32 {
@@ -4301,6 +4481,7 @@ public class SPLATSettingsState {
     if value == EnumInt(RFCSplatPresetMode.DirtyHarry) { return 3; };
     if value == EnumInt(RFCSplatPresetMode.Arnold) { return 4; };
     if value == EnumInt(RFCSplatPresetMode.Vanilla) { return 5; };
+    if value == EnumInt(RFCSplatPresetMode.Juggernaut) { return 6; };
     return 1;
   }
 

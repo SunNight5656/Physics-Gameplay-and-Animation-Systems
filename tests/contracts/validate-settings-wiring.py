@@ -121,8 +121,9 @@ def main() -> int:
             failures.append(f"section filename does not match mode/topic: {path.name} != {expected_name}")
     for mode in modes:
         found_topics = {d.get("topic") for _, d in section_documents if d.get("mode") == mode}
-        missing = sorted(expected_topics - found_topics)
-        extra = sorted(found_topics - expected_topics)
+        mode_topics = expected_topics | ({"juggernautSmash"} if mode == "juggernaut" else set())
+        missing = sorted(mode_topics - found_topics)
+        extra = sorted(found_topics - mode_topics)
         if missing:
             failures.append(f"{mode} is missing section files: {', '.join(missing)}")
         if extra:

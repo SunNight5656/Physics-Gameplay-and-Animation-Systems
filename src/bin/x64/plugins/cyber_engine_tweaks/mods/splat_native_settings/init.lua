@@ -22,6 +22,8 @@ local animationGroupRefs = {}
 local situationalCategoryIndexes = {}
 local motorcycleDeathAnimationRefs = {}
 local motorcycleDeathAnimationSyncing = false
+local deathAnimationCutoffRefs = {}
+local deathAnimationCutoffSyncing = false
 local getBikeDeathAnimationState
 local setBikeDeathAnimationState
 local syncMotorcycleDeathAnimationControls
@@ -228,50 +230,64 @@ local BVC_MODE_INDEX = {
   realismPlus = 1,
   dirtyHarry = 2,
   arnoldArcade = 3,
-  vanilla = 4
+  vanilla = 4,
+  juggernaut = 5
 }
 
 local BVC_MODE_DEFAULTS = {
   realismCustom = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 3.8,
-    vehicleImpactEnabled = true, vehicleImpactThreshold = 2.0,
-    vehicleImpactChance = 100.0, vehicleImpactStrength = 4.0,
+    bulletHitsRequired = 3, bulletChance = 100, bulletStrength = 3.8,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 2,
+    vehicleImpactChance = 100, vehicleImpactStrength = 4,
     worldImpactEnabled = true, worldImpactThreshold = 4.5,
-    worldImpactChance = 100.0, worldImpactStrength = 4.0,
+    worldImpactChance = 100, worldImpactStrength = 4,
     riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
-    toppleCooldown = 0.35, leanFallEnabled = true, leanFallAngle = 38.0,
-    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
-    leanFallBikeStrength = 3.8, playerGravityFallStrength = 8.0,
+    toppleCooldown = 0.35, leanFallEnabled = true, leanFallAngle = 38,
+    leanFallMinSpeed = 0, leanFallMaxSpeed = 100,
+    leanFallBikeStrength = 3.8, playerGravityFallStrength = 8,
     pickupRecoveryEnabled = true
   },
   realismPlus = {
-    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.2,
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = true,
+    bulletHitsRequired = 6, bulletChance = 23, bulletStrength = 4.2,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 1.75,
-    vehicleImpactChance = 100.0, vehicleImpactStrength = 4.6,
-    worldImpactEnabled = true, worldImpactThreshold = 4.0,
-    worldImpactChance = 100.0, worldImpactStrength = 4.6,
+    vehicleImpactChance = 100, vehicleImpactStrength = 4.6,
+    worldImpactEnabled = true, worldImpactThreshold = 4,
+    worldImpactChance = 100, worldImpactStrength = 4.6,
     riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
-    toppleCooldown = 0.30, leanFallEnabled = true, leanFallAngle = 34.0,
-    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
-    leanFallBikeStrength = 4.2, playerGravityFallStrength = 8.0,
+    toppleCooldown = 0.3, leanFallEnabled = true, leanFallAngle = 34,
+    leanFallMinSpeed = 0, leanFallMaxSpeed = 100,
+    leanFallBikeStrength = 4.2, playerGravityFallStrength = 8,
     pickupRecoveryEnabled = true
   },
   dirtyHarry = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
-    bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 4.8,
+    bulletHitsRequired = 3, bulletChance = 100, bulletStrength = 4.8,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 1.25,
-    vehicleImpactChance = 100.0, vehicleImpactStrength = 5.2,
+    vehicleImpactChance = 100, vehicleImpactStrength = 5.2,
     worldImpactEnabled = true, worldImpactThreshold = 3.25,
-    worldImpactChance = 100.0, worldImpactStrength = 5.0,
+    worldImpactChance = 100, worldImpactStrength = 5,
     riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
-    toppleCooldown = 0.25, leanFallEnabled = true, leanFallAngle = 30.0,
-    leanFallMinSpeed = 0.0, leanFallMaxSpeed = 100.0,
+    toppleCooldown = 0.25, leanFallEnabled = true, leanFallAngle = 30,
+    leanFallMinSpeed = 0, leanFallMaxSpeed = 100,
     leanFallBikeStrength = 4.8, playerGravityFallStrength = 8.5,
     pickupRecoveryEnabled = true
   },
   arnoldArcade = {
+    enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
+    bulletHitsRequired = 3, bulletChance = 100, bulletStrength = 6.5,
+    vehicleImpactEnabled = true, vehicleImpactThreshold = 0.75,
+    vehicleImpactChance = 100, vehicleImpactStrength = 7,
+    worldImpactEnabled = true, worldImpactThreshold = 2,
+    worldImpactChance = 100, worldImpactStrength = 7,
+    riderKnockoffEnabled = true, killMotorcycleDeathAnimation = false, impactDirectionFlip = false,
+    toppleCooldown = 0.2, leanFallEnabled = true, leanFallAngle = 24,
+    leanFallMinSpeed = 0, leanFallMaxSpeed = 100,
+    leanFallBikeStrength = 6.5, playerGravityFallStrength = 9,
+    pickupRecoveryEnabled = true
+  },
+  juggernaut = {
     enabled = true, bulletEnabled = true, bulletPlayerOnly = false,
     bulletHitsRequired = 3.0, bulletChance = 100.0, bulletStrength = 6.5,
     vehicleImpactEnabled = true, vehicleImpactThreshold = 0.75,
@@ -299,12 +315,185 @@ local BVC_MODE_DEFAULTS = {
   }
 }
 
+-- Promoted release defaults captured from the author's in-game tuning.
+-- These are defaults, not a shipped user_settings.json. New installs and
+-- Restore Defaults seed these values into the normal persistence/bridge path.
+local PROMOTED_GAMEPLAY_DEFAULTS = {
+  ["arnoldArcade|RFCModSettings.animCompatDelay"] = {type = "Float", value = 5},
+  ["arnoldArcade|RFCModSettings.arcadeMulBlade"] = {type = "Float", value = 5},
+  ["arnoldArcade|RFCModSettings.arcadeMulBlunt"] = {type = "Float", value = 1.5},
+  ["arnoldArcade|RFCModSettings.arnoldTripAnimation_showTripAnimationAdvanced"] = {type = "Bool", value = true},
+  ["arnoldArcade|RFCModSettings.arnoldTripOnLook_contactDistM"] = {type = "Float", value = 0.94999998807907},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeAllowHandgun"] = {type = "Bool", value = true},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeApplicationPointOffset"] = {type = "Float", value = 0.60000002384186},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeBulletDown"] = {type = "Float", value = 0},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeBulletRadius"] = {type = "Float", value = 1.3500000238419},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeBulletStrength"] = {type = "Float", value = 65},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeBulletUp"] = {type = "Float", value = 7.75},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeImpulseDelay"] = {type = "Float", value = 0.029999999329448},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMeleeRadius"] = {type = "Float", value = 1.3999999761581},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMeleeStrength"] = {type = "Float", value = 39.5},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMeleeUp"] = {type = "Float", value = 4.5},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulAR"] = {type = "Float", value = 1.8000000715256},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulBlunt"] = {type = "Float", value = 3.3500001430511},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulFists"] = {type = "Float", value = 1.6000000238419},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulHandgun"] = {type = "Float", value = 1.3999999761581},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulLMG"] = {type = "Float", value = 2.0499999523163},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulMagnum"] = {type = "Float", value = 2.5},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulSMG"] = {type = "Float", value = 1.8500000238419},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulShotgun"] = {type = "Float", value = 3.7000000476837},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulSniper"] = {type = "Float", value = 1},
+  ["arnoldArcade|RFCModSettings.arnold_arcadeMulStrongArms"] = {type = "Float", value = 5},
+  ["arnoldArcade|RFCModSettings.arnold_grenadeKickRadius"] = {type = "Float", value = 1.6499999761581},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleExplosionLift"] = {type = "Float", value = 13675},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleExplosionRadius"] = {type = "Float", value = 8},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleExplosionStrength"] = {type = "Float", value = 16900},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMeleeStrength"] = {type = "Float", value = 1925},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulAR"] = {type = "Float", value = 2.75},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulHandgun"] = {type = "Float", value = 2.1500000953674},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulLMG"] = {type = "Float", value = 2.0499999523163},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulMagnum"] = {type = "Float", value = 11.550000190735},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulSMG"] = {type = "Float", value = 3.2999999523163},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulShotgun"] = {type = "Float", value = 12.75},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulSniper"] = {type = "Float", value = 3.5499999523163},
+  ["arnoldArcade|RFCModSettings.arnold_vehicleMulUnknownBullet"] = {type = "Float", value = 2.6000001430511},
+  ["arnoldArcade|RFCModSettings.skipDeathAnim"] = {type = "Bool", value = true},
+  ["arnoldArcade|RFCModSettings.vehicleImpulseMassCompensation"] = {type = "Bool", value = true},
+  ["arnoldArcade|SHHJM_Settings.headForwardStrength"] = {type = "Float", value = 170},
+  ["arnoldArcade|SHHJM_Settings.torsoForwardStrength"] = {type = "Float", value = 135},
+  ["dirtyHarry|RFCModSettings.animCompatDelay"] = {type = "Float", value = 0.41999998688698},
+  ["dirtyHarry|RFCModSettings.deathAnimChancePct"] = {type = "Float", value = 100},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_chancePct"] = {type = "Float", value = 100},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_enabled"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_forwardPush"] = {type = "Float", value = 5},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_hitHeight"] = {type = "Float", value = 0.10000000149012},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_lockoutSec"] = {type = "Float", value = 3.5},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_ragdollDelaySec"] = {type = "Float", value = 0.75},
+  ["dirtyHarry|RFCModSettings.dirtyTripAnimation_showTripAnimationAdvanced"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirtyTripEmotion_enabled"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirtyTripOnLook_aggressiveOnly"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirtyTripOnLook_cooldownSec"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirtyTripOnLook_minSpeedMps"] = {type = "Float", value = 5.2000002861023},
+  ["dirtyHarry|RFCModSettings.dirtyTripOnLook_showAdvancedOnLook"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeBulletStrength"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeBulletsEnabled"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMeleeDown"] = {type = "Float", value = 0.25},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMeleeEnabled"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMeleeStrength"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMeleeUp"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMulBlade"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeMulBlunt"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeOnDeathEnabled"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirty_arcadeOnHitEnabled"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirty_grenadeKickZ"] = {type = "Float", value = 22.75},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowAR"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowHandgun"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowLMG"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowMagnum"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowSMG"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vanillaAllowShotgun"] = {type = "Bool", value = true},
+  ["dirtyHarry|RFCModSettings.dirty_vehicleMeleeEnabled"] = {type = "Bool", value = false},
+  ["dirtyHarry|RFCModSettings.dirty_vehicleMeleeStrength"] = {type = "Float", value = 0},
+  ["dirtyHarry|RFCModSettings.dirty_vehicleMulMagnum"] = {type = "Float", value = 6},
+  ["dirtyHarry|RFCModSettings.dirty_vehicleMulShotgun"] = {type = "Float", value = 3.4000000953674},
+  ["dirtyHarry|RFCModSettings.skipDeathAnim"] = {type = "Bool", value = false},
+  ["global|RFCModSettings.animCompatDelay"] = {type = "Float", value = 0.61000001430511},
+  ["global|RFCModSettings.hitReactionCutoffDelay"] = {type = "Float", value = 0.5},
+  ["global|RFCModSettings.injuryShockEnabled"] = {type = "Bool", value = true},
+  ["global|RFCModSettings.injuryShockLimbsOnly"] = {type = "Bool", value = false},
+  ["global|RFCModSettings.killImpulsesEverywhere"] = {type = "Bool", value = true},
+  ["global|RFCModSettings.masterDeathChancePct"] = {type = "Float", value = 100},
+  ["global|RFCModSettings.restoreBlackwallAnimations"] = {type = "Bool", value = true},
+  ["global|RFCModSettings.restoreFinisherAnimations"] = {type = "Bool", value = true},
+  ["global|RFCModSettings.skipDeathAnim"] = {type = "Bool", value = false},
+  ["global|RFCModSettings.stealthRagdollDelay"] = {type = "Float", value = 5},
+  ["global|RFCModSettings.stealthRagdollsEnabled"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.animCompatDelay"] = {type = "Float", value = 5},
+  ["realismCustom|RFCModSettings.arcadeBulletUp"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.arcadeMeleeStrength"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.arcadeMeleeUp"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.customTripAnimation_chancePct"] = {type = "Float", value = 100},
+  ["realismCustom|RFCModSettings.customTripAnimation_downwardForce"] = {type = "Float", value = 7.4000000953674},
+  ["realismCustom|RFCModSettings.customTripAnimation_forwardPush"] = {type = "Float", value = 2.2000000476837},
+  ["realismCustom|RFCModSettings.customTripAnimation_minBumpSpeed"] = {type = "Float", value = 4.2000002861023},
+  ["realismCustom|RFCModSettings.customTripAnimation_showTripAnimationAdvanced"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.customTripEmotion_aggressionFirst"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.customTripEmotion_enabled"] = {type = "Bool", value = true},
+  ["realismCustom|RFCModSettings.customTripOnLook_aggressiveOnly"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.customTripOnLook_centerAimTightness"] = {type = "Float", value = 0.69999998807907},
+  ["realismCustom|RFCModSettings.customTripOnLook_minSpeedMps"] = {type = "Float", value = 5},
+  ["realismCustom|RFCModSettings.customTripOnLook_showAdvancedOnLook"] = {type = "Bool", value = true},
+  ["realismCustom|RFCModSettings.customTripOnLook_zOffset"] = {type = "Float", value = 2},
+  ["realismCustom|RFCModSettings.customTrip_allowBosses"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.deathAnimChancePct"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.realism_bulletJoltWaitForGround"] = {type = "Bool", value = true},
+  ["realismCustom|RFCModSettings.skipDeathAnim"] = {type = "Bool", value = true},
+  ["realismCustom|RFCModSettings.vehicleAllowAR"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowBlunt"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowGorilla"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowHandgun"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowLMG"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowMagnum"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowSMG"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowShotgun"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowSniper"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleAllowUnknownBullet"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleBulletEnabled"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleBulletPlayerOnly"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleBulletStrength"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleImpulseMaxHorizontal"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleImpulseMaxLift"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleMeleeEnabled"] = {type = "Bool", value = false},
+  ["realismCustom|RFCModSettings.vehicleMeleeLift"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleMeleeRadius"] = {type = "Float", value = 0.050000000745058},
+  ["realismCustom|RFCModSettings.vehicleMeleeStrength"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleMulBlade"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleMulBlunt"] = {type = "Float", value = 0},
+  ["realismCustom|RFCModSettings.vehicleMulGorilla"] = {type = "Float", value = 0},
+  ["realismCustom|SHHJM_Settings.leftArmForwardStrength"] = {type = "Float", value = 22},
+  ["realismCustom|SHHJM_Settings.torsoForwardStrength"] = {type = "Float", value = 5},
+  ["realismPlus|RFCModSettings.animCompatDelay"] = {type = "Float", value = 5},
+  ["realismPlus|RFCModSettings.deathAnimChancePct"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeAllowStrongArms"] = {type = "Bool", value = true},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeApplicationPointOffset"] = {type = "Float", value = 0.30000001192093},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeBulletRadius"] = {type = "Float", value = 0.050000000745058},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeMeleeStrength"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeMeleeUp"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusMode_arcadeMulStrongArms"] = {type = "Float", value = 1.8000000715256},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleBulletEnabled"] = {type = "Bool", value = false},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleBulletStrength"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleMeleeEnabled"] = {type = "Bool", value = false},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleMeleeRadius"] = {type = "Float", value = 0.050000000745058},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleMeleeStrength"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusMode_vehicleMeleeUp"] = {type = "Float", value = 0},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_chancePct"] = {type = "Float", value = 100},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_downwardForce"] = {type = "Float", value = 5.4000000953674},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_enabled"] = {type = "Bool", value = true},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_forwardPush"] = {type = "Float", value = 2.4000000953674},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_minBumpSpeed"] = {type = "Float", value = 4.5500001907349},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_ragdollDelaySec"] = {type = "Float", value = 0.40000000596046},
+  ["realismPlus|RFCModSettings.realismPlusTripAnimation_showTripAnimationAdvanced"] = {type = "Bool", value = true},
+  ["realismPlus|RFCModSettings.realismPlusTripEmotion_enabled"] = {type = "Bool", value = true},
+  ["realismPlus|RFCModSettings.realismPlusTripOnLook_aggressiveOnly"] = {type = "Bool", value = false},
+  ["realismPlus|RFCModSettings.realismPlusTripOnLook_minSpeedMps"] = {type = "Float", value = 1.7000000476837},
+  ["realismPlus|RFCModSettings.realismPlusTripOnLook_showAdvancedOnLook"] = {type = "Bool", value = true},
+  ["realismPlus|RFCModSettings.skipDeathAnim"] = {type = "Bool", value = true},
+}
+
+local function copyPromotedDefaults()
+  local out = {}
+  for key, entry in pairs(PROMOTED_GAMEPLAY_DEFAULTS) do
+    out[key] = {type = entry.type, value = entry.value}
+  end
+  return out
+end
+
 local function defaultSettingsStore()
   return {
     version = STATE_VERSION,
     writeSerial = 0,
     valueCount = 0,
-    values = {},
+    values = copyPromotedDefaults(),
     bikeSystem = {
       debugMode = false,
       debugPopups = false,
@@ -419,11 +608,14 @@ local function storedEntry(setting)
 end
 
 local function readVar(setting, useDefault)
-  if useDefault then return setting.default end
+  local promoted = PROMOTED_GAMEPLAY_DEFAULTS[settingKey(setting)]
+  local defaultValue = setting.default
+  if type(promoted) == "table" and promoted.value ~= nil then defaultValue = promoted.value end
+  if useDefault then return defaultValue end
   local entry = storedEntry(setting)
   if type(entry) == "table" and entry.value ~= nil then return entry.value end
   if entry ~= nil and type(entry) ~= "table" then return entry end
-  return setting.default
+  return defaultValue
 end
 
 local function callBridgeSet(setting, value, bridge)
@@ -565,6 +757,36 @@ local function migrateArcadeAttackSourceSettings()
   if migrated > 0 or removed > 0 then
     settingsDirty = true
     logi("Migrated legacy Arcade Player Only values into " .. tostring(migrated) .. " independent attack-source values")
+  end
+end
+
+local function migrateDeathAnimationSettingsPerMode()
+  local values = settingsStore.values or {}
+  local migrated = 0
+  local scopes = {"realismCustom", "realismPlus", "dirtyHarry", "arnoldArcade", "juggernaut"}
+  local names = {"skipDeathAnim", "deathAnimChancePct", "animCompatDelay"}
+
+  for _, name in ipairs(names) do
+    local globalKey = "global|RFCModSettings." .. name
+    local globalEntry = values[globalKey]
+    if globalEntry ~= nil then
+      for _, scope in ipairs(scopes) do
+        local modeKey = scope .. "|RFCModSettings." .. name
+        if values[modeKey] == nil then
+          if type(globalEntry) == "table" then
+            values[modeKey] = {type = globalEntry.type, value = globalEntry.value}
+          else
+            values[modeKey] = globalEntry
+          end
+          migrated = migrated + 1
+        end
+      end
+    end
+  end
+
+  if migrated > 0 then
+    settingsDirty = true
+    logi("Migrated " .. tostring(migrated) .. " standard death-animation values into per-mode settings")
   end
 end
 
@@ -726,7 +948,13 @@ local function sectionMaps(settings)
   return lookup, gates
 end
 local function isShowGate(setting, gates)
-  return setting.uiOnly == true or (gates[setting.id] and setting.type == "Bool" and type(setting.label) == "string" and setting.label:sub(1,5) == "Show ")
+  local label = type(setting.label) == "string" and setting.label or ""
+  local inlineAdvanced = label:find(" - Show Advanced Settings", 1, true) ~= nil
+  return setting.uiOnly == true or (
+    gates[setting.id]
+      and setting.type == "Bool"
+      and (label:sub(1,5) == "Show " or inlineAdvanced)
+  )
 end
 local function gateState(setting, gates, context)
   if isShowGate(setting, gates) then
@@ -759,6 +987,7 @@ local function clearDynamic(path)
   for i = #refs, 1, -1 do pcall(function() nativeSettings.removeOption(refs[i]) end) end
   dynamicRefs[path] = {}
   motorcycleDeathAnimationRefs[path] = nil
+  deathAnimationCutoffRefs[path] = nil
 end
 local function defer(fn)
   -- Native Settings supports adding/removing options and subcategories while its
@@ -773,12 +1002,9 @@ local hiddenNonRuntimeControls = {
   -- These legacy controls have no distinct runtime channel. Keeping them
   -- visible implied precision the scheduler cannot provide.
   overrideGrenade = true,
-  tumbleStairs_downDelay = true,
-  tumbleStairs_sideDelay = true,
   tumbleStairs_yawDeg = true,
   tumbleStairs_pitchDeg = true,
   tumbleStairs_rollDeg = true,
-  tumbleDir_sideDelay = true,
   -- The old mounted-hit shield is intentionally not implemented: it could
   -- make ordinary workspot and vehicle occupants appear invulnerable.
   vehicleMountedHitImmunity = true,
@@ -815,7 +1041,13 @@ local function addSetting(path, setting, index, context, gates, rebuild, collect
   if suppressDuplicateOrDeadControl(setting, context) then return nil end
   local isBikeDeathAnimation = context == "shared/animation"
     and setting.name == "killMotorcycleDeathAnim"
-  local invertAnimationBool = context == "shared/animation"
+  local deathTimingPage = type(context) == "string"
+    and context:find("/vanillaDeath", 1, true) ~= nil
+  local isDeathAnimationCutoff = setting.name == "animCompatDelay"
+    and type(context) == "string"
+    and (context:find("/vanillaDeath", 1, true) ~= nil
+      or context:find("/animationDeathCutoff", 1, true) ~= nil)
+  local invertAnimationBool = (context == "shared/animation" or deathTimingPage)
     and (setting.name == "skipDeathAnim" or setting.name == "hitReactionsDisabled")
   local current = gateState(setting, gates, context)
   local default = isShowGate(setting, gates) and (false) or readVar(setting, true)
@@ -847,7 +1079,18 @@ local function addSetting(path, setting, index, context, gates, rebuild, collect
     local mx = setting.max or math.max(10.0, math.abs(current or 0.0) * 2.0)
     if mx <= mn then mx = mn + 1.0 end
     ref = nativeSettings.addRangeFloat(path, setting.label, desc, mn, mx, setting.step or 0.05, "%.2f", current, default,
-      function(value) writeVar(setting, value, false) end, index)
+      function(value)
+        writeVar(setting, value, false)
+        if isDeathAnimationCutoff and not deathAnimationCutoffSyncing then
+          deathAnimationCutoffSyncing = true
+          for _, cutoffRef in pairs(deathAnimationCutoffRefs) do
+            if cutoffRef and cutoffRef ~= ref then
+              pcall(function() nativeSettings.setOption(cutoffRef, value) end)
+            end
+          end
+          deathAnimationCutoffSyncing = false
+        end
+      end, index)
   elseif setting.type == "Int32" then
     local mn = math.floor(setting.min or 0)
     local mx = math.floor(setting.max or math.max(100, math.abs(current or 0) * 2))
@@ -865,6 +1108,9 @@ local function addSetting(path, setting, index, context, gates, rebuild, collect
   end
   if isBikeDeathAnimation and ref then
     motorcycleDeathAnimationRefs[path] = ref
+  end
+  if isDeathAnimationCutoff and ref then
+    deathAnimationCutoffRefs[path] = ref
   end
   if collect then remember(path, ref) end
   return ref
@@ -1038,6 +1284,22 @@ end
 local rebuildAnimationLayout
 local rebuildAnimationValues
 
+local function deathAnimationCutoffSetting(mode)
+  return {
+    id = "ui." .. mode.key .. ".death.animCompatDelay",
+    class = "RFCModSettings",
+    name = "animCompatDelay",
+    mode = mode.key,
+    type = "Float",
+    default = 5.0,
+    label = "Death Animation Cutoff (s)",
+    description = "Shared cutoff for this mode. This is the same value shown under Vanilla Impulse + Death Animation; changing either slider changes the other.",
+    min = 0.0,
+    max = 5.0,
+    step = 0.01
+  }
+end
+
 local ANIMATION_GROUPS = {
   {id = "explosions.showDeathAnimControls", index = 2},
   {id = "explosions.showIncapacitatedAnimationControls", index = 3},
@@ -1059,6 +1321,18 @@ local function clearAnimationGroupRefs()
   animationGroupRefs = {}
 end
 
+-- Native Settings can append dynamically re-added options after later category
+-- headers. Rebuild the selected mode in canonical category order whenever an
+-- Animation disclosure changes so Animation children stay inside Animation.
+local function rebuildAnimationModeLayout(section)
+  local mode = selectedMode and selectedMode() or nil
+  if mode and showModeCategories then
+    showModeCategories(mode, tonumber(mode.enumIndex) or 1)
+  else
+    rebuildAnimationLayout(section)
+  end
+end
+
 local function buildAnimationSection(section)
   local path = ANIMATION_PATH
   local context = "shared/animation"
@@ -1076,7 +1350,7 @@ local function buildAnimationSection(section)
     return
   end
 
-  local function again() rebuildAnimationLayout(section) end
+  local function again() rebuildAnimationModeLayout(section) end
   addStableShowSwitch(
     path,
     master,
@@ -1089,34 +1363,9 @@ local function buildAnimationSection(section)
 end
 
 rebuildAnimationValues = function(section)
-  local path = ANIMATION_PATH
-  local context = "shared/animation"
-  local master = animationSettingById(section, "RFCModSettings.showAnimationControls")
-  local bucket = uiGateBucket(context)
-
-  clearDynamic(path)
-
-  if not master then return end
-  if bucket[master.id] == nil then bucket[master.id] = false end
-  if bucket[master.id] ~= true then return end
-
-  local function again() rebuildAnimationValues(section) end
-  -- Native Settings stores options in a contiguous Lua array. Sparse indexes
-  -- such as 100/200/300/400 do not extend that array and can place widgets
-  -- beneath a later category header. Keep all Animation values contiguous
-  -- after the master and four stable Show switches.
-  local idx = 6
-  for _, group in ipairs(ANIMATION_GROUPS) do
-    if bucket[group.id] == true then
-      local values = {}
-      for _, setting in ipairs(section.settings or {}) do
-        if setting.uiOnly ~= true and setting.dependency == group.id then
-          table.insert(values, setting)
-        end
-      end
-      idx = addSettings(path, values, idx, context, again, true)
-    end
-  end
+  -- Animation values are built inline with their owning Show switch so every
+  -- disclosure reads as one contiguous block: Show -> children -> next Show.
+  rebuildAnimationLayout(section)
 end
 
 rebuildAnimationLayout = function(section)
@@ -1132,28 +1381,71 @@ rebuildAnimationLayout = function(section)
   if bucket[master.id] == nil then bucket[master.id] = false end
   if bucket[master.id] ~= true then return end
 
+  local function again() rebuildAnimationModeLayout(section) end
+  local idx = 2
+
   for _, group in ipairs(ANIMATION_GROUPS) do
     local setting = animationSettingById(section, group.id)
     if setting then
       if bucket[setting.id] == nil then bucket[setting.id] = false end
+
+      local groupLabel = setting.label
+      local groupDescription = setting.description or ""
+      if group.id == "explosions.showDeathAnimControls" then
+        groupLabel = "Show Death Animation Controls"
+        groupDescription = "Shows this mode's shared death-animation cutoff plus motorcycle, stealth, finisher, and Blackwall animation controls."
+      end
+
       local ref = nativeSettings.addSwitch(
         path,
-        setting.label,
-        setting.description or "",
+        groupLabel,
+        groupDescription,
         bucket[setting.id] == true,
         false,
         function(value)
           bucket[setting.id] = value == true
           uiDirty = true
-          defer(function() rebuildAnimationValues(section) end)
+          defer(function() rebuildAnimationModeLayout(section) end)
         end,
-        group.index
+        idx
       )
+      idx = idx + 1
       if ref then table.insert(animationGroupRefs, ref) end
+
+      if bucket[group.id] == true then
+        if group.id == "explosions.showDeathAnimControls" then
+          local mode = selectedMode and selectedMode() or nil
+          if mode and mode.key ~= "vanilla" then
+            local cutoff = deathAnimationCutoffSetting(mode)
+            addSetting(
+              path,
+              cutoff,
+              idx,
+              "mode/" .. mode.key .. "/animationDeathCutoff",
+              {},
+              again,
+              true
+            )
+            idx = idx + 1
+          end
+        end
+
+        local values = {}
+        for _, child in ipairs(section.settings or {}) do
+          if child.uiOnly ~= true and child.dependency == group.id then
+            local moveToVanillaDeathPage = group.id == "explosions.showDeathAnimControls"
+              and (child.name == "skipDeathAnim"
+                or child.name == "deathAnimChancePct"
+                or child.name == "animCompatDelay")
+            if not moveToVanillaDeathPage then
+              table.insert(values, child)
+            end
+          end
+        end
+        idx = addSettings(path, values, idx, context, again, true)
+      end
     end
   end
-
-  rebuildAnimationValues(section)
 end
 
 local function situationalGroupPath(mode, groupKey)
@@ -1451,6 +1743,31 @@ local function rebuildBulletJoltPage(mode)
   addSettings(path, values, 3, context, again, true)
 end
 
+local function tripSharedSettings(data)
+  local settings = (data and data.settings) or {}
+  local master = nil
+  for _, setting in ipairs(settings) do
+    if setting.uiOnly == true
+      and setting.type == "Bool"
+      and tostring(setting.id or ""):find(".trip.all.clean2", 1, true) then
+      master = setting
+      break
+    end
+  end
+  if not master then return {} end
+
+  local shared = {}
+  for _, setting in ipairs(settings) do
+    if setting.uiOnly ~= true and setting.dependency == master.id then
+      local copy = copySettingEarly(setting)
+      copy.dependency = nil
+      copy.dependencyName = ""
+      table.insert(shared, copy)
+    end
+  end
+  return shared
+end
+
 local function tripPages(data)
   local settings = (data and data.settings) or {}
   local master = nil
@@ -1506,9 +1823,20 @@ local function rebuildTripPage(mode)
     end
   end
 
+  local function again() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+
+  -- Shared Trip controls (currently Allow Bosses) live above the page-specific
+  -- controls and remain visible no matter which Trip page is selected.
+  local shared = tripSharedSettings(data)
+  local nextIndex = addSettings(
+    path, shared, 2,
+    "mode/" .. mode.key .. "/tripShared",
+    again, true
+  )
+
   local context = "mode/" .. mode.key .. "/trip/" .. tostring(selected)
-  local function again() rebuildTripPage(mode) end
-  addSettings(path, values, 3, context, again, true)
+  -- The stable page selector occupies nextIndex, so page values begin after it.
+  addSettings(path, values, nextIndex + 1, context, again, true)
 end
 
 local function combinedPushSettings(mode, topicKey)
@@ -1631,6 +1959,44 @@ local function targetPageValues(page)
     extraIds[extra.id] = true
   end
 
+  -- NPC melee parity: all editable modes expose the same melee controls on the
+  -- NPC Melee Push page. Some legacy JSON still nests Custom/Plus melee weapon
+  -- fields beneath the bullet Advanced/weapon-list gates; force those existing
+  -- fields onto the melee page without creating any new saved/schema fields.
+  local meleeSuffixes = {
+    "arcademeleeenabled",
+    "arcademeleestrength",
+    "arcademeleeup",
+    "arcademeleedown",
+    "arcademeleeradius",
+    "arcadeallowfists",
+    "arcadeallowstrongarms",
+    "arcadeallowblunt",
+    "arcadeallowblade",
+    "arcademulfists",
+    "arcademulstrongarms",
+    "arcademulblunt",
+    "arcademulblade"
+  }
+
+  local function meleeKind(setting)
+    local name = string.lower(tostring((setting and setting.name) or ""))
+    for _, suffix in ipairs(meleeSuffixes) do
+      if #name >= #suffix and name:sub(-#suffix) == suffix then return suffix end
+    end
+    return nil
+  end
+
+  local forcedMelee = {}
+  if page.key == "npcMelee" then
+    for _, setting in ipairs(page.settings or {}) do
+      if meleeKind(setting) then
+        included[setting.id] = true
+        forcedMelee[setting.id] = true
+      end
+    end
+  end
+
   local changed = true
   while changed do
     changed = false
@@ -1644,13 +2010,32 @@ local function targetPageValues(page)
 
   local values = {}
   for _, setting in ipairs(page.settings or {}) do
-    if included[setting.id] and setting.id ~= page.root.id then
+    local mk = meleeKind(setting)
+    local hideLegacyMeleeFromBullet = page.key == "npcBullet" and mk ~= nil
+    if included[setting.id] and setting.id ~= page.root.id and not hideLegacyMeleeFromBullet then
       local copy = copySettingEarly(setting)
       if copy.dependency == page.root.id
         or extraIds[copy.id]
-        or copy.dependency == copy.id then
+        or copy.dependency == copy.id
+        or forcedMelee[copy.id] then
         copy.dependency = nil
         copy.dependencyName = ""
+      end
+
+      if page.key == "npcMelee" and mk then
+        if mk == "arcademeleeenabled" then copy.label = "Enable NPC Melee Push" end
+        if mk == "arcademeleestrength" then copy.label = "NPC Melee Push — Away" end
+        if mk == "arcademeleeup" then copy.label = "NPC Melee Push — Up" end
+        if mk == "arcademeleedown" then copy.label = "NPC Melee Push — Down" end
+        if mk == "arcademeleeradius" then copy.label = "NPC Melee Push — Radius" end
+        if mk == "arcadeallowfists" then copy.label = "Allow Hand / Fists" end
+        if mk == "arcadeallowstrongarms" then copy.label = "Allow Gorilla Arms" end
+        if mk == "arcadeallowblunt" then copy.label = "Allow Blunt" end
+        if mk == "arcadeallowblade" then copy.label = "Allow Blade / Sharp" end
+        if mk == "arcademulfists" then copy.label = "Hand / Fists Multiplier" end
+        if mk == "arcademulstrongarms" then copy.label = "Gorilla Arms Multiplier" end
+        if mk == "arcademulblunt" then copy.label = "Blunt Multiplier" end
+        if mk == "arcademulblade" then copy.label = "Blade / Sharp Multiplier" end
       end
       table.insert(values, copy)
     end
@@ -2063,11 +2448,12 @@ local function addTopicCategory(mode, topic, index)
       local labels = {}
       for _, page in ipairs(tripPages(data)) do table.insert(labels, page.label) end
       if #labels > 0 then
-        local function again() rebuildTripPage(mode) end
+        local function again() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+        local sharedCount = #tripSharedSettings(data)
         addPageSelector(
           path, mode, "tripView", "Select Trip & Push Feature",
           "Choose whether you are editing Trip Emotions, Trip Animation, or Look-Triggered Trip behavior.",
-          labels, again, 2
+          labels, again, 2 + sharedCount
         )
         rebuildTripPage(mode)
       end
@@ -2199,6 +2585,35 @@ local function vanillaImpulseParts(mode)
   return master, values
 end
 
+local function modeDeathAnimationSettings(mode)
+  return {
+    {
+      id = "ui." .. mode.key .. ".death.skipDeathAnim",
+      class = "RFCModSettings",
+      name = "skipDeathAnim",
+      mode = mode.key,
+      type = "Bool",
+      default = true,
+      label = "Enable Standard Death Animations",
+      description = "ON allows this mode to use standard vanilla death animations. OFF uses ragdoll-only deaths unless a weapon-specific Vanilla override is enabled."
+    },
+    {
+      id = "ui." .. mode.key .. ".death.deathAnimChancePct",
+      class = "RFCModSettings",
+      name = "deathAnimChancePct",
+      mode = mode.key,
+      type = "Float",
+      default = 100.0,
+      label = "Death Animation Chance (%)",
+      description = "Chance that an ordinary eligible death uses a vanilla death animation when Standard Death Animations are enabled. Weapon-specific Vanilla overrides always restore their selected weapon's death animation.",
+      min = 0.0,
+      max = 100.0,
+      step = 1.0
+    },
+    deathAnimationCutoffSetting(mode)
+  }
+end
+
 local function rebuildVanillaImpulseControl(mode)
   clearDynamic(VANILLA_PATH)
   local master, values = vanillaImpulseParts(mode)
@@ -2207,15 +2622,39 @@ local function rebuildVanillaImpulseControl(mode)
     return
   end
 
-  local function again() rebuildVanillaImpulseControl(mode) end
-  addSettings(
+  local labels = {"Vanilla Weapon Controls", "Death Animation Controls"}
+  local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
+  addPageSelector(
     VANILLA_PATH,
-    values,
-    2,
-    context,
-    again,
-    true
+    mode,
+    "vanillaDeathView",
+    "Select Vanilla / Death Animation Page",
+    "Choose whether you are editing weapon-specific Vanilla impulse/death-animation overrides or this mode's standard death-animation enable/chance/cutoff.",
+    labels,
+    rebuildLayout,
+    2
   )
+
+  local selected = pageSelection(mode, "vanillaDeathView", #labels)
+  if selected == 1 then
+    addSettings(
+      VANILLA_PATH,
+      values,
+      3,
+      context .. "/weapons",
+      rebuildLayout,
+      true
+    )
+  else
+    addSettings(
+      VANILLA_PATH,
+      modeDeathAnimationSettings(mode),
+      3,
+      "mode/" .. mode.key .. "/vanillaDeath",
+      rebuildLayout,
+      true
+    )
+  end
 end
 
 local function addVanillaImpulseControl(mode, index)
@@ -2224,18 +2663,17 @@ local function addVanillaImpulseControl(mode, index)
 
   local master = vanillaImpulseParts(mode)
   local context = "mode/" .. mode.key .. "/vanillaImpulse"
-  local function again() rebuildVanillaImpulseControl(mode) end
+  local function rebuildLayout() showModeCategories(mode, tonumber(mode.enumIndex) or 1) end
   addStableShowSwitch(
     VANILLA_PATH,
     master,
     context,
-    again,
+    rebuildLayout,
     "Show Vanilla Impulse + Death Animation Controls",
-    "Shows or hides the per-weapon controls. Each weapon toggle independently restores vanilla hit impulse/reaction and vanilla death animation for that weapon only."
+    "Shows the page selector for weapon-specific Vanilla overrides and this mode's standard death-animation controls."
   )
   rebuildVanillaImpulseControl(mode)
 end
-
 local function modeInsertIndex(targetModeIndex)
   local idx = 4
   for mi, mode in ipairs(schema.modes) do
@@ -2427,7 +2865,7 @@ local function applyBikeAll(playerHint, activeMode)
   end)
   if not okDebug or debugApplied ~= true or not okManual or manualApplied ~= true then return false end
 
-  for _, key in ipairs({"realismCustom", "realismPlus", "dirtyHarry", "arnoldArcade", "vanilla"}) do
+  for _, key in ipairs({"realismCustom", "realismPlus", "dirtyHarry", "arnoldArcade", "vanilla", "juggernaut"}) do
     if not applyBikeMode(key, player) then return false end
   end
 
@@ -2716,7 +3154,7 @@ showModeCategories = function(mode, modeIndex)
   removeModeCategories(mode)
   if nativeSettings.pathExists(VANILLA_PATH) then nativeSettings.removeSubcategory(VANILLA_PATH) end
   dynamicRefs[VANILLA_PATH] = nil
-  local idx = 2
+  local idx = 3
 
   if mode.key == "vanilla" then
     idx = addSharedCategoryAt("globalImpulse", idx)
@@ -2738,7 +3176,7 @@ showModeCategories = function(mode, modeIndex)
   idx = addSharedCategoryAt("globalImpulse", idx)
   idx = addSharedCategoryAt("animation", idx)
 
-  local approvedOrder = {"arcade", "explosions", "bulletJolts", "trip", "tumble"}
+  local approvedOrder = {"juggernautSmash", "arcade", "explosions", "bulletJolts", "trip", "tumble"}
   for _, key in ipairs(approvedOrder) do
     local topic = topicByKey[key]
     if topic.key ~= "randomization" and topic.key ~= "head" and topic.key ~= "body"
@@ -2884,6 +3322,7 @@ rebuildGlobalImpulseControls = function(section)
   -- A full refresh here repopulates persistent controls, including the mode selector.
 end
 
+
 local function buildMenu()
   nativeSettings.addTab(TAB, schema.title, function() saveUI(false); saveSettingsNow(false) end)
   nativeSettings.addSubcategory(GLOBAL_PATH, "SPLAT Mode", 1)
@@ -2997,6 +3436,7 @@ local function initialize()
   if type(settingsStore.values) ~= "table" then settingsStore.values = {} end
   migrateObsoleteShoulderButtSettings()
   migrateArcadeAttackSourceSettings()
+  migrateDeathAnimationSettingsPerMode()
 
   purgeLegacySplatMotorcycleValues()
   purgeRemovedAnimationValues()

@@ -443,7 +443,7 @@ private func RFC_VehicleExitShieldWindow(c: RFCConfig) -> Float {
 //   native seat/mount/exit pipeline owns the driver/passenger.
 public func RFC_IsVehicleContext(p: wref<ScriptedPuppet>) -> Bool {
   let c: RFCConfig = RFC.Cfg();
-  if !c.killImpulsesVehiclesOnly {
+  if !c.killImpulsesVehiclesOnly && !c.vehicleOccupantShieldEnabled {
     return false;
   }
 

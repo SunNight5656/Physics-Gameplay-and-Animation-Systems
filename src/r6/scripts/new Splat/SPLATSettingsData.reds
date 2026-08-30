@@ -14,6 +14,31 @@ public let masterDeathChancePct: Float = 94.000000;
 
   public let showGlobal: Bool = false;
 
+  // Juggernaut mode-only smash controls. These fields are stored in the
+  // Juggernaut settings bank and are not copied into the other SPLAT modes.
+  public let juggernautEnabled: Bool = true;
+  public let juggernautMaxTestSensitivity: Bool = true;
+  public let juggernautAffectNPCs: Bool = true;
+  public let juggernautAffectVehicles: Bool = true;
+  public let juggernautAffectObjects: Bool = true;
+  public let juggernautRequireCenterScreen: Bool = false;
+  public let juggernautVehicleMassCompensation: Bool = true;
+  public let juggernautMinSpeedMps: Float = 2.50;
+  public let juggernautNPCContactDistM: Float = 1.50;
+  public let juggernautVehicleContactDistM: Float = 4.00;
+  public let juggernautObjectContactDistM: Float = 2.25;
+  public let juggernautNPCPush: Float = 55.00;
+  public let juggernautNPCVertical: Float = 4.00;
+  public let juggernautNPCRadius: Float = 1.25;
+  public let juggernautVehiclePush: Float = 3500.00;
+  public let juggernautVehicleVertical: Float = 300.00;
+  public let juggernautVehicleRadius: Float = 1.50;
+  public let juggernautObjectPush: Float = 1600.00;
+  public let juggernautObjectVertical: Float = 120.00;
+  public let juggernautObjectRadius: Float = 1.00;
+  public let juggernautCooldownSec: Float = 0.10;
+  public let juggernautIntervalSec: Float = 0.04;
+
 
   public let showAnimationControls: Bool = false;
 
@@ -488,6 +513,8 @@ public let showArcade: Bool = false;
   public let arcadeAllowBlunt: Bool = false;
 
   public let arcadeAllowBlade: Bool = false;
+  public let arcadeAllowFists: Bool = false;
+  public let arcadeAllowStrongArms: Bool = false;
 
   public let arcadeMulHandgun: Float = 1.000000;
 
@@ -506,6 +533,8 @@ public let showArcade: Bool = false;
   public let arcadeMulBlunt: Float = 1.000000;
 
   public let arcadeMulBlade: Float = 1.000000;
+  public let arcadeMulFists: Float = 1.000000;
+  public let arcadeMulStrongArms: Float = 1.000000;
 
   public let arcadeBulletStrength: Float = 0.000000;
 
@@ -752,13 +781,17 @@ public let customTripEmotion_showEmotionSection: Bool = false;
   public let customTripEmotion_allowCompleteSurrender: Bool = true;
 
 
+public let customTrip_allowBosses: Bool = true;
+
 public let customTripAnimation_showTripAnimationSection: Bool = false;
 
   public let customTripAnimation_enabled: Bool = false;
 
+  public let customTripAnimation_minBumpSpeed: Float = 0.60;
+
   public let customTripAnimation_showTripAnimationAdvanced: Bool = false;
 
-  public let customTripAnimation_chancePct: Float = 100.00;
+  public let customTripAnimation_chancePct: Float = 7.00;
 
   public let customTripAnimation_forwardPush: Float = 4.00;
 
@@ -774,7 +807,7 @@ public let customTripAnimation_showTripAnimationSection: Bool = false;
 
 public let customTripOnLook_showOnLookSection: Bool = false;
 
-  public let customTripOnLook_enabled: Bool = false;
+  public let customTripOnLook_enabled: Bool = true;
 
   public let customTripOnLook_aggressiveOnly: Bool = true;
 
@@ -790,15 +823,15 @@ public let customTripOnLook_showOnLookSection: Bool = false;
 
   public let customTripOnLook_downZ: Float = 11.00;
 
-  public let customTripOnLook_centerAimTightness: Float = 0.90;
+  public let customTripOnLook_centerAimTightness: Float = 0.99;
 
-  public let customTripOnLook_centerLaneWidth: Float = 0.35;
+  public let customTripOnLook_centerLaneWidth: Float = 0.20;
 
   public let customTripOnLook_sideXY: Float = 9.00;
 
   public let customTripOnLook_liftZ: Float = 1.00;
 
-  public let customTripOnLook_radius: Float = 1.20;
+  public let customTripOnLook_radius: Float = 1.05;
 
   public let customTripOnLook_zOffset: Float = 0.50;
 
@@ -1028,6 +1061,8 @@ public let showTumblesD: Bool = false;
   public let realismPlusMode_arcadeAllowBlunt: Bool = false;
 
   public let realismPlusMode_arcadeAllowBlade: Bool = false;
+  public let realismPlusMode_arcadeAllowFists: Bool = false;
+  public let realismPlusMode_arcadeAllowStrongArms: Bool = false;
 
   public let realismPlusMode_arcadeMulHandgun: Float = 1.000000;
 
@@ -1046,6 +1081,8 @@ public let showTumblesD: Bool = false;
   public let realismPlusMode_arcadeMulBlunt: Float = 1.000000;
 
   public let realismPlusMode_arcadeMulBlade: Float = 1.000000;
+  public let realismPlusMode_arcadeMulFists: Float = 1.000000;
+  public let realismPlusMode_arcadeMulStrongArms: Float = 1.000000;
 
   public let realismPlusShowVehicles: Bool = false;
 
@@ -1175,13 +1212,17 @@ public let realismPlusTripEmotion_showEmotionSection: Bool = false;
   public let realismPlusTripEmotion_allowCompleteSurrender: Bool = true;
 
 
+public let realismPlusTrip_allowBosses: Bool = true;
+
 public let realismPlusTripAnimation_showTripAnimationSection: Bool = false;
 
   public let realismPlusTripAnimation_enabled: Bool = false;
 
+  public let realismPlusTripAnimation_minBumpSpeed: Float = 0.60;
+
   public let realismPlusTripAnimation_showTripAnimationAdvanced: Bool = false;
 
-  public let realismPlusTripAnimation_chancePct: Float = 100.00;
+  public let realismPlusTripAnimation_chancePct: Float = 7.00;
 
   public let realismPlusTripAnimation_forwardPush: Float = 4.00;
 
@@ -1197,7 +1238,7 @@ public let realismPlusTripAnimation_showTripAnimationSection: Bool = false;
 
 public let realismPlusTripOnLook_showOnLookSection: Bool = false;
 
-  public let realismPlusTripOnLook_enabled: Bool = false;
+  public let realismPlusTripOnLook_enabled: Bool = true;
 
   public let realismPlusTripOnLook_aggressiveOnly: Bool = true;
 
@@ -1213,15 +1254,15 @@ public let realismPlusTripOnLook_showOnLookSection: Bool = false;
 
   public let realismPlusTripOnLook_downZ: Float = 11.00;
 
-  public let realismPlusTripOnLook_centerAimTightness: Float = 0.90;
+  public let realismPlusTripOnLook_centerAimTightness: Float = 0.99;
 
-  public let realismPlusTripOnLook_centerLaneWidth: Float = 0.35;
+  public let realismPlusTripOnLook_centerLaneWidth: Float = 0.20;
 
   public let realismPlusTripOnLook_sideXY: Float = 9.00;
 
   public let realismPlusTripOnLook_liftZ: Float = 1.00;
 
-  public let realismPlusTripOnLook_radius: Float = 1.20;
+  public let realismPlusTripOnLook_radius: Float = 1.05;
 
   public let realismPlusTripOnLook_zOffset: Float = 0.50;
 
@@ -1355,6 +1396,8 @@ public let realismPlusTripOnLook_showOnLookSection: Bool = false;
   public let dirty_arcadeAllowBlunt: Bool = false;
 
   public let dirty_arcadeAllowBlade: Bool = false;
+  public let dirty_arcadeAllowFists: Bool = false;
+  public let dirty_arcadeAllowStrongArms: Bool = false;
 
   public let dirty_arcadeMulHandgun: Float = 1.000000;
 
@@ -1373,6 +1416,8 @@ public let realismPlusTripOnLook_showOnLookSection: Bool = false;
   public let dirty_arcadeMulBlunt: Float = 1.000000;
 
   public let dirty_arcadeMulBlade: Float = 1.000000;
+  public let dirty_arcadeMulFists: Float = 1.000000;
+  public let dirty_arcadeMulStrongArms: Float = 1.000000;
 
   public let dirtyHarryShowVehicles: Bool = false;
 
@@ -1502,13 +1547,17 @@ public let dirtyTripEmotion_showEmotionSection: Bool = false;
   public let dirtyTripEmotion_allowCompleteSurrender: Bool = true;
 
 
+public let dirtyTrip_allowBosses: Bool = true;
+
 public let dirtyTripAnimation_showTripAnimationSection: Bool = false;
 
   public let dirtyTripAnimation_enabled: Bool = false;
 
+  public let dirtyTripAnimation_minBumpSpeed: Float = 0.60;
+
   public let dirtyTripAnimation_showTripAnimationAdvanced: Bool = false;
 
-  public let dirtyTripAnimation_chancePct: Float = 100.00;
+  public let dirtyTripAnimation_chancePct: Float = 7.00;
 
   public let dirtyTripAnimation_forwardPush: Float = 4.00;
 
@@ -1524,7 +1573,7 @@ public let dirtyTripAnimation_showTripAnimationSection: Bool = false;
 
 public let dirtyTripOnLook_showOnLookSection: Bool = false;
 
-  public let dirtyTripOnLook_enabled: Bool = false;
+  public let dirtyTripOnLook_enabled: Bool = true;
 
   public let dirtyTripOnLook_aggressiveOnly: Bool = true;
 
@@ -1540,15 +1589,15 @@ public let dirtyTripOnLook_showOnLookSection: Bool = false;
 
   public let dirtyTripOnLook_downZ: Float = 11.00;
 
-  public let dirtyTripOnLook_centerAimTightness: Float = 0.90;
+  public let dirtyTripOnLook_centerAimTightness: Float = 0.99;
 
-  public let dirtyTripOnLook_centerLaneWidth: Float = 0.35;
+  public let dirtyTripOnLook_centerLaneWidth: Float = 0.20;
 
   public let dirtyTripOnLook_sideXY: Float = 9.00;
 
   public let dirtyTripOnLook_liftZ: Float = 1.00;
 
-  public let dirtyTripOnLook_radius: Float = 1.20;
+  public let dirtyTripOnLook_radius: Float = 1.05;
 
   public let dirtyTripOnLook_zOffset: Float = 0.50;
 
@@ -1682,6 +1731,8 @@ public let dirtyTripOnLook_showOnLookSection: Bool = false;
   public let arnold_arcadeAllowBlunt: Bool = true;
 
   public let arnold_arcadeAllowBlade: Bool = false;
+  public let arnold_arcadeAllowFists: Bool = true;
+  public let arnold_arcadeAllowStrongArms: Bool = true;
 
   public let arnold_arcadeMulHandgun: Float = 1.100000;
 
@@ -1700,6 +1751,8 @@ public let dirtyTripOnLook_showOnLookSection: Bool = false;
   public let arnold_arcadeMulBlunt: Float = 1.350000;
 
   public let arnold_arcadeMulBlade: Float = 0.000000;
+  public let arnold_arcadeMulFists: Float = 1.000000;
+  public let arnold_arcadeMulStrongArms: Float = 1.000000;
 
   public let arnoldArcadeShowVehicles: Bool = false;
 
@@ -1842,13 +1895,17 @@ public let arnoldTripEmotion_showEmotionSection: Bool = false;
   public let arnoldTripEmotion_allowCompleteSurrender: Bool = true;
 
 
+public let arnoldTrip_allowBosses: Bool = true;
+
 public let arnoldTripAnimation_showTripAnimationSection: Bool = false;
 
   public let arnoldTripAnimation_enabled: Bool = false;
 
+  public let arnoldTripAnimation_minBumpSpeed: Float = 0.60;
+
   public let arnoldTripAnimation_showTripAnimationAdvanced: Bool = false;
 
-  public let arnoldTripAnimation_chancePct: Float = 100.00;
+  public let arnoldTripAnimation_chancePct: Float = 15.00;
 
   public let arnoldTripAnimation_forwardPush: Float = 4.00;
 
@@ -1864,7 +1921,7 @@ public let arnoldTripAnimation_showTripAnimationSection: Bool = false;
 
 public let arnoldTripOnLook_showOnLookSection: Bool = false;
 
-  public let arnoldTripOnLook_enabled: Bool = false;
+  public let arnoldTripOnLook_enabled: Bool = true;
 
   public let arnoldTripOnLook_aggressiveOnly: Bool = true;
 
@@ -1872,23 +1929,23 @@ public let arnoldTripOnLook_showOnLookSection: Bool = false;
 
   public let arnoldTripOnLook_showAdvancedOnLook: Bool = false;
 
-  public let arnoldTripOnLook_contactDistM: Float = 0.85;
+  public let arnoldTripOnLook_contactDistM: Float = 1.10;
 
-  public let arnoldTripOnLook_minSpeedMps: Float = 6.90;
+  public let arnoldTripOnLook_minSpeedMps: Float = 5.50;
 
   public let arnoldTripOnLook_pushXY: Float = 28.00;
 
   public let arnoldTripOnLook_downZ: Float = 11.00;
 
-  public let arnoldTripOnLook_centerAimTightness: Float = 0.90;
+  public let arnoldTripOnLook_centerAimTightness: Float = 0.97;
 
-  public let arnoldTripOnLook_centerLaneWidth: Float = 0.35;
+  public let arnoldTripOnLook_centerLaneWidth: Float = 0.30;
 
   public let arnoldTripOnLook_sideXY: Float = 9.00;
 
   public let arnoldTripOnLook_liftZ: Float = 1.00;
 
-  public let arnoldTripOnLook_radius: Float = 1.20;
+  public let arnoldTripOnLook_radius: Float = 1.30;
 
   public let arnoldTripOnLook_zOffset: Float = 0.50;
 

@@ -38,7 +38,8 @@ private func AAT_EmotionCfg() -> ref<AAT_EmotionSettings> {
   let settings: ref<AAT_EmotionSettings> = new AAT_EmotionSettings();
   let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
   let mode: Int32 = EnumInt(menu.splatPresetMode);
-  if mode == EnumInt(RFCSplatPresetMode.Realism) {
+  if mode == EnumInt(RFCSplatPresetMode.Realism)
+    || mode == EnumInt(RFCSplatPresetMode.Juggernaut) {
     settings.showEmotionSection = menu.customTripEmotion_showEmotionSection;
     settings.enabled = menu.customTripEmotion_enabled;
     settings.aggressionFirst = menu.customTripEmotion_aggressionFirst;

@@ -61,14 +61,17 @@ public class RFC_MicroBrake extends Event {
 
 
 
-public class RFC_CutDeathAnimEvent extends Event {}
+public class RFC_CutDeathAnimEvent extends Event {
+  public let allowVanillaWeaponLane: Bool;
+}
 @addMethod(NPCPuppet)
 protected cb func OnRFC_CutDeathAnimEvent(evt: ref<RFC_CutDeathAnimEvent>) -> Bool {
   // HARD VANILLA BYPASS: stale cuts from another mode die here.
   if RFC.Cfg().vanillaMode { return true; }
 
-  // v1704: stale compatibility cuts cannot override a selected Vanilla death.
-  if RFC_VanillaWeaponReactionArmed(this) { return true; }
+  // Stale generic compatibility cuts still cannot override a selected Vanilla
+  // weapon death. Only the explicit per-weapon cutoff event may pass this gate.
+  if RFC_VanillaWeaponReactionArmed(this) && !evt.allowVanillaWeaponLane { return true; }
   // Outside Vanilla only: this is SPLAT's compatibility handoff.
   // Vanilla/rig-only returned above and can never execute this animation cut.
   // Outside slow motion, stealth/finisher handoff remains owned by its dedicated
@@ -82,6 +85,10 @@ protected cb func OnRFC_CutDeathAnimEvent(evt: ref<RFC_CutDeathAnimEvent>) -> Bo
   // the NORMAL SPLAT death-animation toggle.
   if this.rfc_splatDeathAnimationActive {
     this.rfc_splatDeathAnimationActive = false;
+  };
+  if evt.allowVanillaWeaponLane {
+    this.rfc_vanillaDeathAnimArmed = false;
+    this.rfc_vanillaWeaponLane = 0;
   };
 
   let ds: ref<DelaySystem> = GameInstance.GetDelaySystem(this.GetGame());
@@ -98,7 +105,17 @@ private func RFC_ScheduleCut(ds: ref<DelaySystem>, p: wref<NPCPuppet>, t: Float)
   if RFC.Cfg().vanillaMode { return; }
   if !IsDefined(ds) || !IsDefined(p) { return; }
   let t0: Float = MaxF(t, 0.0);
-  ds.DelayEvent(p, new RFC_CutDeathAnimEvent(), t0, false);
+  let evt: ref<RFC_CutDeathAnimEvent> = new RFC_CutDeathAnimEvent();
+  evt.allowVanillaWeaponLane = false;
+  ds.DelayEvent(p, evt, t0, false);
+}
+
+public func RFC_ScheduleVanillaWeaponCut(ds: ref<DelaySystem>, p: wref<NPCPuppet>, t: Float) -> Void {
+  if RFC.Cfg().vanillaMode { return; }
+  if !IsDefined(ds) || !IsDefined(p) { return; }
+  let evt: ref<RFC_CutDeathAnimEvent> = new RFC_CutDeathAnimEvent();
+  evt.allowVanillaWeaponLane = true;
+  ds.DelayEvent(p, evt, MaxF(t, 0.0), false);
 }
 
 public func RFC_ApplyHeadSlam(

@@ -5,9 +5,9 @@ public let showTripAnimationSection: Bool = true;
   public let enabled: Bool = false;
   public let showTripAnimationAdvanced: Bool = false;
 
-  // Hidden legacy gate. Kept at 0.00 so this restore does not silently block OnBump testing.
-  public let minBumpSpeed: Float = 0.00;
-  public let chancePct: Float = 100.00;
+  // Restored per-mode OnBump speed gate. Uses BumpEvent.sourceSpeed.
+  public let minBumpSpeed: Float = 0.60;
+  public let chancePct: Float = 7.00;
   public let forwardPush: Float = 4.00;
   public let downwardForce: Float = 3.00;
   public let ragdollDelaySec: Float = 1.15;
@@ -28,9 +28,11 @@ private func AAT_TripCfg() -> ref<AAT_TripSettings> {
   let settings: ref<AAT_TripSettings> = new AAT_TripSettings();
   let menu: ref<RFCModSettings> = SPLATSettingsRuntime.Menu();
   let mode: Int32 = EnumInt(menu.splatPresetMode);
-  if mode == EnumInt(RFCSplatPresetMode.Realism) {
+  if mode == EnumInt(RFCSplatPresetMode.Realism)
+    || mode == EnumInt(RFCSplatPresetMode.Juggernaut) {
     settings.showTripAnimationSection = menu.customTripAnimation_showTripAnimationSection;
     settings.enabled = menu.customTripAnimation_enabled;
+    settings.minBumpSpeed = menu.customTripAnimation_minBumpSpeed;
     settings.showTripAnimationAdvanced = menu.customTripAnimation_showTripAnimationAdvanced;
     settings.chancePct = menu.customTripAnimation_chancePct;
     settings.forwardPush = menu.customTripAnimation_forwardPush;
@@ -43,6 +45,7 @@ private func AAT_TripCfg() -> ref<AAT_TripSettings> {
   else if mode == EnumInt(RFCSplatPresetMode.RealismPlus) {
     settings.showTripAnimationSection = menu.realismPlusTripAnimation_showTripAnimationSection;
     settings.enabled = menu.realismPlusTripAnimation_enabled;
+    settings.minBumpSpeed = menu.realismPlusTripAnimation_minBumpSpeed;
     settings.showTripAnimationAdvanced = menu.realismPlusTripAnimation_showTripAnimationAdvanced;
     settings.chancePct = menu.realismPlusTripAnimation_chancePct;
     settings.forwardPush = menu.realismPlusTripAnimation_forwardPush;
@@ -55,6 +58,7 @@ private func AAT_TripCfg() -> ref<AAT_TripSettings> {
   else if mode == EnumInt(RFCSplatPresetMode.DirtyHarry) {
     settings.showTripAnimationSection = menu.dirtyTripAnimation_showTripAnimationSection;
     settings.enabled = menu.dirtyTripAnimation_enabled;
+    settings.minBumpSpeed = menu.dirtyTripAnimation_minBumpSpeed;
     settings.showTripAnimationAdvanced = menu.dirtyTripAnimation_showTripAnimationAdvanced;
     settings.chancePct = menu.dirtyTripAnimation_chancePct;
     settings.forwardPush = menu.dirtyTripAnimation_forwardPush;
@@ -67,6 +71,7 @@ private func AAT_TripCfg() -> ref<AAT_TripSettings> {
   else if mode == EnumInt(RFCSplatPresetMode.Arnold) {
     settings.showTripAnimationSection = menu.arnoldTripAnimation_showTripAnimationSection;
     settings.enabled = menu.arnoldTripAnimation_enabled;
+    settings.minBumpSpeed = menu.arnoldTripAnimation_minBumpSpeed;
     settings.showTripAnimationAdvanced = menu.arnoldTripAnimation_showTripAnimationAdvanced;
     settings.chancePct = menu.arnoldTripAnimation_chancePct;
     settings.forwardPush = menu.arnoldTripAnimation_forwardPush;
@@ -78,9 +83,6 @@ private func AAT_TripCfg() -> ref<AAT_TripSettings> {
   }
   return settings;
 }
-
-
-
 
 @addField(NPCPuppet)
 private let aatTripLocked: Bool;

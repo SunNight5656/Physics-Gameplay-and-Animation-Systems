@@ -90,7 +90,7 @@ public final func GetPhysicalImpulse(
 
   // Vehicle occupants keep the normal hit/death animation, but receive no
   // physical push while the dedicated vehicle kill toggle is active.
-  if c.killImpulsesVehiclesOnly && IsDefined(this.m_ownerNPC) && RFC_IsVehicleContext(this.m_ownerNPC) {
+  if (c.killImpulsesVehiclesOnly || c.vehicleOccupantShieldEnabled) && IsDefined(this.m_ownerNPC) && RFC_IsVehicleContext(this.m_ownerNPC) {
     frameImpulse = 0.0;
     this.m_cumulatedPhysicalImpulse = 0.0;
     this.m_ragdollImpulse = 0.0;

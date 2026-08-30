@@ -54,10 +54,15 @@ public class RFC_DeathImpulseRouter {
       srcPos = inst.GetWorldPosition();
     }
 
-    let tgtPos: Vector4 = puppet.GetWorldPosition();
+    let rawHitPos: Vector4 = puppet.GetWorldPosition();
+    let tgtPos: Vector4 = rawHitPos;
+    if !RFC_ArcadeIsMeleeAttack(ad2) && puppet.rfc_lastArcadeHitValid {
+      rawHitPos = puppet.rfc_lastArcadeHitPos;
+      tgtPos = RFC_ArcadeApplicationPoint(puppet, rawHitPos, c.arcadeApplicationPointOffset);
+    }
 
-    let dx: Float = tgtPos.X - srcPos.X;
-    let dy: Float = tgtPos.Y - srcPos.Y;
+    let dx: Float = rawHitPos.X - srcPos.X;
+    let dy: Float = rawHitPos.Y - srcPos.Y;
     let len: Float = SqrtF(dx * dx + dy * dy);
     if len < 0.0001 {
       dx = 0.0;
@@ -137,10 +142,15 @@ public class RFC_DeathImpulseRouter {
           srcPos = inst.GetWorldPosition();
         }
 
-        let tgtPos: Vector4 = puppet.GetWorldPosition();
+        let rawHitPos: Vector4 = puppet.GetWorldPosition();
+        let tgtPos: Vector4 = rawHitPos;
+        if !RFC_ArcadeIsMeleeAttack(ad2) && puppet.rfc_lastArcadeHitValid {
+          rawHitPos = puppet.rfc_lastArcadeHitPos;
+          tgtPos = RFC_ArcadeApplicationPoint(puppet, rawHitPos, c.arcadeApplicationPointOffset);
+        }
 
-        let dx: Float = tgtPos.X - srcPos.X;
-        let dy: Float = tgtPos.Y - srcPos.Y;
+        let dx: Float = rawHitPos.X - srcPos.X;
+        let dy: Float = rawHitPos.Y - srcPos.Y;
         let len: Float = SqrtF(dx * dx + dy * dy);
         if len < 0.0001 {
           dx = 0.0;
@@ -264,9 +274,6 @@ if IsDefined(adGS) {
   let gGrenadeActive:    Bool = !gVanilla && c.grenadeEnabled;
   // Legacy bullet kick system removed. Bullet reactions use SHHJM Hit Jolts only.
   let gWalkActive:       Bool = !gVanilla && c.walkEnabled;
-
-  // (you were forcing puppet off anyway)
-  gSettleActive = false;
 
   // Legacy corpse-impulse arming removed.
 
@@ -412,6 +419,9 @@ if isStairLike {
         c.tumbleStairs_side,
         c.tumbleStairs_down,
         c.tumbleStairs_fwd,
+        RFC_ClampT(c.tumbleStairs_sideDelay),
+        RFC_ClampT(c.tumbleStairs_downDelay),
+        RFC_ClampT(c.tumbleStairs_fwdDelay),
         c.tumbleStairs_radius,
         c
       );
@@ -430,10 +440,22 @@ if isStairLike {
         9.25,
         -2.80,
         0.04,
+        0.00,
+        0.00,
+        0.00,
         1.35,
         c
       );
     }
+  }
+
+  if !gStairsActive {
+    RFC_ScheduleIndependentStairsTumble(
+      ds, puppet, pelvisPos, chestPos, headPos,
+      downhill.X, downhill.Y,
+      didGroundHit, heightToGround,
+      c
+    );
   }
 
   RFC_ScheduleTwitch(puppet, ds, chestPos, pelvisPos, headPos, c);
@@ -444,6 +466,10 @@ if isStairLike {
   // ─────────────────────────
   if isWS {
     if !gWSActive {
+      RFC_ScheduleIndependentDirectionalTumble(
+        ds, puppet, pelvisPos, chestPos, headPos,
+        dirX, dirY, false, c
+      );
       return arcadeDeathHandled;
     }
 
@@ -517,6 +543,9 @@ if isStairLike {
           c.tumbleDir_side,
           c.tumbleDir_down,
           c.tumbleDir_fwd,
+          RFC_ClampT(c.tumbleDir_sideDelay),
+          RFC_ClampT(c.tumbleDir_downDelay),
+          RFC_ClampT(c.tumbleDir_fwdDelay),
           c.tumbleDir_radius,
           c
         );
@@ -548,6 +577,10 @@ if isStairLike {
   // ─────────────────────────
   if isCow {
     if !gCowerActive {
+      RFC_ScheduleIndependentDirectionalTumble(
+        ds, puppet, pelvisPos, chestPos, headPos,
+        dirX, dirY, false, c
+      );
       return arcadeDeathHandled;
     }
 
@@ -600,6 +633,9 @@ if isStairLike {
           c.tumbleDir_side,
           c.tumbleDir_down,
           c.tumbleDir_fwd,
+          RFC_ClampT(c.tumbleDir_sideDelay),
+          RFC_ClampT(c.tumbleDir_downDelay),
+          RFC_ClampT(c.tumbleDir_fwdDelay),
           c.tumbleDir_radius,
           c
         );
@@ -665,6 +701,10 @@ let useStand: Bool = gStandActive && !movingLike;
     d_pelvisFall = c.st_d_pelvisFall;
 
   } else {
+    RFC_ScheduleIndependentDirectionalTumble(
+      ds, puppet, pelvisPos, chestPos, headPos,
+      dirX, dirY, movingLike, c
+    );
     if gSettleActive {
       RFC_ApplyGlobalSettle(ds, puppet, headPos, chestPos, pelvisPos, dirX, dirY, c);
     }
@@ -770,6 +810,9 @@ let useStand: Bool = gStandActive && !movingLike;
           c.tumbleDir_side,
           c.tumbleDir_down,
           c.tumbleDir_fwd,
+          RFC_ClampT(c.tumbleDir_sideDelay),
+          RFC_ClampT(c.tumbleDir_downDelay),
+          RFC_ClampT(c.tumbleDir_fwdDelay),
           c.tumbleDir_radius,
           c
         );
@@ -829,6 +872,12 @@ let useStand: Bool = gStandActive && !movingLike;
       RFC_Burst(ds, puppet, pelvisPos, sPelvis, MaxF(c.st_pelvisRadius, c.st_forwardRadius), tFwd, c);
     }
 
+    // DeathImpulseRouter previously omitted directional Tumble from its active
+    // Standing route even though DeathRouter included it.
+    RFC_ScheduleIndependentDirectionalTumble(
+      ds, puppet, pelvisPos, chestPos, headPos,
+      dirX, dirY, false, c
+    );
     RFC_ScheduleTwitch(puppet, ds, chestPos, pelvisPos, headPos, c);
     return arcadeDeathHandled;
   }

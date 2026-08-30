@@ -77,10 +77,6 @@ private func SHHJM_QueueWorkingTorsoModel(puppet: ref<NPCPuppet>, targetWasAlrea
   impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, 1, s);
   radius = SHHJM_GetRadius(1, s);
 
-  LogChannel(
-    n"DEBUG",
-    s"[SPLAT_JOLT_TRACE] TORSO_GROUND_NATIVE_DISPATCH anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) delay=\(fireDelay)"
-  );
 
   if puppet.IsDead() && !puppet.IsRagdolling() {
     if ScriptedPuppet.CanRagdoll(puppet) {
@@ -113,12 +109,6 @@ private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, boneIndex: Int
   let effectiveDelay: Float;
 
   let c: RFCConfig = RFC.Cfg();
-  if part == 1 {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] TORSO_QUEUE_ENTRY definedPuppet=\(IsDefined(puppet)) definedSettings=\(IsDefined(s)) vanilla=\(c.vanillaMode) joltsEnabled=\(c.bulletJoltsEnabled) bone=\(boneIndex)"
-    );
-  };
   if !IsDefined(puppet) || !IsDefined(s) {
     return;
   };
@@ -163,10 +153,6 @@ private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, boneIndex: Int
   if part == 1 {
     impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, part, s);
     radius = SHHJM_GetRadius(part, s);
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] TORSO_NATIVE_DISPATCH anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) delay=\(effectiveDelay)"
-    );
 
     if puppet.IsDead() && !puppet.IsRagdolling() {
       if ScriptedPuppet.CanRagdoll(puppet) {
@@ -197,12 +183,6 @@ private func SHHJM_QueueJolt(puppet: ref<NPCPuppet>, part: Int32, boneIndex: Int
   // before CreateRagdollApplyImpulseEvent ever reached the puppet.
   impulse = SHHJM_BuildImpulse(puppet, srcPos, applyAnchor, part, s);
   radius = SHHJM_GetBoneRadius(part, s);
-  if part == 1 {
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] TORSO_EVENT anchor=\(applyAnchor) impulse=\(impulse) radius=\(radius) dead=\(puppet.IsDead()) ragdoll=\(puppet.IsRagdolling()) fireDelay=\(fireDelay)"
-    );
-  };
   // Preserve active death animations on newly lethal hits. Existing
   // dead/ragdoll targets are the Bullet Jolt lane and may be refreshed.
   if RFC_AnyDeathAnimationOwnsLifecycle(puppet)
@@ -680,10 +660,6 @@ private func SHHJM_ResolveBodyPartFromHitEvent(puppet: ref<NPCPuppet>, evt: ref<
       } else {
         SHHJM_GetExactPartAnchor(puppet, part, hitPos, anchorPos);
       };
-      LogChannel(
-        n"DEBUG",
-        s"[SPLAT_JOLT_TRACE] SHAPE_RESOLVE shapeIndex=\(i) part=\(part) hit=\(hitPos) anchor=\(anchorPos)"
-      );
       return true;
     };
 
@@ -880,14 +856,9 @@ private func SHHJM_ResolveBodyPart(puppet: ref<NPCPuppet>, hitPos: Vector4, out 
   if found {
     part = bestPart;
     SHHJM_GetExactPartAnchor(puppet, bestPart, bestPos, anchorPos);
-    LogChannel(
-      n"DEBUG",
-      s"[SPLAT_JOLT_TRACE] SPATIAL_RESOLVE part=\(part) hit=\(hitPos) anchor=\(anchorPos)"
-    );
     return true;
   };
 
-  LogChannel(n"DEBUG", s"[SPLAT_JOLT_TRACE] RESOLVE_FAILED hit=\(hitPos)");
   return false;
 }
 
