@@ -1,14 +1,17 @@
-# SPLAT Physics — Runtime Physics, Gameplay & Animation Systems
+﻿# SPLAT Physics â€” Runtime Physics, Gameplay & Animation Systems
 
 ## Overview
 
 SPLAT Physics is a modular runtime physics, gameplay, and animation overhaul for **Cyberpunk 2077**. It provides extensive control over ragdoll behavior, character falls, directional pushes, bullet reactions, explosions, vehicle interactions, situational responses, and animation-to-physics transitions.
 
+**Live Product:** https://www.nexusmods.com/cyberpunk2077/mods/23539  
+**User Support / Posts:** https://www.nexusmods.com/cyberpunk2077/mods/23539?tab=posts
+
 SPLAT is a public software project maintained through production debugging, automated regression testing, controlled releases, and feedback from an active user base. The project has shipped through more than **40 public releases** and has reached:
 
-- **75,000+ total downloads**
-- **32,000+ unique downloads**
-- **750+ endorsements**
+- **88,000+ total downloads**
+- **38,000+ unique users**
+- **800+ endorsements**
 
 ## Problem Statement
 
@@ -74,10 +77,10 @@ SPLAT addresses these problems through a configurable runtime system that routes
 
 SPLAT supports multiple configurable modes:
 
-- **Realism Custom** — full manual configuration
-- **Realism Plus** — stronger realistic reactions
-- **Clint Eastwood Old West** — exaggerated cinematic gun reactions
-- **Arnold/Arcade** — intentionally extreme arcade-style physics
+- **Realism Custom** â€” full manual configuration
+- **Realism Plus** â€” stronger realistic reactions
+- **Clint Eastwood Old West** â€” exaggerated cinematic gun reactions
+- **Arnold/Arcade** â€” intentionally extreme arcade-style physics
 
 Each mode maintains its own settings rather than relying on one shared configuration.
 
@@ -89,15 +92,15 @@ SPLAT uses a modular, event-driven runtime architecture.
 
 ```text
 Game Event
-    ↓
+    â†“
 Context and State Checks
-    ↓
+    â†“
 Physics Router
-    ↓
+    â†“
 Feature-Specific Logic
-    ↓
+    â†“
 Scheduled Ragdoll or Impulse Event
-    ↓
+    â†“
 Runtime Physics Response
 ```
 
@@ -107,31 +110,31 @@ Major systems are separated into focused REDscript modules, helper utilities, Na
 
 ```text
 .github/
-└── workflows/
-    └── ci.yml
+â””â”€â”€ workflows/
+    â””â”€â”€ ci.yml
 scripts/
-└── build-release.ps1
+â””â”€â”€ build-release.ps1
 src/
-├── archive/
-│   └── pc/
-│       └── mod/
-│           └── rig.archive
-├── bin/
-│   └── x64/
-│       └── plugins/
-│           └── cyber_engine_tweaks/
-│               └── mods/
-│                   └── splat_native_settings/
-└── r6/
-    └── scripts/
-        └── new Splat/
-            ├── Features/
-            ├── Helpers/
-            └── Core REDscript systems
+â”œâ”€â”€ archive/
+â”‚   â””â”€â”€ pc/
+â”‚       â””â”€â”€ mod/
+â”‚           â””â”€â”€ rig.archive
+â”œâ”€â”€ bin/
+â”‚   â””â”€â”€ x64/
+â”‚       â””â”€â”€ plugins/
+â”‚           â””â”€â”€ cyber_engine_tweaks/
+â”‚               â””â”€â”€ mods/
+â”‚                   â””â”€â”€ splat_native_settings/
+â””â”€â”€ r6/
+    â””â”€â”€ scripts/
+        â””â”€â”€ new Splat/
+            â”œâ”€â”€ Features/
+            â”œâ”€â”€ Helpers/
+            â””â”€â”€ Core REDscript systems
 tests/
-├── contracts/
-├── run-all-tests.py
-└── run-all-tests.ps1
+â”œâ”€â”€ contracts/
+â”œâ”€â”€ run-all-tests.py
+â””â”€â”€ run-all-tests.ps1
 ```
 
 ### `src/archive`
@@ -264,8 +267,10 @@ SPLAT currently uses:
 - Native Settings UI
 - redscript
 
-The repository contains SPLAT’s own source and packaged project files. External dependencies must be installed separately by the user.
+The repository contains SPLATâ€™s own source and packaged project files. External dependencies must be installed separately by the user.
 
 ## Status
 
 SPLAT remains under active development as a maintained public runtime system. Current work focuses on runtime stability, feature isolation, settings correctness, regression prevention, reproducible packaging, and extending the approved release artifact toward Nexus Mods delivery.
+
+
